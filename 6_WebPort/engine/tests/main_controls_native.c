@@ -10,6 +10,8 @@ void zeliard_key_down(int keycode);
 void zeliard_key_up(int keycode);
 int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
+int zeliard_test_enter_room(int kind);
+int zeliard_room_kind(void);
 int zeliard_phase(void);
 u32 zeliard_phase_elapsed(void);
 u32 zeliard_audio_opl_write_count(void);
@@ -126,6 +128,11 @@ int main(void) {
     ok &= zeliard_music_enabled() == 1 && zeliard_music_track() == 3;
     zeliard_key(27);
     ok &= zeliard_paused() == 1 && zeliard_music_track() == 3;
+    int game_pause_pixels = 0;
+    for (int y = 30; y < 46; ++y)
+        for (int x = 128; x < 192; ++x)
+            game_pause_pixels += g_framebuf[y * ZELIARD_WIDTH + x] == 0x09;
+    ok &= game_pause_pixels == 446;
     zeliard_key(32);
     ok &= zeliard_paused() == 0 && zeliard_music_track() == 3;
     zeliard_key_down(39);
@@ -154,6 +161,16 @@ int main(void) {
            dialog_dismissed);
     ok &= dialog_cue == 0x1E && zeliard_music_track() == 3 &&
           dialog_active && dialog_dismissed;
+
+    ok &= zeliard_test_enter_room(1) == 0;
+    ok &= zeliard_music_track() == 3 && zeliard_room_kind() == 0;
+    zeliard_tick(500);
+    const int room_music_stopped =
+        zeliard_room_kind() == 1 && zeliard_music_track() == 0;
+    ok &= room_music_stopped;
+    printf("main_controls:king_entry_music_stop: %s room=%d music=%d\n",
+           room_music_stopped ? "PASS" : "FAIL", zeliard_room_kind(),
+           zeliard_music_track());
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

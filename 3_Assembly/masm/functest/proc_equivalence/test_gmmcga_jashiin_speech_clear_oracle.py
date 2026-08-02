@@ -21,6 +21,7 @@ BIN = MASM_ROOT / "bin" / "gmmcga.bin"
 CODE_SEG, STACK_SEG, VGA_SEG = 0x1000, 0x5000, 0xA000
 ENTRY, RET_SENTINEL = 0x2046, 0x0080
 EXPECTED_FNV = 0x9A550041FF6558A5
+EXPECTED_KING_PROMPT_FNV = 0x18ADDA5D7FCDF1E5
 
 
 def fnv1a64(data: bytes) -> int:
@@ -31,7 +32,7 @@ def fnv1a64(data: bytes) -> int:
     return value
 
 
-def run() -> int:
+def run(bx: int, cx: int) -> int:
     mu = Uc(UC_ARCH_X86, UC_MODE_16)
     for seg in (CODE_SEG, STACK_SEG, VGA_SEG):
         mu.mem_map(seg << 4, 0x10000, UC_PROT_ALL)
@@ -41,7 +42,7 @@ def run() -> int:
     for reg, value in ((UC_X86_REG_CS, CODE_SEG), (UC_X86_REG_DS, CODE_SEG),
                        (UC_X86_REG_ES, CODE_SEG), (UC_X86_REG_SS, STACK_SEG),
                        (UC_X86_REG_SP, 0xFFFC), (UC_X86_REG_AX, 0),
-                       (UC_X86_REG_BX, 0x0094), (UC_X86_REG_CX, 0x501E)):
+                       (UC_X86_REG_BX, bx), (UC_X86_REG_CX, cx)):
         mu.reg_write(reg, value)
     mu.mem_write((STACK_SEG << 4) + 0xFFFC,
                  bytes((RET_SENTINEL & 0xFF, RET_SENTINEL >> 8)))
@@ -57,10 +58,15 @@ def run() -> int:
 
 
 def main() -> int:
-    actual = run()
-    ok = actual == EXPECTED_FNV
-    print(f"gmmcga_jashiin_speech_clear: {'PASS' if ok else 'FAIL'} "
+    actual = run(0x0094, 0x501E)
+    king_prompt = run(0x278B, 0x020A)
+    speech_ok = actual == EXPECTED_FNV
+    prompt_ok = king_prompt == EXPECTED_KING_PROMPT_FNV
+    ok = speech_ok and prompt_ok
+    print(f"gmmcga_jashiin_speech_clear: {'PASS' if speech_ok else 'FAIL'} "
           f"vga={actual:016x}")
+    print(f"gmmcga_king_prompt_clear: {'PASS' if prompt_ok else 'FAIL'} "
+          f"vga={king_prompt:016x}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM GMMCGA 2046 AL=0 speech-field clear")
     return 0 if ok else 1

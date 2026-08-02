@@ -104,7 +104,10 @@ static void apply_input_actions(u32 actions) {
     if (actions & ZEL_INPUT_ACTION_TOGGLE_SOUND)
         zel_opening_audio_toggle_sound();
     if ((actions & ZEL_INPUT_ACTION_ESCAPE) && !g_paused) {
-        opening_pause_overlay_show();
+        if (g_scene == SCENE_GAME)
+            opening_pause_overlay_show_game(g_game_segments[0], 0x10000);
+        else
+            opening_pause_overlay_show();
         g_paused = 1;
         zel_opening_audio_pause();
     }
@@ -205,6 +208,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         return;
     }
     if (g_scene == SCENE_GAME) {
+        const int room_was_active = g_town_runtime.room.active;
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
             input_ticks, g_game_segments[0][0xFF17]);
@@ -213,6 +217,13 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         } else if (frames > 0) {
             memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
         }
+        /* 106TOWN:door_type_shop invokes INT 60h AX=1 after the blocking
+         * MCGA entry fade and reloads/plays the current town score only after
+         * the room program returns. */
+        if (!room_was_active && g_town_runtime.room.active)
+            zel_opening_audio_stop();
+        else if (room_was_active && !g_town_runtime.room.active)
+            zel_audio_play_music(ZEL_MUSIC_MGT1);
         if (g_town_runtime.dialog.pending_sound_cue) {
             zel_opening_audio_write_cue(
                 g_town_runtime.dialog.pending_sound_cue);
