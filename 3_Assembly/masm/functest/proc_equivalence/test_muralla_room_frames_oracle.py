@@ -28,7 +28,7 @@ CASES = (
         "boundary_pattern": bytes.fromhex("c7064cffd3ad"),
         "frame": 0x12FD1F3947E28290,
         "artwork": 0xDDF10D6134E5DA7C,
-        "menu_frame": 0xD4A92FBE8A86E12A,
+        "menu_frame": 0xF3074246AE808D8C,
     },
     {
         "name": "bank",
@@ -38,7 +38,7 @@ CASES = (
         "boundary_pattern": bytes.fromhex("c7064cff89a9"),
         "frame": 0x41FC80F26CEF61FB,
         "artwork": 0x0E059B43834625FF,
-        "menu_frame": 0x7B7375C7253142E3,
+        "menu_frame": 0xC2530EBABD5407A1,
         "wait_pattern": bytes.fromhex("803e1aff3c72f9"),
     },
     {
@@ -58,14 +58,14 @@ CASES = (
         "boundary_pattern": bytes.fromhex("c7064cff6ba8"),
         "frame": 0xDD94A39161EEBD55,
         "artwork": 0xB72FA5E69F6FA18D,
-        "menu_frame": 0xFCE58574B14C00FD,
+        "menu_frame": 0xEE7EECCE440BF677,
         "wait_pattern": bytes.fromhex("803e1aff5072f9"),
     },
 )
 
 
 def run_to_main_menu(machine, case) -> bytes:
-    """Run a release shop program to 106TOWN:poll_menu_input.
+    """Run a release shop program through the first menu cursor draw.
 
     The town frame tick is a browser/DOS host boundary in this harness. The
     direct FF1A loops are released after their body has run; all drawing,
@@ -100,7 +100,7 @@ def run_to_main_menu(machine, case) -> bytes:
         nonlocal reached
         last[:] = address, size
         if uc.reg_read(UC_X86_REG_CS) == GAME_SEG and \
-                uc.reg_read(UC_X86_REG_IP) == 0x7344:
+                uc.reg_read(UC_X86_REG_IP) == 0x735D:
             reached = True
             uc.emu_stop()
 
@@ -114,7 +114,8 @@ def run_to_main_menu(machine, case) -> bytes:
             from error
     machine.hook_del(hook)
     if not reached:
-        raise RuntimeError(f"{case['name']} did not reach poll_menu_input")
+        raise RuntimeError(
+            f"{case['name']} did not reach the post-cursor input check")
     return bytes(machine.mem_read(VGA_SEG << 4, 0x10000))
 
 
