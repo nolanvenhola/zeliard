@@ -7,7 +7,7 @@ from pathlib import Path
 from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, UC_PROT_ALL, Uc, UcError
 from unicorn.x86_const import (
     UC_X86_REG_AX, UC_X86_REG_CS, UC_X86_REG_DS, UC_X86_REG_ES,
-    UC_X86_REG_DI, UC_X86_REG_IP, UC_X86_REG_SP, UC_X86_REG_SS,
+    UC_X86_REG_DI, UC_X86_REG_IP, UC_X86_REG_SI, UC_X86_REG_SP, UC_X86_REG_SS,
 )
 
 MASM_ROOT = Path(__file__).resolve().parents[2]
@@ -126,6 +126,74 @@ def run_until_boundary(mu: Uc, entry: int, boundary: int,
         raise RuntimeError(f"room program did not reach {boundary:04x}")
 
 
+def run_near_proc(mu: Uc, entry: int, stop_ip: int = 0x0400) -> None:
+    base = GAME_SEG << 4
+    stack = STACK_SEG << 4
+    mu.reg_write(UC_X86_REG_CS, GAME_SEG)
+    mu.reg_write(UC_X86_REG_DS, GAME_SEG)
+    mu.reg_write(UC_X86_REG_SS, STACK_SEG)
+    mu.reg_write(UC_X86_REG_SP, 0xFFFA)
+    mu.mem_write(stack + 0xFFFA, stop_ip.to_bytes(2, "little"))
+    reached = False
+
+    def stop(uc: Uc, _address: int, _size: int, _user: object) -> None:
+        nonlocal reached
+        if uc.reg_read(UC_X86_REG_CS) == GAME_SEG and \
+                uc.reg_read(UC_X86_REG_IP) == stop_ip:
+            reached = True
+            uc.emu_stop()
+
+    hook = mu.hook_add(UC_HOOK_CODE, stop)
+    mu.emu_start(base + entry, 0, count=2_000_000)
+    mu.hook_del(hook)
+    if not reached:
+        raise RuntimeError(f"near proc {entry:04x} did not return")
+
+
+def king_interaction_oracles(program: Path, graphic: Path) -> bool:
+    expected = (
+        ((0, 0, 0), 0xA42F),
+        ((0xFF, 0, 0), 0xA53C),
+        ((0xFF, 0xFF, 0), 0xA5D2),
+        ((0xFF, 0xFF, 0xFF), 0xA6C1),
+    )
+    branches = []
+    for (flag_a, flag_b, quest), script_ip in expected:
+        machine = build_machine(program, graphic)
+        base = GAME_SEG << 4
+        machine.mem_write(base + 5, bytes((flag_a, flag_b)))
+        machine.mem_write(base + 0x49, bytes((quest,)))
+        run_near_proc(machine, 0xA3E8)
+        actual = machine.reg_read(UC_X86_REG_SI)
+        branches.append(actual)
+        if actual != script_ip:
+            return False
+
+    award = build_machine(program, graphic)
+    base = GAME_SEG << 4
+    # 210KINGP:A09A calls the frame-commit dispatch and waits for FF1A=0F
+    # ten times. Redirect only that dispatch to RET and let a timer hook
+    # supply the same interrupt-produced boundary value before face_anim_tick.
+    write_u16(award, 0x2016, SAR_STUB)
+
+    def timer_boundary(uc: Uc, _address: int, _size: int, _user: object) -> None:
+        if uc.reg_read(UC_X86_REG_CS) == GAME_SEG and \
+                uc.reg_read(UC_X86_REG_IP) == 0xA0C1:
+            uc.mem_write(base + 0xFF1A, b"\x0f")
+
+    hook = award.hook_add(UC_HOOK_CODE, timer_boundary)
+    run_near_proc(award, 0xA09A)
+    award.hook_del(hook)
+    gold = int.from_bytes(bytes(award.mem_read(base + 0x86, 2)), "little") | \
+        (int.from_bytes(bytes(award.mem_read(base + 0x85, 1)), "little") << 16)
+    done = int.from_bytes(bytes(award.mem_read(base + 5, 1)), "little")
+    cue = int.from_bytes(bytes(award.mem_read(base + 0xFF75, 1)), "little")
+    print("felishika_king_interaction: "
+          f"branches={','.join(f'{value:04x}' for value in branches)} "
+          f"gold={gold} done={done:02x} cue={cue:02x}")
+    return gold == 1000 and done == 0xFF and cue == 0x13
+
+
 def main() -> int:
     king_program = MASM_ROOT / "bin" / "zelres2" / "210KINGP.bin"
     king_graphic = MASM_ROOT / "bin" / "zelres2" / "218KINGG.grp"
@@ -177,15 +245,17 @@ def main() -> int:
         sage.mem_read(base + 0xFF4C, 4))
     print(f"felishika_sage_room: frame={fnv1a64(sage_frame):016x} "
           f"state={sage_state.hex()}:{fnv1a64(sage_state):016x}")
+    king_interaction = king_interaction_oracles(king_program, king_graphic)
     ok = fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
         fnv1a64(king_state) == EXPECTED_KING_STATE and \
+        king_interaction and \
         fnv1a64(omoya_frame) == EXPECTED_OMOYA_FRAME and \
         fnv1a64(omoya_state) == EXPECTED_OMOYA_STATE and \
         fnv1a64(omoya_artwork) == EXPECTED_OMOYA_ARTWORK and \
         fnv1a64(sage_frame) == EXPECTED_SAGE_FRAME and \
         fnv1a64(sage_state) == EXPECTED_SAGE_STATE
     print(f"VERDICT: {'PASS' if ok else 'FAIL'}: "
-          "release-MASM Felishika room stable frames")
+          "release-MASM Felishika room frames and king interaction")
     return 0 if ok else 1
 
 
