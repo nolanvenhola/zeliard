@@ -4,6 +4,14 @@ This file tracks which `gameplay_state.c` primitives are backed by MASM
 behavior probes. "Oracle-backed" means there is a MASM-side functest and a
 native C parity case using the same scenario name or a direct manifest mirror.
 
+Canonical player-record coverage:
+
+| C primitive | Status | MASM oracle |
+| --- | --- | --- |
+| `zeliard_player_state_bind` / `snapshot` / `import` | Oracle-backed | `regression/test_player_record_contract.py`; exact release `stdply.bin` SHA-256, web-asset identity, 256-byte initialization and opaque-tail preservation |
+| `zeliard_player_read/write_u8/u16/u24` | Oracle-backed | `regression/test_player_record_contract.py`; complete MASM before/after diff allowlists for byte state, HP word, and carried-gold 24-bit layout |
+| `zeliard_king_select_script` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; all four `210KINGP:select_script_branch` outcomes |
+
 | C primitive | Status | MASM oracle |
 | --- | --- | --- |
 | `zeliard_subtract_from_player_hp` | Oracle-backed | `regression/test_arithmetic_24bit_and_word.py` |

@@ -11,40 +11,43 @@ enum {
 };
 
 void zeliard_subtract_from_player_hp(zeliard_player_state_t *state, u16 amount) {
-    if (state->hero_hp < amount) {
-        state->hero_hp = 0;
-    } else {
-        state->hero_hp = (u16)(state->hero_hp - amount);
-    }
+    const u16 hp = zeliard_player_read_u16(state, ZEL_PLAYER_HP);
+    zeliard_player_write_u16(state, ZEL_PLAYER_HP,
+                             hp < amount ? 0 : (u16)(hp - amount));
 }
 
 void zeliard_hero_almas_add(zeliard_player_state_t *state, u16 amount) {
-    u32 sum = (u32)state->hero_almas + (u32)amount;
-    state->hero_almas = (sum > 0xFFFFu) ? 0xFFFFu : (u16)sum;
+    u32 sum = (u32)zeliard_player_read_u16(state, ZEL_PLAYER_ALMAS) + amount;
+    zeliard_player_write_u16(state, ZEL_PLAYER_ALMAS,
+                             sum > 0xFFFFu ? 0xFFFFu : (u16)sum);
 }
 
 void zeliard_gold_add(zeliard_player_state_t *state, u16 amount_lo, u8 amount_hi) {
-    u32 sum = (u32)state->gold_lo + (u32)amount_lo;
-    state->gold_lo = (u16)sum;
-    state->gold_hi = (u8)(state->gold_hi + amount_hi + ((sum >> 16) & 1u));
+    const u32 amount = ((u32)amount_hi << 16) | amount_lo;
+    zeliard_player_write_u24(
+        state, ZEL_PLAYER_GOLD,
+        zeliard_player_read_u24(state, ZEL_PLAYER_GOLD) + amount);
 }
 
 bool zeliard_gold_insufficient(const zeliard_player_state_t *state,
                                u16 amount_lo, u8 amount_hi) {
-    if (state->gold_hi < amount_hi) {
+    const u8 gold_hi = zeliard_player_read_u8(state, ZEL_PLAYER_GOLD);
+    const u16 gold_lo = zeliard_player_read_u16(state, ZEL_PLAYER_GOLD + 1);
+    if (gold_hi < amount_hi) {
         return true;
     }
-    u8 hi_remaining = (u8)(state->gold_hi - amount_hi);
-    if (state->gold_lo >= amount_lo) {
+    u8 hi_remaining = (u8)(gold_hi - amount_hi);
+    if (gold_lo >= amount_lo) {
         return false;
     }
     return hi_remaining == 0;
 }
 
 void zeliard_bank_add(zeliard_player_state_t *state, u16 amount_lo, u8 amount_hi) {
-    u32 sum = (u32)state->bank_lo + (u32)amount_lo;
-    state->bank_lo = (u16)sum;
-    state->bank_hi = (u8)(state->bank_hi + amount_hi + ((sum >> 16) & 1u));
+    const u32 amount = ((u32)amount_hi << 16) | amount_lo;
+    zeliard_player_write_u24(
+        state, ZEL_PLAYER_BANK_GOLD,
+        zeliard_player_read_u24(state, ZEL_PLAYER_BANK_GOLD) + amount);
 }
 
 bool zeliard_town_walk_right_col(u8 *town_player_col) {

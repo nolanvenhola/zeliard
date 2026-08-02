@@ -1,5 +1,6 @@
 #include "room_runtime.h"
 
+#include "../core/player_state.h"
 #include "../load/fill_buffer.h"
 #include "../platform/platform.h"
 #include "../render/palette.h"
@@ -87,6 +88,8 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
                        u8 *vga, size_t vga_size) {
     if (!room || !game_seg || !vga || game_size < 0x10000 ||
         vga_size < 0x10000 || room->active) return -1;
+    zeliard_player_state_t player;
+    if (!zeliard_player_state_bind(&player, game_seg, game_size)) return -1;
     const char *program = kind == ZEL_ROOM_KING ? "kingpro.bin" :
                           kind == ZEL_ROOM_SAGE ? "kenjpro.bin" :
                           kind == ZEL_ROOM_VIEWING ? "omoypro.bin" : NULL;
@@ -145,10 +148,10 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     /* 211OMOYP:A041 tests player offset 49h after drawing the room and
      * branches to end_demo_transition when it is nonzero. */
     room->alternate_transition_requested =
-        kind == ZEL_ROOM_VIEWING && game_seg[0x0049] != 0;
+        kind == ZEL_ROOM_VIEWING &&
+        zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0;
     if (kind == ZEL_ROOM_KING) {
-        room->king_entry_gold = ((u32)game_seg[0x85] << 16) |
-                                read_u16(game_seg, 0x86);
+        room->king_entry_gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
         game_seg[GVAR_TEXT_X] = 0;
         game_seg[GVAR_TEXT_Y] = 0;
         game_seg[TOWN_TEXT_LINE_COUNT] = 0;
@@ -166,11 +169,12 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
                        u8 *vga, size_t vga_size) {
     if (!room || !room->active || !game_seg || !vga ||
         game_size < 0x10000 || vga_size < 0x10000) return -1;
+    zeliard_player_state_t player;
+    if (!zeliard_player_state_bind(&player, game_seg, game_size)) return -1;
     memcpy(game_seg + 0xA000, room->saved_code, sizeof(room->saved_code));
     memcpy(vga, room->saved_vga, sizeof(room->saved_vga));
     if (room->kind == ZEL_ROOM_KING) {
-        const u32 gold = ((u32)game_seg[0x85] << 16) |
-                         read_u16(game_seg, 0x86);
+        const u32 gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
         if (gold != room->king_entry_gold)
             zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size);
     }
@@ -186,9 +190,14 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
 
 u16 zeliard_king_select_script(const u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x10000) return 0;
-    if ((u8)(game_seg[5] | game_seg[6]) == 0) return 0xA42F;
-    if (game_seg[6] == 0) return 0xA53C;
-    if (game_seg[0x49] == 0) return 0xA5D2;
+    zeliard_player_state_t player = {.bytes = (u8 *)game_seg};
+    if ((u8)(zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE) |
+             zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE_B)) == 0)
+        return 0xA42F;
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE_B) == 0)
+        return 0xA53C;
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) == 0)
+        return 0xA5D2;
     return 0xA6C1;
 }
 
@@ -503,11 +512,11 @@ int zeliard_room_advance_pit(zeliard_room_runtime_t *room,
         break;
     case KING_SCRIPT_GOLD_AWARD:
         if (room->script_wait_ticks == 0) {
-            u32 gold = ((u32)game_seg[0x85] << 16) |
-                       read_u16(game_seg, 0x86);
-            gold = (gold + 100u) & 0xFFFFFFu;
-            game_seg[0x85] = (u8)(gold >> 16);
-            write_u16(game_seg, 0x86, (u16)gold);
+            zeliard_player_state_t player;
+            zeliard_player_state_bind(&player, game_seg, game_size);
+            zeliard_player_write_u24(
+                &player, ZEL_PLAYER_GOLD,
+                zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD) + 100u);
             zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size);
             king_sound_cue(room, game_seg, 0x13);
             game_seg[GVAR_FRAME_TIMER] = 0;
@@ -515,7 +524,10 @@ int zeliard_room_advance_pit(zeliard_room_runtime_t *room,
         } else {
             king_face_anim_tick(room, game_seg, vga, vga_size);
             if (--room->script_wait_ticks == 0 && --room->script_gold_steps == 0) {
-                game_seg[5] = 0xFF;
+                zeliard_player_state_t player;
+                zeliard_player_state_bind(&player, game_seg, game_size);
+                zeliard_player_write_u8(
+                    &player, ZEL_PLAYER_KING_DIALOG_DONE, 0xFF);
                 king_schedule_delay(room);
             }
         }

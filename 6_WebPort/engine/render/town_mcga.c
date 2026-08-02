@@ -1,5 +1,7 @@
 #include "town_mcga.h"
 
+#include "../core/player_state.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -523,7 +525,9 @@ int zeliard_gmmcga_draw_life_max(u8 *vga, size_t vga_size,
                                  const u8 *game_seg, size_t game_size) {
     if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x00B4)
         return -1;
-    const u16 width = life_width(read_u16_le(game_seg + 0x00B2));
+    zeliard_player_state_t player = {.bytes = (u8 *)game_seg};
+    const u16 width = life_width(
+        zeliard_player_read_u16(&player, ZEL_PLAYER_HP_MAX));
     fill_life_columns(vga, 0xCC14, width, 6, 0x2D, 0x12);
     return 0;
 }
@@ -532,7 +536,9 @@ int zeliard_gmmcga_draw_life_current(u8 *vga, size_t vga_size,
                                      const u8 *game_seg, size_t game_size) {
     if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x0092)
         return -1;
-    const u16 width = life_width(read_u16_le(game_seg + 0x0090));
+    zeliard_player_state_t player = {.bytes = (u8 *)game_seg};
+    const u16 width = life_width(
+        zeliard_player_read_u16(&player, ZEL_PLAYER_HP));
     fill_life_columns(vga, 0xCC14, width, 5, 0x12, 0x09);
     fill_life_columns(vga, (u16)(0xCC14 + width), (u16)(100 - width),
                       5, 0x12, 0x00);
@@ -641,16 +647,17 @@ static int draw_hud_number(u8 *vga, size_t vga_size,
 int zeliard_gmmcga_draw_almas(u8 *vga, size_t vga_size,
                               u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x008D) return -1;
+    zeliard_player_state_t player = {.bytes = game_seg};
     return draw_hud_number(vga, vga_size, game_seg, game_size,
-                           read_u16_le(game_seg + 0x008B), 0x2435,
+                           zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS), 0x2435,
                            0x26, 0xBB, 5, 1);
 }
 
 int zeliard_gmmcga_draw_gold(u8 *vga, size_t vga_size,
                              u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x0088) return -1;
-    const u32 value = ((u32)game_seg[0x0085] << 16) |
-                      read_u16_le(game_seg + 0x0086);
+    zeliard_player_state_t player = {.bytes = game_seg};
+    const u32 value = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
     return draw_hud_number(vga, vga_size, game_seg, game_size, value,
                            0x2434, 0x13, 0xBB, 6, 1);
 }
@@ -658,19 +665,27 @@ int zeliard_gmmcga_draw_gold(u8 *vga, size_t vga_size,
 int zeliard_gmmcga_draw_spell_charge(u8 *vga, size_t vga_size,
                                      u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x01AB) return -1;
-    const u8 selected = game_seg[0x009D];
-    const u16 charge_address = (u16)(0x00AB + (u8)(selected - 1));
+    zeliard_player_state_t player = {.bytes = game_seg};
+    const u8 selected =
+        zeliard_player_read_u8(&player, ZEL_PLAYER_SELECTED_SPELL);
+    const u16 charge_address =
+        (u16)(ZEL_PLAYER_SPELL_CHARGES + (u8)(selected - 1));
+    const u8 charge = charge_address < ZEL_PLAYER_RECORD_SIZE
+        ? zeliard_player_read_u8(&player, charge_address)
+        : game_seg[charge_address];
     return draw_hud_number(vga, vga_size, game_seg, game_size,
-                           game_seg[charge_address], 0x2437,
+                           charge, 0x2437,
                            0x37, 0xBB, 3, 1);
 }
 
 int zeliard_gmmcga_draw_shield_hp(u8 *vga, size_t vga_size,
                                   u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x0096) return -1;
-    if (game_seg[0x0093] == 0) return 0;
+    zeliard_player_state_t player = {.bytes = game_seg};
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_SHIELD) == 0) return 0;
     return draw_hud_number(vga, vga_size, game_seg, game_size,
-                           read_u16_le(game_seg + 0x0094), 0x2437,
+                           zeliard_player_read_u16(&player, ZEL_PLAYER_SHIELD_HP),
+                           0x2437,
                            0x3E, 0xBB, 3, 1);
 }
 
@@ -695,7 +710,8 @@ int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
         zeliard_gmmcga_draw_almas(vga, vga_size, game_seg, game_size) ||
         zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size))
         return -1;
-    if (game_seg[0x009D] != 0 &&
+    zeliard_player_state_t player = {.bytes = game_seg};
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_SELECTED_SPELL) != 0 &&
         zeliard_gmmcga_draw_spell_charge(vga, vga_size, game_seg, game_size))
         return -1;
     if (zeliard_gmmcga_draw_shield_hp(vga, vga_size, game_seg, game_size))
@@ -861,13 +877,16 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
         mask_data_size < 0x10000 || !vga || vga_size < 0x10000)
         return -1;
 
-    const u8 player_col = game_seg[0x0083];
+    zeliard_player_state_t player = {.bytes = game_seg};
+    const u8 player_col =
+        zeliard_player_read_u8(&player, ZEL_PLAYER_SCREEN_POSITION);
     const u16 tile_ptr = read_at(game_seg, 0xFF2A);
     const u16 tile_at = (u16)(tile_ptr + (u16)(player_col + 4) * 8u + 5u);
     u8 ids[6];
     memcpy(ids, game_seg + tile_at, 3);
     memcpy(ids + 3, game_seg + (u16)(tile_at + 8), 3);
-    u16 position = (u16)(read_at(game_seg, 0x0080) + player_col + 4);
+    u16 position = (u16)(zeliard_player_read_u16(
+        &player, ZEL_PLAYER_START_POSITION) + player_col + 4);
     for (u8 group = 0; group < 2; ++group) {
         u8 *id = ids + group * 3;
         if (*id == 0xFD) {
@@ -888,7 +907,8 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
                                        game_data_size, vga, vga_size))
         return -3;
 
-    const u16 npc_column = (u16)(read_at(game_seg, 0x0080) + player_col + 3);
+    const u16 npc_column = (u16)(zeliard_player_read_u16(
+        &player, ZEL_PLAYER_START_POSITION) + player_col + 3);
     const u8 column_ids[3] = {
         game_seg[(u16)(tile_at - 8)], game_seg[tile_at],
         game_seg[(u16)(tile_at + 8)],
@@ -906,8 +926,11 @@ int zeliard_gtmcga_render_town_actors(u8 *game_seg, size_t game_size,
         npc_at = (u16)(npc_at + 8);
     }
 
-    const u16 walk = (game_seg[0x00C2] & 1) ? 0x6A3B : 0x6A59;
-    const u16 player_ids = (u16)(walk + (u16)game_seg[0x00E7] * 6u);
+    const u16 walk =
+        (zeliard_player_read_u8(&player, ZEL_PLAYER_FACING_DIRECTION) & 1)
+        ? 0x6A3B : 0x6A59;
+    const u16 player_ids = (u16)(walk + (u16)zeliard_player_read_u8(
+        &player, ZEL_PLAYER_POSE) * 6u);
     return zeliard_gtmcga_draw_player_tiles(game_seg + player_ids, 6,
                                              game_data, game_data_size,
                                              mask_data, mask_data_size,
@@ -971,7 +994,9 @@ static void update_actor_columns(u8 *game_seg, const u8 *game_data,
                                  const u8 *mask_data, u8 *vga,
                                  u8 column, u16 map_after_row5,
                                  u16 cursor_after_row5) {
-    const u16 world = (u16)(read_at(game_seg, 0x0080) + column + 4u);
+    zeliard_player_state_t player = {.bytes = game_seg};
+    const u16 world = (u16)(zeliard_player_read_u16(
+        &player, ZEL_PLAYER_START_POSITION) + column + 4u);
     u8 ids[6];
     ids[0] = npc_under_tile(game_seg, world);
     ids[1] = game_seg[map_after_row5];
@@ -1073,7 +1098,9 @@ int zeliard_gtmcga_update_town_frame(u8 *game_seg, size_t game_size,
         return -1;
     memset(game_seg + 0x42EF, 0, 0x200);
     u16 tile_cache[256] = {0};
-    const u8 player_col = game_seg[0x0083];
+    zeliard_player_state_t player = {.bytes = game_seg};
+    const u8 player_col =
+        zeliard_player_read_u8(&player, ZEL_PLAYER_SCREEN_POSITION);
     u16 map = (u16)(read_at(game_seg, 0xFF2A) + 0x20);
     u16 tile_vga = 0x61B0;
     for (u8 column = 0; column < 0x1C; ++column) {

@@ -2,15 +2,7 @@
 #define ZELIARD_GAMEPLAY_STATE_H
 
 #include "../core/types.h"
-
-typedef struct {
-    u16 hero_hp;       /* DS:0x90 */
-    u16 hero_almas;    /* DS:0x8B */
-    u8  gold_hi;       /* DS:0x85 */
-    u16 gold_lo;       /* DS:0x86 */
-    u8  bank_hi;       /* DS:0x88 */
-    u16 bank_lo;       /* DS:0x89 */
-} zeliard_player_state_t;
+#include "../core/player_state.h"
 
 typedef struct {
     u16 map_x;         /* [si] */
