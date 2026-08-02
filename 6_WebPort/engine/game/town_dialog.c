@@ -75,20 +75,31 @@ static u8 count_wrapped_lines(const u8 *cs, u16 si) {
     }
 }
 
-static void scroll_dialog_rows(zeliard_town_dialog_t *dialog, u8 *vga,
-                               u16 packed, u16 layout) {
+enum {
+    /* GMMCGA:2857 copies 6,864 words for this dialog geometry. Its REP
+     * MOVSW and row-loop cost rounds to ten 236.7 Hz ticks at the reference
+     * DOSBox-X rate of 3000 cycles/ms. */
+    SCROLL_PASS_PIT_TICKS = 10,
+};
+
+static void scroll_dialog_one_row(u8 *vga, u16 packed, u16 layout) {
     const u16 x = (u16)((u8)(packed >> 8) * 8u);
     const u16 y = (u16)((u8)packed + 4u);
     /* GMMCGA doubles CH twice, then uses that value as REP MOVSW count. */
     const u16 width = (u16)(((u8)(layout >> 8) >> 1) * 8u);
     const u16 height = (u16)((u8)layout - 8u);
-    /* 106TOWN calls GMMCGA:2857 ten times. Each call copies the next
-     * scanline over the current one; it does not clear the final row. */
-    for (u8 pass = 0; pass < 10; ++pass)
-        for (u16 row = 0; row < height; ++row)
-            memmove(vga + (size_t)(y + row) * 320u + x,
-                    vga + (size_t)(y + row + 1u) * 320u + x, width);
-    ++dialog->scroll_count;
+    for (u16 row = 0; row < height; ++row)
+        memmove(vga + (size_t)(y + row) * 320u + x,
+                vga + (size_t)(y + row + 1u) * 320u + x, width);
+}
+
+static void begin_dialog_scroll(zeliard_town_dialog_t *dialog,
+                                u16 packed, u16 layout) {
+    dialog->scroll_active = 1;
+    dialog->scroll_pass = 0;
+    dialog->scroll_wait_ticks = SCROLL_PASS_PIT_TICKS;
+    dialog->scroll_packed = packed;
+    dialog->scroll_layout = layout;
 }
 
 static void clear_page_prompt(u8 *vga, u16 packed) {
@@ -96,6 +107,32 @@ static void clear_page_prompt(u8 *vga, u16 packed) {
     const u16 y = (u16)((u8)packed + 74u);
     for (u16 row = 0; row < 8; ++row)
         memset(vga + (size_t)(y + row) * 320u + x, 0, 8);
+}
+
+static int finish_dialog_newline(zeliard_town_dialog_t *dialog, u8 *cs,
+                                 u8 *vga, size_t vga_size) {
+    if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
+        cs[TEXT_ANIM_STEP] = (u8)(cs[TEXT_ANIM_STEP] - 7u);
+        const u16 packed = read_u16(cs, TEXT_DRAW_X);
+        const u16 x = (u16)((u8)(packed >> 8) * 8u + 84u);
+        const u16 y = (u16)((u8)packed + 74u);
+        if (zeliard_gmmcga_draw_text_char(
+                vga, vga_size, cs, 0x10000, 0x7C, 2, x, (u8)y))
+            return -3;
+        dialog->waiting = dialog->page_wait = 1;
+    }
+    return 0;
+}
+
+static int start_dialog_newline(zeliard_town_dialog_t *dialog, u8 *cs,
+                                u8 *vga, size_t vga_size, u16 packed) {
+    cs[TEXT_COL_POS] = 0;
+    if (++cs[TEXT_BOX_COLS] == 8) {
+        --cs[TEXT_BOX_COLS];
+        begin_dialog_scroll(dialog, packed, read_u16(cs, TEXT_LAYOUT_CX));
+        return 1;
+    }
+    return finish_dialog_newline(dialog, cs, vga, vga_size);
 }
 
 static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
@@ -109,22 +146,10 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             return 0;
         }
         if (ch == 0x2F) {
-            cs[TEXT_COL_POS] = 0;
-            if (++cs[TEXT_BOX_COLS] == 8) {
-                --cs[TEXT_BOX_COLS];
-                scroll_dialog_rows(dialog, vga, read_u16(cs, TEXT_DRAW_X),
-                                   read_u16(cs, TEXT_LAYOUT_CX));
-            }
-            if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
-                cs[TEXT_ANIM_STEP] = (u8)(cs[TEXT_ANIM_STEP] - 7u);
-                const u16 packed = read_u16(cs, TEXT_DRAW_X);
-                const u16 x = (u16)((u8)(packed >> 8) * 8u + 84u);
-                const u16 y = (u16)((u8)packed + 74u);
-                zeliard_gmmcga_draw_text_char(
-                    vga, vga_size, cs, 0x10000, 0x7C, 2, x, (u8)y);
-                dialog->waiting = dialog->page_wait = 1;
-                return 0;
-            }
+            const int result = start_dialog_newline(
+                dialog, cs, vga, vga_size, read_u16(cs, TEXT_DRAW_X));
+            if (result) return result < 0 ? result : 0;
+            if (dialog->waiting) return 0;
             continue;
         }
         if (ch & 0x80) return -2;
@@ -140,22 +165,10 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             cs[(u16)(CHAR_GLYPH_TABLE + ch - 0x20)]);
         if (ch == 0x20 &&
             (u16)(cs[TEXT_COL_POS] + measure_word(cs, si)) >= 0xA8) {
-            cs[TEXT_COL_POS] = 0;
-            if (++cs[TEXT_BOX_COLS] == 8) {
-                --cs[TEXT_BOX_COLS];
-                scroll_dialog_rows(dialog, vga, packed,
-                                   read_u16(cs, TEXT_LAYOUT_CX));
-            }
-            if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
-                cs[TEXT_ANIM_STEP] = (u8)(cs[TEXT_ANIM_STEP] - 7u);
-                const u16 prompt_x = (u16)((u8)(packed >> 8) * 8u + 84u);
-                const u16 prompt_y = (u16)((u8)packed + 74u);
-                zeliard_gmmcga_draw_text_char(
-                    vga, vga_size, cs, 0x10000, 0x7C, 2,
-                    prompt_x, (u8)prompt_y);
-                dialog->waiting = dialog->page_wait = 1;
-                return 0;
-            }
+            const int result = start_dialog_newline(
+                dialog, cs, vga, vga_size, packed);
+            if (result) return result < 0 ? result : 0;
+            if (dialog->waiting) return 0;
         }
     }
 }
@@ -275,4 +288,31 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
     cs[TEXT_DONE_FLAG] = cs[TEXT_WRAP_FLAG] = 0;
     dialog->active = dialog->waiting = 0;
     return 1;
+}
+
+int zeliard_town_dialog_advance_pit(zeliard_town_dialog_t *dialog,
+                                    u8 *cs,
+                                    u8 *vga, size_t vga_size) {
+    if (!dialog || !dialog->active || !cs || !vga || vga_size < 0x10000)
+        return -1;
+    if (dialog->scroll_active) {
+        if (--dialog->scroll_wait_ticks != 0) return 0;
+        scroll_dialog_one_row(vga, dialog->scroll_packed,
+                              dialog->scroll_layout);
+        ++dialog->scroll_pass;
+        ++dialog->scroll_step_count;
+        if (dialog->scroll_pass < 10) {
+            dialog->scroll_wait_ticks = SCROLL_PASS_PIT_TICKS;
+        } else {
+            dialog->scroll_active = 0;
+            dialog->scroll_resume_pending = 1;
+            ++dialog->scroll_count;
+        }
+        return 1;
+    }
+    if (!dialog->scroll_resume_pending) return 0;
+    dialog->scroll_resume_pending = 0;
+    const int result = finish_dialog_newline(dialog, cs, vga, vga_size);
+    if (result || dialog->waiting) return result < 0 ? result : 1;
+    return render_dialog_chars(dialog, cs, vga, vga_size) < 0 ? -1 : 1;
 }

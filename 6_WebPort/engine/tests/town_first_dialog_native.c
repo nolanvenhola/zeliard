@@ -64,6 +64,18 @@ static int load_font(u8 *segment) {
 }
 
 static int test_muralla_multipage_dialog(void) {
+    static const unsigned long long expected_scroll_steps[] = {
+        0x24CB66E41A5DBC53ULL, 0x2F82EE743B806666ULL,
+        0xDF3B4F3D058423F8ULL, 0xA46EC27677EF7F79ULL,
+        0xB3D9F195B1809D75ULL, 0x2EBB4276EE9495B7ULL,
+        0x59E8958980B3871CULL, 0xDE632A2E14D1B0EDULL,
+        0x6B1AD5219D0E042DULL, 0xFFB12319111FCC4DULL,
+        0xE4D74FD15F086069ULL, 0xA0081FC4DF3B4CFBULL,
+        0xF720A98B0BA13DF4ULL, 0x61FFD82C7CCA92DFULL,
+        0x4492CCC49406CFC1ULL, 0x8F17880A59A7B1A0ULL,
+        0xDC510002420EE61FULL, 0x167E5948F1B2CF1DULL,
+        0xC0C74121CDF987FDULL, 0x15344942CA81D4BDULL,
+    };
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
     u8 vga[0x10000];
@@ -96,11 +108,31 @@ static int test_muralla_multipage_dialog(void) {
     segment[0xFF1D] = 0xFF;
     ok &= zeliard_town_dialog_continue(
         &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    unsigned long long scroll_steps[20] = {0};
+    size_t scroll_step_count = 0;
+    u16 previous_steps = dialog.scroll_step_count;
+    for (unsigned tick = 0;
+         tick < 1000 && (!dialog.final_wait || dialog.scroll_active ||
+                         dialog.scroll_resume_pending);
+         ++tick) {
+        const int advanced = zeliard_town_dialog_advance_pit(
+            &dialog, segment, vga, sizeof(vga));
+        ok &= advanced >= 0;
+        if (dialog.scroll_step_count != previous_steps) {
+            if (scroll_step_count < 20)
+                scroll_steps[scroll_step_count] = fnv1a64(vga, sizeof(vga));
+            ++scroll_step_count;
+            previous_steps = dialog.scroll_step_count;
+        }
+    }
     const unsigned long long second = fnv1a64(vga, sizeof(vga));
     size_t page_diff = 0;
     for (size_t i = 0; i < sizeof(vga); ++i)
         page_diff += first_frame[i] != vga[i];
     ok &= dialog.active && dialog.final_wait && !dialog.page_wait;
+    ok &= scroll_step_count == 20;
+    ok &= memcmp(scroll_steps, expected_scroll_steps,
+                 sizeof(expected_scroll_steps)) == 0;
     ok &= second == 0xB95556613E17D5DAULL;
     ok &= dialog.pending_sound_cue == 0x1D && segment[0xFF75] == 0x1D;
 
