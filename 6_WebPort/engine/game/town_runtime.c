@@ -330,6 +330,12 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_RUN_207MOLE, "game.asm:loaded_code_a", "mole.bin",
             0x3000, 0, 4}))
         return -5;
+    /* game.asm calls GMMCGA:254C with AL=sword, BX=18ABh immediately after
+     * 207MOLE has composed the HUD. The later town clear excludes this row. */
+    if (cs[0x0092] != 0 &&
+        zeliard_gmmcga_draw_equipped_sword(vga, vga_size, cs_1000, 0x10000,
+                                            cs[0x0092], 0x18AB))
+        return -5;
     if (zeliard_gmmcga_clear_playfield(vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_CLEAR_PLAYFIELD, "106TOWN:gfx_clear_fn", NULL,

@@ -91,6 +91,11 @@ int zeliard_gmmcga_draw_spell_charge(u8 *vga, size_t vga_size,
 int zeliard_gmmcga_draw_shield_hp(u8 *vga, size_t vga_size,
                                   u8 *game_seg, size_t game_size);
 
+/* GMMCGA:254C, resident dispatch slot CS:201C. */
+int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
+                                       const u8 *item_seg, size_t item_size,
+                                       u8 sword, u16 bx);
+
 /* Combined initial 106TOWN frame_update HUD call span. */
 int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
                                         u8 *game_seg, size_t game_size,
