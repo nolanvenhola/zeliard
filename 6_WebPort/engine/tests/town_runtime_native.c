@@ -604,10 +604,17 @@ int main(void) {
     segments[0][0xFF1D] = 0xFF;
     ok &= zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+    segments[0][0xFF1D] = 0;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 1, 0) >= 0;
     while (town.building_transition != ZEL_TOWN_BUILDING_TRANSITION_LEAVE &&
            armory_ticks++ < 4000) {
-        if (zeliard_room_masm_vm_at_input_poll())
+        if (zeliard_room_masm_vm_at_input_poll()) {
             segments[0][0xFF1D] = 0xFF;
+            ok &= zeliard_town_advance_pit(
+                &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+            segments[0][0xFF1D] = 0;
+        }
         ok &= zeliard_town_advance_pit(
             &town, &game, vga, sizeof(vga), 1, 0) >= 0;
     }

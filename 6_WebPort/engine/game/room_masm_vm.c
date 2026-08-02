@@ -40,6 +40,8 @@ typedef struct {
     u8 direction;
     u8 pending_space;
     u8 pending_enter;
+    u8 host_space_latched;
+    u8 host_enter_latched;
     u8 pending_sound_cue;
     u8 *graphic;
     size_t graphic_size;
@@ -266,11 +268,17 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
     memcpy(memory + base + 0xFF16, game_seg + 0xFF16, 4);
     memory[base + 0xFF17] = direction;
     g_room_vm.direction = direction;
-    if (space) memory[base + 0xFF1D] = 0xFF;
-    if (enter) memory[base + 0xFF29] = 0x0D;
-    if (space) g_room_vm.pending_space = 1;
-    if (enter) g_room_vm.pending_enter = 1;
-    if (direction || space || enter) g_room_vm.allow_poll_once = 1;
+    /* 106TOWN:poll_menu_input clears FF1D before polling. A latch copied
+     * back at a VM timeslice boundary is still the same physical press. */
+    const u8 space_edge = (u8)(space && !g_room_vm.host_space_latched);
+    const u8 enter_edge = (u8)(enter && !g_room_vm.host_enter_latched);
+    g_room_vm.host_space_latched = (u8)(space != 0);
+    g_room_vm.host_enter_latched = (u8)(enter != 0);
+    if (space_edge) memory[base + 0xFF1D] = 0xFF;
+    if (enter_edge) memory[base + 0xFF29] = 0x0D;
+    if (space_edge) g_room_vm.pending_space = 1;
+    if (enter_edge) g_room_vm.pending_enter = 1;
+    if (direction || space_edge || enter_edge) g_room_vm.allow_poll_once = 1;
     for (u32 tick = 0; tick < pit_ticks; ++tick) {
         const u8 sound_cue = memory[base + 0xFF75];
         if (sound_cue) {

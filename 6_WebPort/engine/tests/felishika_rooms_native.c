@@ -427,6 +427,55 @@ static int muralla_release_vm_browser_space(void) {
     return ok;
 }
 
+static int vm_run_to_next_poll(u8 *cs, u8 *vga, u8 direction, u8 space,
+                               unsigned *ticks);
+
+static int muralla_release_vm_held_space_edge(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u16 confirm_ip = zeliard_room_masm_vm_ip();
+    const int confirm_kind = zeliard_room_masm_vm_input_kind();
+
+    u16 result_ip = confirm_ip;
+    int result_kind = confirm_kind;
+    for (unsigned tick = 0; ok && tick < 200 &&
+         result_ip == confirm_ip && result_kind == confirm_kind; ++tick) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 1, 0);
+        if (zeliard_room_masm_vm_at_input_poll()) {
+            result_ip = zeliard_room_masm_vm_ip();
+            result_kind = zeliard_room_masm_vm_input_kind();
+        }
+    }
+    const unsigned long long result_frame = fnv1a64(vga, 0x10000);
+    for (unsigned tick = 0; ok && tick < 25; ++tick)
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 1, 0);
+    const u16 held_ip = zeliard_room_masm_vm_ip();
+    const unsigned long long held_frame = fnv1a64(vga, 0x10000);
+    ok &= (result_ip != confirm_ip || result_kind != confirm_kind) &&
+          held_ip == result_ip && held_frame == result_frame &&
+          zeliard_room_masm_vm_input_kind() == result_kind;
+    printf("muralla_release_vm_held_space: ip=%04x/%d>%04x/%d=%04x/%d "
+           "frame=%016llx/%016llx\n", confirm_ip, confirm_kind,
+           result_ip, result_kind, held_ip,
+           zeliard_room_masm_vm_input_kind(), result_frame, held_frame);
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int muralla_release_vm_armory_exit(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -762,6 +811,7 @@ int main(void) {
                    muralla_shop_main_menu_routes() &&
                    muralla_release_vm_menu_frames() &&
                    muralla_release_vm_browser_space() &&
+                   muralla_release_vm_held_space_edge() &&
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
                    muralla_release_vm_church_heal() &&
