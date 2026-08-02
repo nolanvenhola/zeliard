@@ -130,7 +130,9 @@ static int runtime_round_trip(void) {
     u8 *vga = calloc(1, 0x10000);
     zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
     if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
-        load_font(cs)) { free(cs); free(vga); free(room); return 0; }
+        load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+        free(cs); free(vga); free(room); return 0;
+    }
     int ok = zeliard_room_enter(room, ZEL_ROOM_KING, cs, 0x10000,
                                 vga, 0x10000) == 0;
     ok &= fnv1a64(vga, 0x10000) == 0xC3F7143FE6C981F1ULL;
@@ -184,13 +186,17 @@ static int king_first_visit_script(void) {
     u8 *vga = calloc(1, 0x10000);
     zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
     if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
-        load_font(cs)) { free(cs); free(vga); free(room); return 0; }
+        load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+        free(cs); free(vga); free(room); return 0;
+    }
     int ok = zeliard_room_enter(room, ZEL_ROOM_KING, cs, 0x10000,
                                 vga, 0x10000) == 0;
     ok &= room->script_ip == 0xA42F;
     ok &= (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)) == 0xA42F;
     u32 ticks = 0;
-    int first_wait_seen = 0;
+    u16 wait_ips[16] = {0};
+    u8 wait_y[16] = {0}, wait_lines[16] = {0}, wait_prompt[16] = {0};
+    size_t wait_count = 0;
     while (ok && !room->exit_requested && ticks < 30000) {
         cs[0xFF1A]++;
         u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
@@ -198,14 +204,12 @@ static int king_first_visit_script(void) {
         timer = (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8));
         ++timer; cs[0xFF50] = (u8)timer; cs[0xFF51] = (u8)(timer >> 8);
         if (room->script_state == 2) {
-            if (!first_wait_seen) {
-                /* The first-visit bytes contain one explicit 11h wait. The
-                 * release procedure reaches it at this exact script state. */
-                printf("king_first_prompt: y=%u lines=%u ip=%04x\n",
-                       cs[0xFF4F], cs[0x7C52], room->script_ip);
-                ok &= cs[0xFF4F] == 2 && cs[0x7C52] == 2 &&
-                      room->script_ip == 0xA53A;
-                first_wait_seen = 1;
+            if (wait_count < sizeof(wait_ips) / sizeof(wait_ips[0])) {
+                wait_ips[wait_count] = room->script_ip;
+                wait_y[wait_count] = cs[0xFF4F];
+                wait_lines[wait_count] = cs[0x7C52];
+                wait_prompt[wait_count] = room->script_prompt_after_scroll;
+                ++wait_count;
             }
             cs[0xFF1D] = 0xFF;
         }
@@ -215,7 +219,20 @@ static int king_first_visit_script(void) {
     }
     const u32 gold = ((u32)cs[0x85] << 16) |
                      (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
-    ok &= room->exit_requested && ticks < 30000 && first_wait_seen;
+    ok &= room->exit_requested && ticks < 30000;
+    static const u16 expected_wait_ips[] = {0xA49F, 0xA516, 0xA53A};
+    static const u8 expected_wait_y[] = {4, 4, 4};
+    static const u8 expected_wait_lines[] = {4, 4, 1};
+    static const u8 expected_wait_prompt[] = {1, 1, 0};
+    ok &= wait_count == sizeof(expected_wait_ips) / sizeof(expected_wait_ips[0]);
+    for (size_t index = 0;
+         index < wait_count && index < sizeof(expected_wait_ips) / sizeof(expected_wait_ips[0]);
+         ++index) {
+        ok &= wait_ips[index] == expected_wait_ips[index] &&
+              wait_y[index] == expected_wait_y[index] &&
+              wait_lines[index] == expected_wait_lines[index] &&
+              wait_prompt[index] == expected_wait_prompt[index];
+    }
     const u8 completed = room->exit_requested;
     ok &= gold == 1000;
     ok &= cs[5] == 0xFF;
@@ -230,6 +247,11 @@ static int king_first_visit_script(void) {
     }
     printf("king_script: ticks=%u gold=%u ip=%02x%02x exit=%u\n",
            ticks, gold, cs[0xFF4D], cs[0xFF4C], completed);
+    printf("king_first_waits:");
+    for (size_t index = 0; index < wait_count; ++index)
+        printf(" %04x/y%u/l%u/p%u", wait_ips[index], wait_y[index],
+               wait_lines[index], wait_prompt[index]);
+    printf("\n");
     free(expected_town); free(cs); free(vga); free(room);
     return ok;
 }
@@ -238,17 +260,21 @@ static int king_followup_scripts(void) {
     static const struct {
         u8 flag_a, flag_b, quest;
         u16 start;
+        u16 automatic_wait;
+        u16 explicit_wait;
     } cases[] = {
-        {0xFF, 0x00, 0x00, 0xA53C},
-        {0xFF, 0xFF, 0x00, 0xA5D2},
-        {0xFF, 0xFF, 0xFF, 0xA6C1},
+        {0xFF, 0x00, 0x00, 0xA53C, 0xA5A7, 0xA5D0},
+        {0xFF, 0xFF, 0x00, 0xA5D2, 0xA651, 0xA6BF},
+        {0xFF, 0xFF, 0xFF, 0xA6C1, 0xA739, 0xA79B},
     };
     int ok = 1;
     for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
         u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
         zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
         if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
-            load_font(cs)) { free(cs); free(vga); free(room); return 0; }
+            load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+            free(cs); free(vga); free(room); return 0;
+        }
         cs[5] = cases[index].flag_a;
         cs[6] = cases[index].flag_b;
         cs[0x49] = cases[index].quest;
@@ -257,13 +283,23 @@ static int king_followup_scripts(void) {
                                  vga, 0x10000) == 0;
         ok &= room->script_ip == cases[index].start;
         u32 ticks = 0;
+        u16 wait_ips[16] = {0};
+        u8 wait_prompt[16] = {0};
+        size_t wait_count = 0;
         while (ok && !room->exit_requested && ticks < 30000) {
             ++cs[0xFF1A];
             u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
             ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
             timer = (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8));
             ++timer; cs[0xFF50] = (u8)timer; cs[0xFF51] = (u8)(timer >> 8);
-            if (room->script_state == 2) cs[0xFF1D] = 0xFF;
+            if (room->script_state == 2) {
+                if (wait_count < sizeof(wait_ips) / sizeof(wait_ips[0])) {
+                    wait_ips[wait_count] = room->script_ip;
+                    wait_prompt[wait_count] = room->script_prompt_after_scroll;
+                    ++wait_count;
+                }
+                cs[0xFF1D] = 0xFF;
+            }
             ok &= zeliard_room_advance_pit(room, cs, 0x10000,
                                            vga, 0x10000) >= 0;
             ++ticks;
@@ -271,8 +307,15 @@ static int king_followup_scripts(void) {
         const u32 gold = ((u32)cs[0x85] << 16) |
                          (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
         ok &= room->exit_requested && ticks < 30000 && gold == 321;
+        ok &= wait_count == 2 && wait_ips[0] == cases[index].automatic_wait &&
+              wait_ips[1] == cases[index].explicit_wait &&
+              wait_prompt[0] == 1 && wait_prompt[1] == 0;
         printf("king_script_%04x: ticks=%u gold=%u exit=%u\n",
                cases[index].start, ticks, gold, room->exit_requested);
+        printf("king_waits_%04x:", cases[index].start);
+        for (size_t wait = 0; wait < wait_count; ++wait)
+            printf(" %04x", wait_ips[wait]);
+        printf("\n");
         free(cs); free(vga); free(room);
     }
     return ok;

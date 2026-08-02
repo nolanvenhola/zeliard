@@ -154,6 +154,7 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         game_seg[TOWN_TEXT_LINE_COUNT] = 0;
         room->script_ip = zeliard_king_select_script(game_seg, game_size);
         write_u16(game_seg, GVAR_SCRIPT_IP, room->script_ip);
+        room->script_word_check_pending = 1;
         room->script_delay = 6;
         room->script_state = KING_SCRIPT_DELAY;
     }
@@ -192,14 +193,20 @@ u16 zeliard_king_select_script(const u8 *game_seg, size_t game_size) {
 }
 
 static u16 measure_king_word(const u8 *game_seg, u16 si) {
-    u16 width = 0;
+    u16 width = 0, characters = 0;
+    u8 last = 0;
     for (;;) {
         const u8 ch = game_seg[si++];
         if (!ch || ch == 0xFF || ch == 0x20 || ch == 0x2F ||
-            ch == 0x0D || ch == 0x0C)
+            ch == 0x0D || ch == 0x0C) {
+            if (characters == 1 && (last == '.' || last == ',')) return 0;
             return width;
-        if (ch >= 0x20 && ch < 0x80)
+        }
+        if (ch >= 0x20 && ch < 0x80) {
+            last = ch;
+            ++characters;
             width = (u16)(width + game_seg[TOWN_CHAR_ADVANCE_TABLE + ch - 0x20]);
+        }
     }
 }
 
@@ -207,12 +214,13 @@ static u16 count_king_lines(const u8 *game_seg, u16 si) {
     u16 lines = 0, width = 0;
     for (;;) {
         const u8 ch = game_seg[si++];
-        if (!ch) return lines;
+        if (!ch) return (u16)(lines + (width != 0));
         if (ch == 0xFF) {
-            if (game_seg[si++] == 0xFF) return lines;
+            if (game_seg[si++] == 0xFF)
+                return (u16)(lines + (width != 0));
             continue;
         }
-        if (ch == 0x0C) return lines;
+        if (ch == 0x0C) return (u16)(lines + (width != 0));
         if (ch == 0x2F || ch == 0x0D) {
             width = 0;
             ++lines;
@@ -303,6 +311,9 @@ static void king_face_anim_tick(zeliard_room_runtime_t *room, u8 *game_seg,
 static void king_start_command(zeliard_room_runtime_t *room, u8 *game_seg,
                                u8 *vga, size_t vga_size, u8 command) {
     room->script_command = command;
+    /* 210KINGP:script_loop calls 106TOWN:dlg_setup again after every
+     * dispatched command. dlg_setup performs one leading word-fit test. */
+    room->script_word_check_pending = 1;
     switch (command) {
     case 0:
         room->script_sequence_index = 0;
@@ -371,10 +382,13 @@ static void king_advance_line(zeliard_room_runtime_t *room, u8 *game_seg,
 static void king_process_script_byte(zeliard_room_runtime_t *room,
                                      u8 *game_seg, u8 *vga,
                                      size_t vga_size) {
-    if ((u16)(game_seg[GVAR_TEXT_X] + measure_king_word(
-            game_seg, room->script_ip)) >= 0xD0) {
-        king_advance_line(room, game_seg, vga, vga_size);
-        return;
+    if (room->script_word_check_pending) {
+        room->script_word_check_pending = 0;
+        if ((u16)(game_seg[GVAR_TEXT_X] + measure_king_word(
+                game_seg, room->script_ip)) >= 0xD0) {
+            king_advance_line(room, game_seg, vga, vga_size);
+            return;
+        }
     }
     const u8 ch = game_seg[room->script_ip++];
     write_u16(game_seg, GVAR_SCRIPT_IP, room->script_ip);
@@ -436,6 +450,12 @@ static void king_process_script_byte(zeliard_room_runtime_t *room,
         game_seg[GVAR_TEXT_X] = (u8)(game_seg[GVAR_TEXT_X] +
             game_seg[TOWN_CHAR_ADVANCE_TABLE + ch - 0x20]);
         if (ch != 0x20) king_sound_cue(room, game_seg, 5);
+        if ((game_seg[TOWN_TEXT_WRAP] || ch == 0x20) &&
+            (u16)(game_seg[GVAR_TEXT_X] + measure_king_word(
+                game_seg, room->script_ip)) >= 0xD0) {
+            king_advance_line(room, game_seg, vga, vga_size);
+            return;
+        }
     }
     king_schedule_delay(room);
 }
