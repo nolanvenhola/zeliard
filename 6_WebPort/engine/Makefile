@@ -8,6 +8,7 @@ ENGINE_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/input.c \
+	core/player_state.c \
 	core/runtime.c \
 	core/timer.c \
 	audio/adlib_cue.c \
@@ -42,6 +43,7 @@ TEST_OPENING_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/input.c \
+	core/player_state.c \
 	core/timer.c \
 	audio/opening_audio.c \
 	audio/mscadlib_vm.c \
@@ -70,6 +72,7 @@ TEST_OPENING_TRACE_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/input.c \
+	core/player_state.c \
 	core/timer.c \
 	audio/opening_audio.c \
 	audio/mscadlib_vm.c \
@@ -141,6 +144,7 @@ TEST_MAIN_CONTROLS_SRC := \
 	main.c \
 	core/framebuf.c \
 	core/input.c \
+	core/player_state.c \
 	core/timer.c \
 	audio/opening_audio.c \
 	audio/mscadlib_vm.c \
@@ -169,6 +173,7 @@ TEST_CONTINUOUS_INPUT_SRC := \
 	core/input.c
 TEST_GAMEPLAY_SRC := \
 	tests/gameplay_parity_native.c \
+	core/player_state.c \
 	game/gameplay_state.c
 TEST_ZELIAD_LOADER_SRC := \
 	tests/zeliad_loader_parity_native.c \
@@ -227,19 +232,23 @@ TEST_MCGA_SPRITE_PALETTE_SRC := \
 	platform/platform_sdl.c
 TEST_TOWN_MCGA_DISPATCH_SRC := \
 	tests/town_mcga_dispatch_native.c \
+	core/player_state.c \
 	render/town_mcga.c
 TEST_TOWN_MCGA_SERVICES_SRC := \
 	tests/town_mcga_services_native.c \
+	core/player_state.c \
 	render/town_mcga.c
 TEST_TOWN_BACKGROUND_SRC := \
 	tests/town_background_native.c \
 	render/town_background.c
 TEST_TOWN_ACTOR_SRC := \
 	tests/town_actor_native.c \
+	core/player_state.c \
 	render/town_mcga.c \
 	load/fill_buffer.c
 TEST_TOWN_RUNTIME_SRC := \
 	tests/town_runtime_native.c \
+	core/player_state.c \
 	game/town_dialog.c \
 	game/room_runtime.c \
 	game/town_runtime.c \
@@ -251,11 +260,13 @@ TEST_TOWN_RUNTIME_SRC := \
 	platform/platform_sdl.c
 TEST_TOWN_FIRST_DIALOG_SRC := \
 	tests/town_first_dialog_native.c \
+	core/player_state.c \
 	game/town_dialog.c \
 	render/town_mcga.c \
 	load/fill_buffer.c
 TEST_FELISHIKA_ROOMS_SRC := \
 	tests/felishika_rooms_native.c \
+	core/player_state.c \
 	game/room_runtime.c \
 	render/room_mcga.c \
 	render/town_mcga.c \

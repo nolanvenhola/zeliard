@@ -1,5 +1,6 @@
 #include "town_runtime.h"
 
+#include "../core/player_state.h"
 #include "../load/fill_buffer.h"
 #include "../platform/platform.h"
 #include "../render/palette.h"
@@ -16,10 +17,10 @@ enum {
     TOWN_TEXT_POINTER = 0xC004,
     TOWN_PATTERN_DEST = 0x8000,
     TOWN_YMPD_DEST = 0x3300,
-    TOWN_START_POSITION = 0x0080,
-    TOWN_PLAYER_COLUMN = 0x0083,
-    TOWN_FACING_DIRECTION = 0x00C2,
-    TOWN_POSE_INDEX = 0x00E7,
+    TOWN_START_POSITION = ZEL_PLAYER_START_POSITION,
+    TOWN_PLAYER_COLUMN = ZEL_PLAYER_SCREEN_POSITION,
+    TOWN_FACING_DIRECTION = ZEL_PLAYER_FACING_DIRECTION,
+    TOWN_POSE_INDEX = ZEL_PLAYER_POSE,
     TOWN_NPC_LIST_POINTER = 0xC00F,
     TOWN_MAP_LIMIT_POINTER = 0xC011,
     TOWN_KEY_EVENT_POINTER = 0xC015,
@@ -272,6 +273,9 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     town->facing_npc_position = 0xFFFF;
     town->facing_door_type = 0xFF;
     u8 *cs = game->segment[0];
+    zeliard_player_state_t player;
+    if (!zeliard_player_state_bind(&player, cs, game->segment_size[0]))
+        return -1;
     u8 *cs_1000 = game->segment[1];
     u8 *cs_2000 = game->segment[2];
     u8 *cs_3000 = game->segment[3];
@@ -332,9 +336,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         return -5;
     /* game.asm calls GMMCGA:254C with AL=sword, BX=18ABh immediately after
      * 207MOLE has composed the HUD. The later town clear excludes this row. */
-    if (cs[0x0092] != 0 &&
+    const u8 sword = zeliard_player_read_u8(&player, ZEL_PLAYER_SWORD);
+    if (sword != 0 &&
         zeliard_gmmcga_draw_equipped_sword(vga, vga_size, cs_1000, 0x10000,
-                                            cs[0x0092], 0x18AB))
+                                            sword, 0x18AB))
         return -5;
     if (zeliard_gmmcga_clear_playfield(vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
@@ -365,8 +370,8 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
 
     cs[0xFF1D] = 0;
     cs[0xFF1E] = 0;
-    cs[0x00E4] = 0;
-    cs[0x009F] = 0;
+    zeliard_player_write_u8(&player, ZEL_PLAYER_KEY_COUNT, 0);
+    zeliard_player_write_u8(&player, ZEL_PLAYER_FRAME_SCRATCH, 0);
     write_u16(cs, GVAR_TILE_POINTER,
               (u16)(0xC017u + (u16)(u8)read_u16(cs,
                                                 TOWN_START_POSITION) * 8u));
@@ -389,8 +394,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             0, 0xFA00, 0}))
         return -11;
 
-    if (cs[0x0083] < 0x1B) {
-        u16 cursor = (u16)(0xE000 + (u16)cs[0x0083] * 8u + 5u);
+    const u8 screen_position =
+        zeliard_player_read_u8(&player, ZEL_PLAYER_SCREEN_POSITION);
+    if (screen_position < 0x1B) {
+        u16 cursor = (u16)(0xE000 + (u16)screen_position * 8u + 5u);
         memset(cs + cursor, 0xFF, 3);
         memset(cs + cursor + 8, 0xFF, 3);
     }
@@ -406,8 +413,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
 }
 
 static u16 player_world_position(const u8 *cs) {
-    return (u16)(read_u16(cs, TOWN_START_POSITION) +
-                 (u8)(cs[TOWN_PLAYER_COLUMN] + 4));
+    zeliard_player_state_t player = {.bytes = (u8 *)cs};
+    return (u16)(zeliard_player_read_u16(&player, ZEL_PLAYER_START_POSITION) +
+                 (u8)(zeliard_player_read_u8(
+                     &player, ZEL_PLAYER_SCREEN_POSITION) + 4));
 }
 
 void zeliard_town_detect_facing_targets(zeliard_town_runtime_t *town, u8 *cs,
@@ -462,14 +471,18 @@ void zeliard_town_detect_facing_targets(zeliard_town_runtime_t *town, u8 *cs,
 
 static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
                        size_t vga_size, u8 direction) {
+    zeliard_player_state_t player = {.bytes = cs};
     const int left = (direction & 0x0C) == 4;
     const int right = (direction & 0x0C) == 8;
     if (!left && !right) {
-        cs[TOWN_POSE_INDEX] |= 1;
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_POSE,
+            (u8)(zeliard_player_read_u8(&player, ZEL_PLAYER_POSE) | 1));
         return 0;
     }
 
-    const u8 column = cs[TOWN_PLAYER_COLUMN];
+    const u8 column =
+        zeliard_player_read_u8(&player, ZEL_PLAYER_SCREEN_POSITION);
     const u16 tile_ptr = read_u16(cs, GVAR_TILE_POINTER);
     const u8 map_column = (u8)(column + (left ? 3 : 6));
     const u16 tile_at = (u16)(tile_ptr + (u16)map_column * 8u + 7u);
@@ -478,31 +491,46 @@ static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
     const u16 target = (u16)(player_world_position(cs) + (left ? -1 : 1));
     if (npc_blocks_position(cs, target)) return 0;
 
-    cs[TOWN_POSE_INDEX] = (u8)((cs[TOWN_POSE_INDEX] + 1) & 3);
+    zeliard_player_write_u8(
+        &player, ZEL_PLAYER_POSE,
+        (u8)((zeliard_player_read_u8(&player, ZEL_PLAYER_POSE) + 1) & 3));
     if (left) {
-        cs[TOWN_FACING_DIRECTION] |= 1;
-        if (column >= 0x0B || read_u16(cs, TOWN_START_POSITION) == 0) {
-            cs[TOWN_PLAYER_COLUMN]--;
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_FACING_DIRECTION,
+            (u8)(zeliard_player_read_u8(
+                &player, ZEL_PLAYER_FACING_DIRECTION) | 1));
+        if (column >= 0x0B ||
+            zeliard_player_read_u16(&player, ZEL_PLAYER_START_POSITION) == 0) {
+            zeliard_player_write_u8(
+                &player, ZEL_PLAYER_SCREEN_POSITION, (u8)(column - 1));
             return 1;
         }
-        write_u16(cs, TOWN_START_POSITION,
-                  (u16)(read_u16(cs, TOWN_START_POSITION) - 1));
+        zeliard_player_write_u16(
+            &player, ZEL_PLAYER_START_POSITION,
+            (u16)(zeliard_player_read_u16(
+                &player, ZEL_PLAYER_START_POSITION) - 1));
         write_u16(cs, GVAR_TILE_POINTER, (u16)(tile_ptr - 8));
         zeliard_gtmcga_scroll_view_left(vga, vga_size);
         return 2;
     }
 
-    cs[TOWN_FACING_DIRECTION] &= 0xFE;
+    zeliard_player_write_u8(
+        &player, ZEL_PLAYER_FACING_DIRECTION,
+        (u8)(zeliard_player_read_u8(
+            &player, ZEL_PLAYER_FACING_DIRECTION) & 0xFE));
     if (column < 0x10) {
-        cs[TOWN_PLAYER_COLUMN]++;
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_SCREEN_POSITION, (u8)(column + 1));
         return 1;
     }
-    const u16 next_start = (u16)(read_u16(cs, TOWN_START_POSITION) + 1);
+    const u16 next_start = (u16)(zeliard_player_read_u16(
+        &player, ZEL_PLAYER_START_POSITION) + 1);
     if ((u16)(read_u16(cs, 0xC002) - 0x23) == next_start) {
-        cs[TOWN_PLAYER_COLUMN]++;
+        zeliard_player_write_u8(
+            &player, ZEL_PLAYER_SCREEN_POSITION, (u8)(column + 1));
         return 1;
     }
-    write_u16(cs, TOWN_START_POSITION, next_start);
+    zeliard_player_write_u16(&player, ZEL_PLAYER_START_POSITION, next_start);
     write_u16(cs, GVAR_TILE_POINTER, (u16)(tile_ptr + 8));
     zeliard_gtmcga_scroll_view_right(vga, vga_size);
     return 2;

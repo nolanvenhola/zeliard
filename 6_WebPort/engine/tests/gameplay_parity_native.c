@@ -22,70 +22,163 @@ static int expect_bool(const char *label, bool got, bool want) {
 
 static int run_hp_cases(void) {
     int ok = 1;
-    zeliard_player_state_t s = {.hero_hp = 50};
+    u8 record[ZEL_PLAYER_RECORD_SIZE] = {0};
+    zeliard_player_state_t s;
+    zeliard_player_state_bind(&s, record, sizeof(record));
+    zeliard_player_write_u16(&s, ZEL_PLAYER_HP, 50);
     zeliard_subtract_from_player_hp(&s, 20);
-    ok &= expect_u16("HP_sub:normal", s.hero_hp, 30);
+    ok &= expect_u16("HP_sub:normal",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_HP), 30);
 
-    s.hero_hp = 10;
+    zeliard_player_write_u16(&s, ZEL_PLAYER_HP, 10);
     zeliard_subtract_from_player_hp(&s, 50);
-    ok &= expect_u16("HP_sub:underflow_clamp", s.hero_hp, 0);
+    ok &= expect_u16("HP_sub:underflow_clamp",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_HP), 0);
 
-    s.hero_hp = 0xFFFF;
+    zeliard_player_write_u16(&s, ZEL_PLAYER_HP, 0xFFFF);
     zeliard_subtract_from_player_hp(&s, 1);
-    ok &= expect_u16("HP_sub:no_underflow", s.hero_hp, 0xFFFE);
+    ok &= expect_u16("HP_sub:no_underflow",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_HP), 0xFFFE);
+    return ok;
+}
+
+static int run_player_record_contract(void) {
+    int ok = 1;
+    u8 record[ZEL_PLAYER_RECORD_SIZE] = {0};
+    FILE *file = fopen("assets/stdply.bin", "rb");
+    if (!file) {
+        printf("player_record:new_game_asset: FAIL missing assets/stdply.bin\n");
+        return 0;
+    }
+    const size_t loaded = fread(record, 1, sizeof(record), file);
+    const int extra = fgetc(file);
+    fclose(file);
+
+    ok &= expect_u16("player_record:stdply_size", (u16)loaded, 233);
+    ok &= expect_bool("player_record:no_extra_byte", extra != EOF, false);
+
+    zeliard_player_state_t player;
+    ok &= expect_bool("player_record:reject_short_segment",
+                      zeliard_player_state_bind(&player, record, 0xFF), false);
+    ok &= expect_bool("player_record:bind",
+                      zeliard_player_state_bind(&player, record, sizeof(record)), true);
+    ok &= expect_u16("player_record:start_position",
+                     zeliard_player_read_u16(&player, ZEL_PLAYER_START_POSITION), 0x001E);
+    ok &= expect_u16("player_record:initial_hp",
+                     zeliard_player_read_u16(&player, ZEL_PLAYER_HP), 0x0050);
+    ok &= expect_u8("player_record:initial_sword",
+                    zeliard_player_read_u8(&player, ZEL_PLAYER_SWORD), 1);
+    ok &= expect_u8("player_record:save_sage",
+                    zeliard_player_read_u8(&player, ZEL_PLAYER_SAVE_SAGE), 0x80);
+    ok &= expect_u8("player_record:last_sage",
+                    zeliard_player_read_u8(&player, ZEL_PLAYER_LAST_SAGE), 0x81);
+    for (u16 offset = 0xE9; offset < ZEL_PLAYER_RECORD_SIZE; ++offset)
+        ok &= expect_u8("player_record:new_game_gap_zero", record[offset], 0);
+
+    /* The save-format tail is opaque. It must survive known field writes. */
+    record[0xF4] = 0xA7;
+    u8 before[ZEL_PLAYER_RECORD_SIZE];
+    u8 after[ZEL_PLAYER_RECORD_SIZE];
+    ok &= expect_bool("player_record:snapshot_before",
+                      zeliard_player_snapshot(&player, before), true);
+    zeliard_player_write_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE, 0xFF);
+    zeliard_player_write_u16(&player, ZEL_PLAYER_HP, 0x789A);
+    zeliard_player_write_u24(&player, ZEL_PLAYER_GOLD, 0x123456);
+    ok &= expect_bool("player_record:snapshot_after",
+                      zeliard_player_snapshot(&player, after), true);
+
+    const u16 changed[] = {
+        ZEL_PLAYER_KING_DIALOG_DONE,
+        ZEL_PLAYER_GOLD, ZEL_PLAYER_GOLD + 1, ZEL_PLAYER_GOLD + 2,
+        ZEL_PLAYER_HP, ZEL_PLAYER_HP + 1,
+    };
+    for (u16 offset = 0; offset < ZEL_PLAYER_RECORD_SIZE; ++offset) {
+        bool allowed = false;
+        for (size_t i = 0; i < sizeof(changed) / sizeof(changed[0]); ++i)
+            allowed |= offset == changed[i];
+        if ((before[offset] != after[offset]) != allowed) {
+            printf("player_record:complete_diff_allowlist: FAIL offset=0x%02X\n",
+                   offset);
+            ok = 0;
+        }
+    }
+    printf("player_record:complete_diff_allowlist: %s\n", ok ? "PASS" : "FAIL");
+    ok &= expect_u8("player_record:opaque_tail_preserved", after[0xF4], 0xA7);
+    ok &= expect_bool("player_record:import",
+                      zeliard_player_import(&player, before), true);
+    ok &= expect_bool("player_record:roundtrip_256",
+                      memcmp(record, before, sizeof(record)) == 0, true);
     return ok;
 }
 
 static int run_almas_cases(void) {
     int ok = 1;
-    zeliard_player_state_t s = {.hero_almas = 100};
+    u8 record[ZEL_PLAYER_RECORD_SIZE] = {0};
+    zeliard_player_state_t s;
+    zeliard_player_state_bind(&s, record, sizeof(record));
+    zeliard_player_write_u16(&s, ZEL_PLAYER_ALMAS, 100);
     zeliard_hero_almas_add(&s, 50);
-    ok &= expect_u16("almas_add:simple", s.hero_almas, 150);
+    ok &= expect_u16("almas_add:simple",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_ALMAS), 150);
 
-    s.hero_almas = 0xFFF0;
+    zeliard_player_write_u16(&s, ZEL_PLAYER_ALMAS, 0xFFF0);
     zeliard_hero_almas_add(&s, 0x10);
-    ok &= expect_u16("almas_add:overflow_cap", s.hero_almas, 0xFFFF);
+    ok &= expect_u16("almas_add:overflow_cap",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_ALMAS), 0xFFFF);
 
-    s.hero_almas = 0x00FE;
+    zeliard_player_write_u16(&s, ZEL_PLAYER_ALMAS, 0x00FE);
     zeliard_hero_almas_add(&s, 2);
-    ok &= expect_u16("almas_add:carry_into_high", s.hero_almas, 0x0100);
+    ok &= expect_u16("almas_add:carry_into_high",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_ALMAS), 0x0100);
     return ok;
 }
 
 static int run_gold_bank_cases(void) {
     int ok = 1;
-    zeliard_player_state_t s = {0};
+    u8 record[ZEL_PLAYER_RECORD_SIZE] = {0};
+    zeliard_player_state_t s;
+    zeliard_player_state_bind(&s, record, sizeof(record));
 
     zeliard_gold_add(&s, 100, 0);
-    ok &= expect_u8("gold_add:simple:hi", s.gold_hi, 0);
-    ok &= expect_u16("gold_add:simple:lo", s.gold_lo, 100);
+    ok &= expect_u8("gold_add:simple:hi",
+                    zeliard_player_read_u8(&s, ZEL_PLAYER_GOLD), 0);
+    ok &= expect_u16("gold_add:simple:lo",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_GOLD + 1), 100);
 
-    s.gold_hi = 0; s.gold_lo = 0xFFFE;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_GOLD, 0x00FFFE);
     zeliard_gold_add(&s, 5, 0);
-    ok &= expect_u8("gold_add:carry:hi", s.gold_hi, 1);
-    ok &= expect_u16("gold_add:carry:lo", s.gold_lo, 3);
+    ok &= expect_u8("gold_add:carry:hi",
+                    zeliard_player_read_u8(&s, ZEL_PLAYER_GOLD), 1);
+    ok &= expect_u16("gold_add:carry:lo",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_GOLD + 1), 3);
 
-    s.gold_hi = 0; s.gold_lo = 200;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_GOLD, 200);
     ok &= expect_bool("gold_check:enough", zeliard_gold_insufficient(&s, 100, 0), false);
-    s.gold_hi = 0; s.gold_lo = 50;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_GOLD, 50);
     ok &= expect_bool("gold_check:not_enough", zeliard_gold_insufficient(&s, 100, 0), true);
-    s.gold_hi = 0; s.gold_lo = 100;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_GOLD, 100);
     ok &= expect_bool("gold_check:exact", zeliard_gold_insufficient(&s, 100, 0), false);
 
-    s.bank_hi = 0; s.bank_lo = 0;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_BANK_GOLD, 0);
     zeliard_bank_add(&s, 100, 0);
-    ok &= expect_u8("bank_add:simple:hi", s.bank_hi, 0);
-    ok &= expect_u16("bank_add:simple:lo", s.bank_lo, 100);
+    ok &= expect_u8("bank_add:simple:hi",
+                    zeliard_player_read_u8(&s, ZEL_PLAYER_BANK_GOLD), 0);
+    ok &= expect_u16("bank_add:simple:lo",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_BANK_GOLD + 1), 100);
 
-    s.bank_hi = 0; s.bank_lo = 0xFFFE;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_BANK_GOLD, 0x00FFFE);
     zeliard_bank_add(&s, 5, 0);
-    ok &= expect_u8("bank_add:carry:hi", s.bank_hi, 1);
-    ok &= expect_u16("bank_add:carry:lo", s.bank_lo, 3);
+    ok &= expect_u8("bank_add:carry:hi",
+                    zeliard_player_read_u8(&s, ZEL_PLAYER_BANK_GOLD), 1);
+    ok &= expect_u16("bank_add:carry:lo",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_BANK_GOLD + 1), 3);
 
-    s.bank_hi = 0; s.bank_lo = 0;
+    zeliard_player_write_u24(&s, ZEL_PLAYER_BANK_GOLD, 0);
     zeliard_bank_add(&s, 10, 2);
-    ok &= expect_u8("bank_add:nonzero_dl:hi", s.bank_hi, 2);
-    ok &= expect_u16("bank_add:nonzero_dl:lo", s.bank_lo, 10);
+    ok &= expect_u8("bank_add:nonzero_dl:hi",
+                    zeliard_player_read_u8(&s, ZEL_PLAYER_BANK_GOLD), 2);
+    ok &= expect_u16("bank_add:nonzero_dl:lo",
+                     zeliard_player_read_u16(&s, ZEL_PLAYER_BANK_GOLD + 1), 10);
     return ok;
 }
 
@@ -1418,6 +1511,7 @@ static int run_try_place_3cell_entity_row_cases(void) {
 
 int main(void) {
     int ok = 1;
+    ok &= run_player_record_contract();
     ok &= run_hp_cases();
     ok &= run_almas_cases();
     ok &= run_gold_bank_cases();

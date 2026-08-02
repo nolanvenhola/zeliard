@@ -731,7 +731,7 @@ short_wait,210KINGP,0x0108,16,lst,0,1,0,0,0,1,0,False,A,trivial_regression,no
 render_portrait,210KINGP,0x0118,46,lst,1,0,1,0,0,0,2,False,A,trivial_regression,no
 render_portrait_variant,210KINGP,0x0146,44,lst,0,0,1,0,0,0,2,False,A,trivial_regression,no
 face_anim_tick,210KINGP,0x0306,210,lst,1,1,3,0,0,3,3,False,D,driver_or_dos,no
-select_script_branch,210KINGP,0x03EC,39,lst,1,0,0,0,0,0,0,False,A,trivial_regression,no
+select_script_branch,210KINGP,0x03EC,39,lst,1,0,0,0,0,0,0,False,A,trivial_regression,yes
 run_omoyp_main,211OMOYP,,261,estimated,0,1,9,0,0,3,0,False,D,driver_or_dos,no
 draw_hut_banner,211OMOYP,,60,estimated,1,0,1,0,0,0,2,False,A,trivial_regression,no
 run_armrp_main,212ARMRP,,177,estimated,0,4,7,0,0,5,1,False,D,driver_or_dos,no

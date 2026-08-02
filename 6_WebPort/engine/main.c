@@ -6,6 +6,7 @@
 
 #include "core/types.h"
 #include "core/framebuf.h"
+#include "core/player_state.h"
 #include "core/input.h"
 #include "core/timer.h"
 #include "render/palette.h"
@@ -131,6 +132,11 @@ static void apply_input_actions(u32 actions) {
 }
 
 static bool enter_game_scene(void) {
+    zeliard_player_state_t player;
+    if (!zeliard_player_state_bind(
+            &player, g_game_segments[0], sizeof(g_game_segments[0]))) {
+        return false;
+    }
     const zeliard_game_exec_services_t services = {
         .fetch_asset = game_fetch_asset,
         .loader_service = game_loader_service,
@@ -144,11 +150,11 @@ static bool enter_game_scene(void) {
     const zeliard_game_bootstrap_input_t input = {
         .load_saved_game = true,
         .gfx_mode = 4,
-        .sword = g_game_segments[0][0x92],
-        .shield = g_game_segments[0][0x93],
-        .selected_spell = g_game_segments[0][0x9D],
-        .music_track_count = g_game_segments[0][0xA0],
-        .current_area_id = g_game_segments[0][0xC4],
+        .sword = zeliard_player_read_u8(&player, ZEL_PLAYER_SWORD),
+        .shield = zeliard_player_read_u8(&player, ZEL_PLAYER_SHIELD),
+        .selected_spell = zeliard_player_read_u8(&player, ZEL_PLAYER_SELECTED_SPELL),
+        .music_track_count = zeliard_player_read_u8(&player, ZEL_PLAYER_TEARS),
+        .current_area_id = zeliard_player_read_u8(&player, ZEL_PLAYER_SAVE_SAGE),
         .level_music_source = g_game_segments[0][0xC000],
         .town_sprite_source = g_game_segments[0][0xC001],
     };

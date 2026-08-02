@@ -2,6 +2,7 @@
   "version": 1,
   "description": "Gameplay proc oracle scenarios mirrored from 3_Assembly/masm/functest/regression.",
   "source_tests": [
+    "regression/test_player_record_contract.py",
     "regression/test_arithmetic_24bit_and_word.py",
     "regression/test_movement_helpers.py",
     "regression/test_enemy_tick_iterators.py",
@@ -89,6 +90,8 @@
     {"name": "gmmcga_town_numeric_hud", "proc": "GMMCGA:238F/23AC/23CC/23F5", "input": {"almas": 12345, "gold": 1193046, "spell_charge": 77, "shield_hp": 4321}, "expected": {"stage_fnv64": ["493b33f0ad38f70d", "f361e65421f56679", "34e71a370a27ff42", "fef9ac4ea582b005"]}},
     {"name": "gmmcga_town_first_frame_hud", "proc": "106TOWN frame_update HUD span", "input": {"label_addresses": [27795, 27803, 27812, 27820], "town_text_si": 38912}, "expected": {"vga_fnv64": "a4388787a04c4e76", "state_fnv64": "36f73c3154c60582"}},
     {"name": "town_castle_music", "proc": "game:A1E0 and 106TOWN:60A9", "input": {"level_data": "236CMAP.mdt", "descriptor_ptr": 50091, "descriptor_byte": 0}, "expected": {"track_index": 0, "resource": "MGT1.MSD", "load": {"si": 41827, "es": 4096, "di": 12288, "al": 5}, "start": {"interrupt": 96, "ax": 0, "ds": 8192, "si": 12288}}},
+    {"name": "player_record:new_game", "proc": "stdply.bin load at game_seg:0000", "input": {"asset_size": 233, "segment_size": 256}, "expected": {"sha256": "c2312fb031230d2cab839ee9f62cca415fbcd414011d884a30a38b66aae44fb8", "initial_hp": 80, "initial_sword": 1, "save_sage": 128, "last_sage": 129, "gap_e9_ff": "zero"}},
+    {"name": "player_record:full_diff_allowlist", "proc": "segment-backed byte/word/24-bit mutations", "input": {"dialog_done": 255, "gold": 1193046, "hp": 30874, "opaque_f4": 167}, "expected": {"changed_offsets": [5,133,134,135,144,145], "opaque_f4": 167, "roundtrip_bytes": 256}},
     {"name": "HP_sub:normal", "proc": "subtract_from_player_HP", "input": {"hp": 50, "amount": 20}, "expected": {"hp": 30}},
     {"name": "HP_sub:underflow_clamp", "proc": "subtract_from_player_HP", "input": {"hp": 10, "amount": 50}, "expected": {"hp": 0}},
     {"name": "HP_sub:no_underflow", "proc": "subtract_from_player_HP", "input": {"hp": 65535, "amount": 1}, "expected": {"hp": 65534}},
