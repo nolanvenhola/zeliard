@@ -23,6 +23,7 @@ typedef struct {
     u8 script_gold_steps;
     u8 script_scroll_steps;
     u8 script_prompt_after_scroll;
+    u8 script_word_check_pending;
     u8 pending_sound_cue;
     u16 script_ip;
     u16 script_wait_ticks;

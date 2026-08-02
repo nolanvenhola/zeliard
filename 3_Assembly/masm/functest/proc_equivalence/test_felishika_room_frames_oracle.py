@@ -6,7 +6,7 @@ from pathlib import Path
 
 from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, UC_PROT_ALL, Uc, UcError
 from unicorn.x86_const import (
-    UC_X86_REG_AX, UC_X86_REG_CS, UC_X86_REG_DS, UC_X86_REG_ES,
+    UC_X86_REG_AX, UC_X86_REG_CS, UC_X86_REG_CX, UC_X86_REG_DS, UC_X86_REG_ES,
     UC_X86_REG_DI, UC_X86_REG_IP, UC_X86_REG_SI, UC_X86_REG_SP, UC_X86_REG_SS,
 )
 
@@ -194,6 +194,34 @@ def king_interaction_oracles(program: Path, graphic: Path) -> bool:
     return gold == 1000 and done == 0xFF and cue == 0x13
 
 
+def king_dialog_remaining_line_oracles(program: Path, graphic: Path) -> bool:
+    """Exercise 106TOWN:count_dialog_wrapped_lines on live king scripts.
+
+    The town payload is loaded at 6000h after its four-byte SAR header is
+    stripped, so the release entry corresponding to listing address 726Dh is
+    7269h. These are the script pointers reached by the page-prompt checks.
+    """
+    expected = (
+        (0xA49F, 6), (0xA516, 2), (0xA53A, 0),
+        (0xA5A7, 2), (0xA5D0, 0),
+        (0xA651, 4), (0xA6BF, 0),
+        (0xA739, 4), (0xA79B, 0),
+    )
+    actual = []
+    for script_ip, expected_lines in expected:
+        machine = build_machine(program, graphic)
+        write_u16(machine, 0xFF4C, script_ip)
+        run_near_proc(machine, 0x7269)
+        lines = machine.reg_read(UC_X86_REG_CX)
+        actual.append(lines)
+        if lines != expected_lines:
+            return False
+    print("felishika_king_dialog_lines: " + ",".join(
+        f"{script_ip:04x}={lines}"
+        for (script_ip, _), lines in zip(expected, actual)))
+    return True
+
+
 def main() -> int:
     king_program = MASM_ROOT / "bin" / "zelres2" / "210KINGP.bin"
     king_graphic = MASM_ROOT / "bin" / "zelres2" / "218KINGG.grp"
@@ -246,9 +274,11 @@ def main() -> int:
     print(f"felishika_sage_room: frame={fnv1a64(sage_frame):016x} "
           f"state={sage_state.hex()}:{fnv1a64(sage_state):016x}")
     king_interaction = king_interaction_oracles(king_program, king_graphic)
+    king_dialog_lines = king_dialog_remaining_line_oracles(
+        king_program, king_graphic)
     ok = fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
         fnv1a64(king_state) == EXPECTED_KING_STATE and \
-        king_interaction and \
+        king_interaction and king_dialog_lines and \
         fnv1a64(omoya_frame) == EXPECTED_OMOYA_FRAME and \
         fnv1a64(omoya_state) == EXPECTED_OMOYA_STATE and \
         fnv1a64(omoya_artwork) == EXPECTED_OMOYA_ARTWORK and \
