@@ -128,6 +128,11 @@ int main(void) {
     ok &= zeliard_music_enabled() == 1 && zeliard_music_track() == 3;
     zeliard_key(27);
     ok &= zeliard_paused() == 1 && zeliard_music_track() == 3;
+    int game_pause_pixels = 0;
+    for (int y = 30; y < 46; ++y)
+        for (int x = 128; x < 192; ++x)
+            game_pause_pixels += g_framebuf[y * ZELIARD_WIDTH + x] == 0x09;
+    ok &= game_pause_pixels == 446;
     zeliard_key(32);
     ok &= zeliard_paused() == 0 && zeliard_music_track() == 3;
     zeliard_key_down(39);

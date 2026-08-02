@@ -6619,7 +6619,7 @@ void opening_credits_exit_release(void) {
     g_credits_exit_released = 1;
 }
 
-void opening_pause_overlay_show(void) {
+static void pause_overlay_show_colors(u8 border_color, u8 text_color) {
     if (g_pause_overlay_active)
         return;
 
@@ -6633,12 +6633,11 @@ void opening_pause_overlay_show(void) {
     }
 
     /* stick.asm:984-995 calls GMMCGA fn0 with BX=201Eh/CX=1010h,
-     * then fn21 with BX=008Ch/CL=22h.  In cinematic mode fn0 emits a
-     * two-pixel FF border and fn21 renders selector 7 as index 77h. */
+     * then fn21 with BX=008Ch/CL=22h. */
     for (int row = 0; row < PAUSE_H; row++) {
         for (int col = 0; col < PAUSE_W; col++) {
             u8 color = (row < 2 || row >= PAUSE_H - 2 ||
-                        col < 2 || col >= PAUSE_W - 2) ? 0xFFu : 0u;
+                        col < 2 || col >= PAUSE_W - 2) ? border_color : 0u;
             pause_overlay_set_pixel(PAUSE_X + col, PAUSE_Y + row, color);
         }
     }
@@ -6654,12 +6653,27 @@ void opening_pause_overlay_show(void) {
                 u8 bits = g_font.data[glyph + (size_t)row];
                 for (int col = 0; col < 8; col++) {
                     if (bits & (u8)(0x80u >> col))
-                        pause_overlay_set_pixel(x + col, 34 + row, 0x77u);
+                        pause_overlay_set_pixel(x + col, 34 + row, text_color);
                 }
             }
         }
     }
     g_pause_overlay_active = 1;
+}
+
+void opening_pause_overlay_show(void) {
+    /* GMMCGA cinematic mode maps fn0's border to FFh and fn21's selector
+     * seven to 77h. */
+    pause_overlay_show_colors(0xFF, 0x77);
+}
+
+void opening_pause_overlay_show_game(const u8 *game_seg, size_t game_size) {
+    if (!game_seg || game_size < 0x10000) return;
+    const int cinematic = game_seg[0xFF77] != 0;
+    /* GMMCGA:2046 uses 0909h outside cinematics. GMMCGA:291A starts
+     * char_color at selector one, resolved through tile_color_tbl:24EAh. */
+    pause_overlay_show_colors(cinematic ? 0xFF : 0x09,
+                              cinematic ? 0x77 : game_seg[0x24EB]);
 }
 
 void opening_pause_overlay_hide(void) {

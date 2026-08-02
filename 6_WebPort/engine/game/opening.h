@@ -19,6 +19,7 @@ void opening_key_advance(void); /* MASM SPACE/ENTER phase-sensitive advance */
 int  opening_credits_exit_waiting(void); /* trans_exit waits on gvar_enable_all */
 void opening_credits_exit_release(void); /* MSC driver set gvar_enable_all */
 void opening_pause_overlay_show(void); /* stick.asm pause handler, MCGA path */
+void opening_pause_overlay_show_game(const u8 *game_seg, size_t game_size);
 void opening_pause_overlay_hide(void); /* restore saved AX=101Eh/CX=0810h region */
 void opening_set_sound_cue_sink(void (*sink)(u8 cue));
 int  opening_phase_id(void); /* native parity/debug: current opening phase enum */

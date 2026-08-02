@@ -104,7 +104,10 @@ static void apply_input_actions(u32 actions) {
     if (actions & ZEL_INPUT_ACTION_TOGGLE_SOUND)
         zel_opening_audio_toggle_sound();
     if ((actions & ZEL_INPUT_ACTION_ESCAPE) && !g_paused) {
-        opening_pause_overlay_show();
+        if (g_scene == SCENE_GAME)
+            opening_pause_overlay_show_game(g_game_segments[0], 0x10000);
+        else
+            opening_pause_overlay_show();
         g_paused = 1;
         zel_opening_audio_pause();
     }
