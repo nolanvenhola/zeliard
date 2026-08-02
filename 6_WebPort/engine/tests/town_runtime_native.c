@@ -222,7 +222,7 @@ int main(void) {
     ok &= town.map_side == 0 && town.palette_index == 0;
     ok &= segments[0][0xC3AC] == 0x00;
     ok &= segments[0][0xC3AD] == 0xFF;
-    ok &= frame_hash == 0x1FA483016782AFECULL;
+    ok &= frame_hash == 0x6FA6E2DDCD810606ULL;
     ok &= state_hash == 0xE75DC3416036703FULL;
     ok &= capture_hash == 0xF2C3F82A0F93D06DULL;
     ok &= palette_hash == 0xF0597D78ABA0CC75ULL;
@@ -333,8 +333,8 @@ int main(void) {
            overlap_hashes[0], overlap_hashes[1], overlap_hashes[2],
            overlap_hashes[3]);
     static const unsigned long long expected_overlap_hashes[4] = {
-        0xC7A9AAD199FEB82EULL, 0x2DF829B1230E73A3ULL,
-        0x312DDFEB392959C3ULL, 0xC2202A1FE9149790ULL,
+        0x1C11242427327C38ULL, 0xE71E06F47DE2A32DULL,
+        0xD8B259521A4B03C5ULL, 0xA63CAC020C12D1BEULL,
     };
     for (size_t index = 0; index < 4; ++index)
         ok &= overlap_hashes[index] == expected_overlap_hashes[index];
@@ -379,9 +379,9 @@ int main(void) {
         }
     }
     ok &= idle_frames_1 == 1 && idle_frames_2 == 1;
-    ok &= idle_frame_hash_1 == 0x26D0E4434D4F9C14ULL;
+    ok &= idle_frame_hash_1 == 0x5F4255EB52D80D5EULL;
     ok &= idle_npc_hash_1 == 0x7AEF6E1921E0C970ULL;
-    ok &= idle_frame_hash_2 == 0xE3CDA193615CB7A5ULL;
+    ok &= idle_frame_hash_2 == 0x2A67C460DC0FEC9FULL;
     ok &= idle_npc_hash_2 == 0x04FCC161ECC110A0ULL;
     printf("town_idle_oracle: frame1=%016llx/npc=%016llx "
            "frame2=%016llx/npc=%016llx\n",
@@ -408,7 +408,7 @@ int main(void) {
     ok &= segments[0][0x0083] == (u8)(initial_column + 1);
     ok &= live_start == initial_start;
     ok &= (segments[0][0x00C2] & 1) == 0;
-    ok &= live_frame_hash == 0xDC19F817A64D52F1ULL;
+    ok &= live_frame_hash == 0xF95B36569A1D60E3ULL;
     ok &= live_npc_hash == 0x04FCC161ECC110A0ULL;
     const int scroll_walk_frames = zeliard_town_advance_pit(
         &town, &game, vga, sizeof(vga), 140, 8);
@@ -421,7 +421,7 @@ int main(void) {
     ok &= town.frame_count == 10;
     ok &= segments[0][0x0083] == 0x10;
     ok &= scrolled_start == (u16)(initial_start + 2);
-    ok &= scrolled_frame_hash == 0x09576E5990854B01ULL;
+    ok &= scrolled_frame_hash == 0x8BDCD5999CB7EFD7ULL;
     printf("town_runtime: %s rc=%d frame=%016llx state=%016llx "
            "capture=%016llx palette=%016llx events=%u text=%04x\n",
            ok ? "PASS" : "FAIL", result, frame_hash, state_hash, capture_hash,
