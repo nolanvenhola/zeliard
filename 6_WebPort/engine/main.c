@@ -218,6 +218,11 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 g_town_runtime.dialog.pending_sound_cue);
             g_town_runtime.dialog.pending_sound_cue = 0;
         }
+        if (g_town_runtime.room.pending_sound_cue) {
+            zel_opening_audio_write_cue(
+                g_town_runtime.room.pending_sound_cue);
+            g_town_runtime.room.pending_sound_cue = 0;
+        }
         zel_opening_audio_tick(dt_ms);
         return;
     }

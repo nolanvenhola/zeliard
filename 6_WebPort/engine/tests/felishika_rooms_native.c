@@ -157,13 +157,114 @@ static int runtime_round_trip(void) {
     return ok;
 }
 
+static int king_branch_selection(void) {
+    u8 cs[0x10000] = {0};
+    int ok = zeliard_king_select_script(cs, sizeof(cs)) == 0xA42F;
+    cs[5] = 0xFF;
+    ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA53C;
+    cs[6] = 0xFF;
+    ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA5D2;
+    cs[0x49] = 0xFF;
+    ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA6C1;
+    return ok;
+}
+
+static int king_first_visit_script(void) {
+    u8 *cs = calloc(1, 0x10000);
+    u8 *vga = calloc(1, 0x10000);
+    zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+    if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
+        load_font(cs)) { free(cs); free(vga); free(room); return 0; }
+    int ok = zeliard_room_enter(room, ZEL_ROOM_KING, cs, 0x10000,
+                                vga, 0x10000) == 0;
+    ok &= room->script_ip == 0xA42F;
+    ok &= (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)) == 0xA42F;
+    u32 ticks = 0;
+    while (ok && !room->exit_requested && ticks < 30000) {
+        cs[0xFF1A]++;
+        u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
+        ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
+        timer = (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8));
+        ++timer; cs[0xFF50] = (u8)timer; cs[0xFF51] = (u8)(timer >> 8);
+        if (room->script_state == 2) cs[0xFF1D] = 0xFF;
+        ok &= zeliard_room_advance_pit(room, cs, 0x10000,
+                                       vga, 0x10000) >= 0;
+        ++ticks;
+    }
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
+    ok &= room->exit_requested && ticks < 30000;
+    const u8 completed = room->exit_requested;
+    ok &= gold == 1000;
+    ok &= cs[5] == 0xFF;
+    ok &= cs[0xFF4C] == 0x3C && cs[0xFF4D] == 0xA5;
+    u8 *expected_town = calloc(1, 0x10000);
+    ok &= expected_town != NULL;
+    if (expected_town) {
+        ok &= zeliard_gmmcga_draw_gold(expected_town, 0x10000,
+                                        cs, 0x10000) == 0;
+        ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+        ok &= memcmp(vga, expected_town, 0x10000) == 0;
+    }
+    printf("king_script: ticks=%u gold=%u ip=%02x%02x exit=%u\n",
+           ticks, gold, cs[0xFF4D], cs[0xFF4C], completed);
+    free(expected_town); free(cs); free(vga); free(room);
+    return ok;
+}
+
+static int king_followup_scripts(void) {
+    static const struct {
+        u8 flag_a, flag_b, quest;
+        u16 start;
+    } cases[] = {
+        {0xFF, 0x00, 0x00, 0xA53C},
+        {0xFF, 0xFF, 0x00, 0xA5D2},
+        {0xFF, 0xFF, 0xFF, 0xA6C1},
+    };
+    int ok = 1;
+    for (size_t index = 0; index < sizeof(cases) / sizeof(cases[0]); ++index) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+        if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin") ||
+            load_font(cs)) { free(cs); free(vga); free(room); return 0; }
+        cs[5] = cases[index].flag_a;
+        cs[6] = cases[index].flag_b;
+        cs[0x49] = cases[index].quest;
+        cs[0x86] = 0x41; cs[0x87] = 0x01; /* 321 gold */
+        ok &= zeliard_room_enter(room, ZEL_ROOM_KING, cs, 0x10000,
+                                 vga, 0x10000) == 0;
+        ok &= room->script_ip == cases[index].start;
+        u32 ticks = 0;
+        while (ok && !room->exit_requested && ticks < 30000) {
+            ++cs[0xFF1A];
+            u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
+            ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
+            timer = (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8));
+            ++timer; cs[0xFF50] = (u8)timer; cs[0xFF51] = (u8)(timer >> 8);
+            if (room->script_state == 2) cs[0xFF1D] = 0xFF;
+            ok &= zeliard_room_advance_pit(room, cs, 0x10000,
+                                           vga, 0x10000) >= 0;
+            ++ticks;
+        }
+        const u32 gold = ((u32)cs[0x85] << 16) |
+                         (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
+        ok &= room->exit_requested && ticks < 30000 && gold == 321;
+        printf("king_script_%04x: ticks=%u gold=%u exit=%u\n",
+               cases[index].start, ticks, gold, room->exit_requested);
+        free(cs); free(vga); free(room);
+    }
+    return ok;
+}
+
 int main(void) {
     const unsigned long long king = render_king();
     const unsigned long long sage = render_sage();
     const unsigned long long omoya = render_omoya();
     const int ok = king == 0xC3F7143FE6C981F1ULL &&
                    sage == 0xA6873B3AD33ACEC7ULL &&
-                   omoya == 0x1C86E94322A50C57ULL && runtime_round_trip();
+                   omoya == 0x1C86E94322A50C57ULL && runtime_round_trip() &&
+                   king_branch_selection() && king_first_visit_script() &&
+                   king_followup_scripts();
     printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",
            king, sage, omoya);
     printf("VERDICT: %s: C room frames match release MASM\n", ok ? "PASS" : "FAIL");

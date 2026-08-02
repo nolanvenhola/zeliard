@@ -141,29 +141,24 @@ script_cmd_dispatch	proc	near
 
 script_cmd_dispatch	endp
 
-; -- Dispatch table words at module offset 0x7C-0x83 (indexed by bl=al*2).
-; -- Only cmd values 2..5 hit defined handlers; other values are garbage-
-; -- bounded by the enclosing script.
+; -- Dispatch table words at runtime A078-A083 (indexed by bl=al*2).
+; -- All six script command values 0..5 have release-byte-confirmed targets.
 ;
-; Byte layout at 0x7C-0x83 (TASM emits as 'in al,0A0h' + 'call far' bogus
+; Byte layout at A078-A083 (TASM emits as 'in al,0A0h' + 'call far' bogus
 ; decodes because Sourcer tried to disassemble the table as code):
-;   [7C] E4 A0  -> 0xA0E4 = dispatch_cmd_wait_long  (cmd 2, wait 150 frames)
-;   [7E] 9A A0  -> 0xA09A = dispatch_cmd_face_on    (cmd 3, jmps loc_mouth_tick)
-;   [80] D4 A0  -> 0xA0D4 = land-mid-instruction (add ax,0FF00h; retn -- adjusts ax)
-;   [82] 92 A0  -> 0xA092 = dispatch_cmd_mouth_off  (cmd 5, jmps loc_mouth_tick)
+;   [A078] E4 A0  -> 0xA0E4 = portrait_play_seq       (cmd 0)
+;   [A07A] 9A A0  -> 0xA09A = gold_award_entry        (cmd 1)
+;   [A07C] D4 A0  -> 0xA0D4 = dispatch_cmd_wait_long  (cmd 2, wait 150 ticks)
+;   [A07E] 92 A0  -> 0xA092 = face_anim_enable        (cmd 3)
+;   [A080] 84 A0  -> 0xA084 = mouth animation enable (cmd 4)
+;   [A082] 8A A0  -> 0xA08A = mouth animation disable (cmd 5)
 
 		;* dispatch table entries at 0x7C (decoded bogusly as instructions)
-		in	al,0A0h			; 0x7C: E4 A0 = dispatch word 0xA0E4 (wait_long)
+		in	al,0A0h			; A078: E4 A0 = dispatch word A0E4 (portrait sequence)
 		db	09Ah, 0A0h, 0D4h, 0A0h, 092h	; 0x7E-0x82: words A09A, A0D4, partial A092
 
-; -- Orphan handler: script cmd 5 (mouth-anim disable + tick).
-; Reached via dispatch[5] = 0xA092 which lands at the jmp below. The three
-; preceding instructions (xor al,al / mov mouth_mode_flag,al) execute only
-; by fall-through from the garbage-decoded table bytes above, and are a
-; separate dispatch target that the script can patch in at runtime.
-;
-; Layout: 0x83-0x8C form the fall-through mouth-off helper, 0x92 is the
-; actual dispatch[5] target (jmp-only).
+; -- Script cmd 4 lands at A084 and enables mouth animation; cmd 5 lands
+; at A08A, disables it, and redraws the closed-mouth glyph set.
 		;* dispatch-table tail bytes 0x83-0x8D (Sourcer decoded as
 		;  instructions but they are continuation of the dispatch
 		;  word table from 0x7C; data, not code).
@@ -175,21 +170,19 @@ script_cmd_dispatch	endp
 mouth_anim_disable:				; fall-through entry: clears mouth anim flag
 		xor	al,al			; Zero register
 		mov	ds:[mouth_mode_flag],al
-		jmp	loc_mouth_tick		; 0x92: jmp (dispatch[5] target)
+		jmp	loc_mouth_tick		; cmd 5 redraws mouth set 0
 
-; -- Orphan handler: script cmd 3 (face-anim enable + tick).
-; Reached via dispatch[3] = 0xA09A which lands at the jmp at 0x9A.
-; The 5 preceding bytes (mov al,0FFh / mov face_mode_flag,al) are the
-; face-enable prologue.
+; -- Script cmd 3 lands at A092, enables face animation, and redraws the
+; alternate mouth glyph set through loc_mouth_tick.
 
 face_anim_enable:
 		mov	al,0FFh
 		mov	ds:[face_mode_flag],al
-		jmp	loc_mouth_tick		; 0x9A: jmp (dispatch[3] target)
+		jmp	loc_mouth_tick		; cmd 3 redraws mouth set 1
 
-; -- Orphan entry: award 1000 gold. Falls through into gold_add_loop,
-; which runs 10 iterations adding 100 gold each + waiting 0x0F frames.
-; Total: 1000 gold, ~150 frames.
+; -- Script cmd 1: award 1000 gold. Falls through into gold_add_loop,
+; which runs 10 iterations adding 100 gold each + waiting 0x0F PIT ticks.
+; Total: 1000 gold, ~150 PIT ticks.
 
 gold_award_entry:
 		mov	cx,10
@@ -216,19 +209,18 @@ gold_add_wait:
 		mov	byte ptr ds:[dialog_done_flag],0FFh
 		retn
 
-; -- Orphan entry: initialize frame-timer before wait. Prologue for
-; the long-wait handler at dispatch_cmd_wait_long.
+; -- Script cmd 2: initialize frame timer and wait 150 raw PIT ticks.
 
 wait_long_init:
 		mov	byte ptr ds:[gvar_frame_timer],0
 
-dispatch_cmd_wait_long:				; dispatch[2] = 0xA0E4: wait 150 frames
+dispatch_cmd_wait_long:				; dispatch[2] = 0xA0D4: wait 150 ticks
 				call	face_anim_tick
 				cmp	byte ptr ds:[gvar_frame_timer],96h	; 150 frames
 				jb	dispatch_cmd_wait_long	; Jump if below
 		retn
 
-; -- Orphan entry: render portrait frame sequence.
+; -- Script cmd 0: render portrait frame sequence.
 ; 15-byte helper that walks face_frame_seq (12 bytes) calling
 ; render_portrait_variant + short_wait for each. Used as an alternate
 ; dispatch entry point.

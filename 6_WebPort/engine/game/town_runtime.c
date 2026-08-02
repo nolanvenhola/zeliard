@@ -534,7 +534,9 @@ static int run_live_frame(zeliard_town_runtime_t *town,
             town->frame_count++;
             return 0;
         }
-        if (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]) {
+        if (town->room.exit_requested ||
+            (town->room.kind != ZEL_ROOM_KING &&
+             (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]))) {
             cs[GVAR_SPACEBAR_STATE] = 0;
             cs[0xFF1E] = 0;
             town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_LEAVE;
@@ -630,6 +632,22 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
             continue;
         }
         cs[GVAR_FRAME_TIMER]++;
+        write_u16(cs, 0xFF1B, (u16)(read_u16(cs, 0xFF1B) + 1));
+        write_u16(cs, 0xFF50, (u16)(read_u16(cs, 0xFF50) + 1));
+        if (town->room.active && town->room.kind == ZEL_ROOM_KING) {
+            const int result = zeliard_room_advance_pit(
+                &town->room, cs, 0x10000, vga, vga_size);
+            if (result < 0) return result;
+            /* The MASM room loop writes directly to A000 between normal
+             * 106TOWN frames. Tell the host that its VGA mirror changed. */
+            frames = 1;
+            if (result > 0) {
+                town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_LEAVE;
+                town->building_transition_pass = 0;
+                town->building_transition_ticks = 0;
+            }
+            continue;
+        }
         const u8 threshold = (u8)(4u * cs[GVAR_ANIM_SPEED]);
         if (cs[GVAR_FRAME_TIMER] < threshold) continue;
         const int result = run_live_frame(town, game, vga, vga_size,
