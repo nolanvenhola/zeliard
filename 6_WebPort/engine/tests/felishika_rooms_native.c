@@ -169,6 +169,16 @@ static int king_branch_selection(void) {
     return ok;
 }
 
+static int prompt_clear_service(void) {
+    u8 vga[0x10000];
+    for (size_t index = 0; index < sizeof(vga); ++index)
+        vga[index] = (u8)(index * 17u + 3u);
+    int ok = zeliard_gmmcga_clear_rect(
+        vga, sizeof(vga), 0x278B, 0x020A) == 0;
+    ok &= fnv1a64(vga, sizeof(vga)) == 0x18ADDA5D7FCDF1E5ULL;
+    return ok;
+}
+
 static int king_first_visit_script(void) {
     u8 *cs = calloc(1, 0x10000);
     u8 *vga = calloc(1, 0x10000);
@@ -180,20 +190,32 @@ static int king_first_visit_script(void) {
     ok &= room->script_ip == 0xA42F;
     ok &= (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)) == 0xA42F;
     u32 ticks = 0;
+    int first_wait_seen = 0;
     while (ok && !room->exit_requested && ticks < 30000) {
         cs[0xFF1A]++;
         u16 timer = (u16)(cs[0xFF1B] | ((u16)cs[0xFF1C] << 8));
         ++timer; cs[0xFF1B] = (u8)timer; cs[0xFF1C] = (u8)(timer >> 8);
         timer = (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8));
         ++timer; cs[0xFF50] = (u8)timer; cs[0xFF51] = (u8)(timer >> 8);
-        if (room->script_state == 2) cs[0xFF1D] = 0xFF;
+        if (room->script_state == 2) {
+            if (!first_wait_seen) {
+                /* The first-visit bytes contain one explicit 11h wait. The
+                 * release procedure reaches it at this exact script state. */
+                printf("king_first_prompt: y=%u lines=%u ip=%04x\n",
+                       cs[0xFF4F], cs[0x7C52], room->script_ip);
+                ok &= cs[0xFF4F] == 2 && cs[0x7C52] == 2 &&
+                      room->script_ip == 0xA53A;
+                first_wait_seen = 1;
+            }
+            cs[0xFF1D] = 0xFF;
+        }
         ok &= zeliard_room_advance_pit(room, cs, 0x10000,
                                        vga, 0x10000) >= 0;
         ++ticks;
     }
     const u32 gold = ((u32)cs[0x85] << 16) |
                      (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
-    ok &= room->exit_requested && ticks < 30000;
+    ok &= room->exit_requested && ticks < 30000 && first_wait_seen;
     const u8 completed = room->exit_requested;
     ok &= gold == 1000;
     ok &= cs[5] == 0xFF;
@@ -263,7 +285,8 @@ int main(void) {
     const int ok = king == 0xC3F7143FE6C981F1ULL &&
                    sage == 0xA6873B3AD33ACEC7ULL &&
                    omoya == 0x1C86E94322A50C57ULL && runtime_round_trip() &&
-                   king_branch_selection() && king_first_visit_script() &&
+                   king_branch_selection() && prompt_clear_service() &&
+                   king_first_visit_script() &&
                    king_followup_scripts();
     printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",
            king, sage, omoya);

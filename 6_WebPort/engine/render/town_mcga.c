@@ -308,6 +308,20 @@ int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
     return 0;
 }
 
+int zeliard_gmmcga_clear_rect(u8 *vga, size_t vga_size, u16 bx, u16 cx) {
+    if (!vga || vga_size < 0x10000) return -1;
+    /* GMMCGA:2046 dispatches AL=0 directly to clear_screen_init. BX packs
+     * x/4 in BH and y in BL; CX packs width/4 in CH and height in CL. */
+    const u16 x = (u16)(bx >> 8) * 4u;
+    const u16 y = (u8)bx;
+    const u16 width = (u16)(cx >> 8) * 4u;
+    const u16 height = (u8)cx;
+    if (!width || !height || x + width > 320 || y + height > 200) return -1;
+    for (u16 row = 0; row < height; ++row)
+        memset(vga + (size_t)(y + row) * 320u + x, 0, width);
+    return 0;
+}
+
 int zeliard_gtmcga_encode_tile_block(u8 *ds, size_t ds_size, u16 si,
                                      u8 *es, size_t es_size, u16 di,
                                      u16 tile_count) {

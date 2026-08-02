@@ -40,6 +40,7 @@ int zeliard_gmmcga_building_fade_pass(u8 *vga, size_t vga_size, u8 pass);
 /* GMMCGA:2046, 27E9, 289A, and 28D9 dialog primitives. */
 int zeliard_gmmcga_fill_frame(u8 *vga, size_t vga_size,
                               u16 bx, u16 cx, u8 cinematic);
+int zeliard_gmmcga_clear_rect(u8 *vga, size_t vga_size, u16 bx, u16 cx);
 int zeliard_gmmcga_draw_text_char(u8 *vga, size_t vga_size,
                                   const u8 *game_seg, size_t game_size,
                                   u8 character, u8 selector, u16 bx, u8 y);

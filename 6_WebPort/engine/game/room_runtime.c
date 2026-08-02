@@ -218,8 +218,10 @@ static u16 count_king_lines(const u8 *game_seg, u16 si) {
             ++lines;
             continue;
         }
-        if (ch < 0x20 || ch >= 0x80) continue;
-        width = (u16)(width + game_seg[TOWN_CHAR_ADVANCE_TABLE + ch - 0x20]);
+        /* 106TOWN:count_dialog_wrapped_lines uses 8-bit BL subtraction and
+         * indexes the advance table for every non-dispatched byte. */
+        width = (u16)(width +
+            game_seg[(u16)(TOWN_CHAR_ADVANCE_TABLE + (u8)(ch - 0x20))]);
         if (ch == 0x20 && (u16)(width + measure_king_word(game_seg, si)) >= 0xD0) {
             width = 0;
             ++lines;
@@ -342,19 +344,28 @@ static void king_start_command(zeliard_room_runtime_t *room, u8 *game_seg,
     }
 }
 
-static void king_advance_line(zeliard_room_runtime_t *room, u8 *game_seg) {
+static void king_advance_line(zeliard_room_runtime_t *room, u8 *game_seg,
+                              u8 *vga, size_t vga_size) {
     game_seg[GVAR_TEXT_X] = 0;
     ++game_seg[TOWN_TEXT_LINE_COUNT];
     ++game_seg[GVAR_TEXT_Y];
-    if (game_seg[TOWN_TEXT_LINE_COUNT] < 4 && game_seg[GVAR_TEXT_Y] < 5) {
-        king_schedule_delay(room);
-        return;
-    }
-    if (game_seg[GVAR_TEXT_Y] >= 5) --game_seg[GVAR_TEXT_Y];
-    room->script_scroll_steps = 10;
-    room->script_prompt_after_scroll =
+    const u8 prompt = game_seg[TOWN_TEXT_LINE_COUNT] >= 4 &&
         count_king_lines(game_seg, room->script_ip) >= 2;
-    room->script_state = KING_SCRIPT_SCROLL;
+    /* scroll_dlg_text_up is called at line four, but its entry immediately
+     * returns while text_y is below five. Prompting is a separate decision. */
+    if (game_seg[GVAR_TEXT_Y] >= 5) {
+        --game_seg[GVAR_TEXT_Y];
+        room->script_scroll_steps = 10;
+        room->script_prompt_after_scroll = prompt;
+        room->script_state = KING_SCRIPT_SCROLL;
+    } else if (prompt) {
+        king_draw_page_prompt(game_seg, vga, vga_size);
+        room->script_prompt_after_scroll = 1;
+        room->script_state = KING_SCRIPT_WAIT_INPUT;
+        game_seg[GVAR_SPACEBAR_STATE] = game_seg[GVAR_SKIP_FLAG2] = 0;
+    } else {
+        king_schedule_delay(room);
+    }
 }
 
 static void king_process_script_byte(zeliard_room_runtime_t *room,
@@ -362,13 +373,13 @@ static void king_process_script_byte(zeliard_room_runtime_t *room,
                                      size_t vga_size) {
     if ((u16)(game_seg[GVAR_TEXT_X] + measure_king_word(
             game_seg, room->script_ip)) >= 0xD0) {
-        king_advance_line(room, game_seg);
+        king_advance_line(room, game_seg, vga, vga_size);
         return;
     }
     const u8 ch = game_seg[room->script_ip++];
     write_u16(game_seg, GVAR_SCRIPT_IP, room->script_ip);
     if (ch == 0x2F || ch == 0x0D) {
-        king_advance_line(room, game_seg);
+        king_advance_line(room, game_seg, vga, vga_size);
         return;
     }
     if (ch == 0x0C) {
@@ -447,7 +458,7 @@ int zeliard_room_advance_pit(zeliard_room_runtime_t *room,
         game_seg[GVAR_ENTER_KEY] = 0;
         king_sound_cue(room, game_seg, 0x1D);
         if (room->script_prompt_after_scroll) {
-            zeliard_gmmcga_fill_frame(vga, vga_size, 0x278B, 0x020A, 0);
+            zeliard_gmmcga_clear_rect(vga, vga_size, 0x278B, 0x020A);
             game_seg[TOWN_TEXT_LINE_COUNT] = 0;
             room->script_prompt_after_scroll = 0;
         }
