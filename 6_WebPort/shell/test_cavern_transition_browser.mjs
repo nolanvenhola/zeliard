@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
 const url = process.argv[2] ?? 'http://127.0.0.1:5177/';
+const capturePrefix = process.argv[3] ?? '';
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 const errors = [];
@@ -12,7 +13,7 @@ try {
     null, { timeout: 120000 });
   await page.waitForSelector('#start:not([hidden])', { timeout: 120000 });
   await page.click('#start');
-  const result = await page.evaluate(() => {
+  const route = await page.evaluate(() => {
     const m = window.__zeliard;
     m._zeliard_opening_set_phase_for_test(3);
     m._zeliard_key(13);
@@ -36,7 +37,31 @@ try {
     while (!m._zeliard_cavern_transition_active() && doorTicks++ < 100)
       m._zeliard_tick(20);
     m._zeliard_key_up(38);
-    const startedAt = m._zeliard_cavern_transition_step();
+    return {
+      ticks, doorTicks,
+      startedAt: m._zeliard_cavern_transition_step(),
+      requested: m._zeliard_town_cavern_exit_requested(),
+    };
+  });
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-entry.png`,
+    });
+  }
+  await page.evaluate(() => {
+    const m = window.__zeliard;
+    while (m._zeliard_cavern_transition_step() < 13)
+      m._zeliard_tick(20);
+  });
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-midpoint.png`,
+    });
+  }
+  const result = await page.evaluate(routeState => {
+    const m = window.__zeliard;
     /* Keep left held: check_c3 must ignore it and still complete 26 steps. */
     m._zeliard_key_down(37);
     let transitionTicks = 0;
@@ -44,13 +69,18 @@ try {
            transitionTicks++ < 1000) m._zeliard_tick(20);
     m._zeliard_key_up(37);
     return {
-      ticks, doorTicks, startedAt, transitionTicks,
-      requested: m._zeliard_town_cavern_exit_requested(),
+      ...routeState, transitionTicks,
       active: m._zeliard_cavern_transition_active(),
       complete: m._zeliard_cavern_transition_complete(),
       step: m._zeliard_cavern_transition_step(),
     };
-  });
+  }, route);
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-complete.png`,
+    });
+  }
   if (!result.requested || result.startedAt < 1 || !result.complete ||
       result.active || result.step !== 26)
     throw new Error(`cavern transition failed: ${JSON.stringify(result)}`);

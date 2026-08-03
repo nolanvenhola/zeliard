@@ -80,9 +80,11 @@ static int run_direction(u8 direction) {
            direction ? "right_to_left" : "left_to_right",
            first_hash, final_hash, transition.step, transition.packed_x);
     const unsigned long long expected_first = direction
-        ? 0xF61475FAC7515929ULL : 0x812794C3C5616545ULL;
+        ? 0x8C75BEF27064A08CULL : 0x48D95049BE5ACC4BULL;
     return ok && first_hash == expected_first &&
-        final_hash == 0x7FF7B84CDAEE2EFCULL &&
+        final_hash == 0x0704EC9455A7754AULL &&
+        fnv1a64(transition.pattern_tiles,
+                sizeof(transition.pattern_tiles)) == 0x6756A16ADA39B5E7ULL &&
         fnv1a64(transition.map_tiles, sizeof(transition.map_tiles)) != 0;
 }
 

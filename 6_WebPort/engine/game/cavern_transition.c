@@ -146,7 +146,10 @@ static int decode_map(zeliard_cavern_transition_t *transition,
     return 0;
 }
 
-/* 206GFMCA:4669. Each three source bytes contain four six-bit pixels. */
+/* 200FIGHT stages MPP through the GF planar conversion before
+ * 206GFMCA:4259 consumes packed pixels. Decode the source three-plane tile
+ * directly: each row is three big-endian words and each pixel uses two
+ * adjacent bits from every plane. */
 static void decode_pattern_tiles(zeliard_cavern_transition_t *transition,
                                  const u8 *patterns) {
     /* GFMCA:41E7 treats zero as an empty tile. For nonzero AL it decrements
@@ -157,14 +160,20 @@ static void decode_pattern_tiles(zeliard_cavern_transition_t *transition,
         const u8 *src = patterns + (size_t)tile * 48;
         u8 *dst = transition->pattern_tiles + (size_t)tile * 64;
         for (u8 row = 0; row < 8; ++row) {
-            for (u8 pair = 0; pair < 2; ++pair) {
-                const u8 a = *src++;
-                const u8 b = *src++;
-                const u8 c = *src++;
-                *dst++ = (u8)(b >> 2);
-                *dst++ = (u8)(a >> 2);
-                *dst++ = (u8)(((a << 4) | (c >> 4)) & 0x3F);
-                *dst++ = (u8)(c & 0x3F);
+            const u16 p1 = (u16)(((u16)src[0] << 8) | src[1]);
+            const u16 p2 = (u16)(((u16)src[2] << 8) | src[3]);
+            const u16 p3 = (u16)(((u16)src[4] << 8) | src[5]);
+            src += 6;
+            for (u8 pixel = 0; pixel < 8; ++pixel) {
+                const u8 high_bit = (u8)(15 - pixel * 2);
+                const u8 low_bit = (u8)(high_bit - 1);
+                const u8 high = (u8)((((p3 >> high_bit) & 1) << 2) |
+                    (((p2 >> high_bit) & 1) << 1) |
+                    ((p1 >> high_bit) & 1));
+                const u8 low = (u8)((((p3 >> low_bit) & 1) << 2) |
+                    (((p2 >> low_bit) & 1) << 1) |
+                    ((p1 >> low_bit) & 1));
+                *dst++ = (u8)((high << 3) | low);
             }
         }
     }
