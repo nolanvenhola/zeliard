@@ -43,6 +43,9 @@ type EngineExports = {
     _zeliard_room_kind(): number;
     _zeliard_town_area(): number;
     _zeliard_town_cavern_exit_requested(): number;
+    _zeliard_cavern_transition_active(): number;
+    _zeliard_cavern_transition_complete(): number;
+    _zeliard_cavern_transition_step(): number;
     _zeliard_test_enter_room(kind: number): number;
     _zeliard_save_serial(): number;
     _zeliard_save_name(): number;

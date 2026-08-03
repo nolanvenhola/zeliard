@@ -31,6 +31,9 @@ const VERIFIED_DATA_HASHES = new Map([
     ['zelres2/data/247MGT2S.msd', '80fbf9d10f5fe1e51c04393f30235db551f16e584ac7ca693abe7bd9c77441f5'],
     ['zelres2/data/248UGM1S.msd', 'cdc86b6f8cc2ef02f2f7395e29be7aabc73810276850d371020352c159d4c5de'],
     ['zelres2/data/249UGM2S.msd', '6743ee4a9bcd6a6fd2a4717712c2d0767dfdff1e3650d30910d2df81aa3ab9f0'],
+    ['zelres3/data/320MP10.mdt', '5f27a710ed0470de24d2aa5c3c8b13b9269dee47585fa2e4385961451d1ed66a'],
+    ['zelres3/data/351FMAN.grp', 'f8ac50e4c6d0fc9038914751360b6eb89ab90f14f39b7be500814494a3e11dda'],
+    ['zelres3/data/374MPP1.grp', '4987c57069e1af6583cad22829049d9b6be98efa687fa092c63594153b7a868c'],
 ]);
 
 function verifiedMasmOutput(relativePath, expectedHash) {
@@ -109,6 +112,10 @@ const ASSET_MAP = [
     ['zelres2/data/247MGT2S.msd', 'mgt2.msd'],
     ['zelres2/data/248UGM1S.msd', 'ugm1.msd'],
     ['zelres2/data/249UGM2S.msd', 'ugm2.msd'],
+    /* 200FIGHT cold entry for Muralla's first cavern route. */
+    ['zelres3/data/320MP10.mdt', 'mp10.mdt'],
+    ['zelres3/data/351FMAN.grp', 'fman.grp'],
+    ['zelres3/data/374MPP1.grp', 'mpp1.grp'],
 ];
 
 const EXTRA_ASSET_MAP = [
