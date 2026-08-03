@@ -189,7 +189,25 @@ static int runtime_round_trip(void) {
         printf("muralla_room_%u: frame=%016llx\n",
                (unsigned)muralla_rooms[index].kind, frame);
         ok &= frame == muralla_rooms[index].frame;
-        ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+        if (muralla_rooms[index].kind == ZEL_ROOM_BANK) {
+            u8 expected[0x10000];
+            memcpy(expected, room->saved_vga, sizeof(expected));
+            cs[ZEL_PLAYER_GOLD] = 0;
+            cs[ZEL_PLAYER_GOLD + 1] = 0x41;
+            cs[ZEL_PLAYER_GOLD + 2] = 0x01;
+            cs[ZEL_PLAYER_ALMAS] = 7;
+            cs[ZEL_PLAYER_ALMAS + 1] = 0;
+            ok &= zeliard_gmmcga_draw_gold(
+                      expected, sizeof(expected), cs, 0x10000) == 0;
+            ok &= zeliard_gmmcga_draw_almas(
+                      expected, sizeof(expected), cs, 0x10000) == 0;
+            ok &= zeliard_room_leave(
+                      room, cs, 0x10000, vga, 0x10000) == 0;
+            ok &= memcmp(vga, expected, sizeof(expected)) == 0;
+        } else {
+            ok &= zeliard_room_leave(
+                      room, cs, 0x10000, vga, 0x10000) == 0;
+        }
     }
     free(cs); free(vga); free(room);
     return ok;

@@ -38,7 +38,8 @@ typedef struct {
     u8 menu_item_ids[12];
     u16 script_ip;
     u16 script_wait_ticks;
-    u32 king_entry_gold;
+    u32 entry_gold;
+    u16 entry_almas;
     u8 saved_code[0x1C00];
     u8 saved_vga[0x10000];
     u8 room_tiles[0x3000];
