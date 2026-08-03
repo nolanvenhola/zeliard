@@ -251,8 +251,9 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     room->alternate_transition_requested =
         kind == ZEL_ROOM_VIEWING &&
         zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0;
+    room->entry_gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
+    room->entry_almas = zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS);
     if (kind == ZEL_ROOM_KING) {
-        room->king_entry_gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
         game_seg[GVAR_TEXT_X] = 0;
         game_seg[GVAR_TEXT_Y] = 0;
         game_seg[TOWN_TEXT_LINE_COUNT] = 0;
@@ -302,11 +303,14 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
     if (!zeliard_player_state_bind(&player, game_seg, game_size)) return -1;
     memcpy(game_seg + 0xA000, room->saved_code, sizeof(room->saved_code));
     memcpy(vga, room->saved_vga, sizeof(room->saved_vga));
-    if (room->kind == ZEL_ROOM_KING) {
-        const u32 gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
-        if (gold != room->king_entry_gold)
-            zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size);
-    }
+    const u32 gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
+    if (gold != room->entry_gold &&
+        zeliard_gmmcga_draw_gold(vga, vga_size, game_seg, game_size))
+        return -1;
+    const u16 almas = zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS);
+    if (almas != room->entry_almas &&
+        zeliard_gmmcga_draw_almas(vga, vga_size, game_seg, game_size))
+        return -1;
     room->active = 0;
     room->alternate_transition_requested = 0;
     room->entry_frame_prepared = 0;

@@ -1,5 +1,6 @@
 #include "../game/town_runtime.h"
 #include "../game/room_masm_vm.h"
+#include "../core/player_state.h"
 #include "../load/fill_buffer.h"
 #include "../render/palette.h"
 #include "../render/town_mcga.h"
@@ -211,6 +212,10 @@ int main(void) {
         load_raw(segments[0] + 0x6000, 0xA000, "assets/town.bin") &&
         load_raw(segments[3], sizeof(segments[3]), "assets/mole.bin") &&
         load_font(segments[0]) && load_item_panel(segments[1]);
+    const u16 pristine_shield_base = (u16)(segments[1][0xE202] |
+        ((u16)segments[1][0xE203] << 8));
+    const unsigned long long pristine_shield_source = fnv1a64(
+        segments[1] + pristine_shield_base, 0xC0);
     ok &= facing_town.facing_item_position == 0x002F;
     ok &= facing_town.facing_npc_position == 0x0030;
     ok &= facing_town.facing_door_type == 0x07;
@@ -228,6 +233,8 @@ int main(void) {
     printf("town_mman_banks: pixels=%016llx masks=%016llx\n",
            fnv1a64(segments[1] + 0x4100, 0x1EC0),
            fnv1a64(segments[2] + 0x7000, 0x0520));
+    printf("town_itemp_shield_source: base=%04x source=%016llx\n",
+           pristine_shield_base, pristine_shield_source);
     const unsigned long long cpat_pixel_hash =
         fnv1a64(segments[1] + 0x8100, 0x2EE0);
     const unsigned long long cpat_alpha_hash =
@@ -590,6 +597,11 @@ int main(void) {
     segments[0][0x0083] = muralla_saved_player_col;
     if (muralla_snapshot)
         memcpy(vga, muralla_snapshot + sizeof(segments), sizeof(vga));
+    segments[0][ZEL_PLAYER_SHIELD] = 1;
+    segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    segments[0][ZEL_PLAYER_SHIELD_HP + 1] = 0;
+    segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    segments[0][ZEL_PLAYER_SHIELD_HP_MAX + 1] = 0;
     ok &= zeliard_town_begin_room_transition(
         &town, ZEL_ROOM_ARMORY, vga, sizeof(vga)) == 0;
     const int armory_enter_frames = zeliard_town_advance_pit(
@@ -622,13 +634,32 @@ int main(void) {
         &town, &game, vga, sizeof(vga), 88, 0);
     const unsigned long long armory_return_playfield =
         fnv1a64(vga, 160u * 320u);
+    const unsigned long long armory_return_shield =
+        frame_rect_hash(vga, 246, 164, 24, 32);
+    const unsigned long long armory_return_shield_icon =
+        frame_rect_hash(vga, 250, 164, 16, 16);
+    const unsigned long long armory_return_shield_field =
+        frame_rect_hash(vga, 246, 186, 24, 10);
+    const u16 armory_shield_base = (u16)(segments[1][0xE202] |
+        ((u16)segments[1][0xE203] << 8));
+    const unsigned long long armory_shield_source = fnv1a64(
+        segments[1] + armory_shield_base, 0xC0);
     ok &= armory_enter_frames == 8 && armory_leave_frames == 8;
     ok &= !town.room.active &&
           town.building_transition == ZEL_TOWN_BUILDING_TRANSITION_NONE;
     ok &= armory_return_playfield == 0x2DF9ABEBE695245FULL;
+    ok &= armory_return_shield == 0xD5E97AC5633D8B37ULL &&
+          armory_return_shield_icon == 0x18FDBA10EBC3FCC6ULL &&
+          armory_return_shield_field == 0x741B4FFF4B27D4F0ULL &&
+          armory_shield_source == pristine_shield_source;
     printf("town_muralla_armory_round_trip: ticks=%u enter=%d leave=%d "
-           "playfield=%016llx\n", armory_ticks, armory_enter_frames,
-           armory_leave_frames, armory_return_playfield);
+           "playfield=%016llx shield=%016llx icon=%016llx field=%016llx "
+           "base=%04x source=%016llx\n",
+           armory_ticks,
+           armory_enter_frames, armory_leave_frames,
+           armory_return_playfield, armory_return_shield,
+           armory_return_shield_icon, armory_return_shield_field,
+           armory_shield_base, armory_shield_source);
     segments[0][0x0080] = 0xB9;
     segments[0][0x0081] = 0;
     segments[0][0x0083] = 0x10;

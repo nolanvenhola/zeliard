@@ -14,6 +14,8 @@
     "castle:inventory-test": "node test_castle_inventory_browser.mjs",
     "rooms:browser-test": "node test_felishika_rooms_browser.mjs",
     "muralla:browser-test": "node test_muralla_browser.mjs",
+    "shops:animation-test": "node test_shop_animations_browser.mjs",
+    "bank:input-test": "node test_bank_input_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
     "dev": "vite",

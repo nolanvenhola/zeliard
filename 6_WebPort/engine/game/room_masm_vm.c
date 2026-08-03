@@ -28,6 +28,10 @@ enum {
     TOWN_TEXT_WAIT_INPUT = 0x71DF,
     TOWN_TEXT_WAIT_REPEAT = 0x71E9,
     TOWN_TEXT_WAIT_AFTER_TICK = 0x71EC,
+    BANK_DEPOSIT_AMOUNT_QUERY = 0xA2D8,
+    BANK_DEPOSIT_REPEAT_QUERY = 0xA2FE,
+    BANK_WITHDRAW_AMOUNT_QUERY = 0xA477,
+    BANK_WITHDRAW_REPEAT_QUERY = 0xA49D,
     INSTRUCTIONS_PER_PIT = 6000,
 };
 
@@ -42,6 +46,7 @@ typedef struct {
     u8 pending_enter;
     u8 host_space_latched;
     u8 host_enter_latched;
+    u16 bank_query_yield;
     u8 pending_sound_cue;
     u8 *graphic;
     size_t graphic_size;
@@ -92,6 +97,28 @@ static int load_raw_to(u8 *memory, size_t destination, const char *name) {
     return 1;
 }
 
+static int load_fill_to(u8 *memory, size_t destination, const char *name) {
+    size_t size = 0, output_size = 0;
+    u8 *file = load_asset(name, &size);
+    u8 *output = file ? fill_buffer_decompress(file, size, &output_size) : NULL;
+    free(file);
+    if (!output || destination + output_size > zel_room86_memory_size()) {
+        free(output);
+        return 0;
+    }
+    memcpy(memory + destination, output, output_size);
+    free(output);
+    return 1;
+}
+
+static void relocate_words(u8 *memory, size_t address, u8 count,
+                           u16 addend) {
+    for (u8 index = 0; index < count; ++index) {
+        const size_t at = address + (size_t)index * 2u;
+        write_u16(memory, at, (u16)(read_u16(memory, at) + addend));
+    }
+}
+
 static int room_step(void *context, u16 cs, u16 ip) {
     room_vm_state_t *state = context;
     u8 *memory = zel_room86_memory();
@@ -113,8 +140,29 @@ static int room_step(void *context, u16 cs, u16 ip) {
         const size_t instruction = linear(cs, ip);
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
             u16 *registers = zel_room86_registers();
+            const int bank_amount_query =
+                ip == BANK_DEPOSIT_AMOUNT_QUERY ||
+                ip == BANK_DEPOSIT_REPEAT_QUERY ||
+                ip == BANK_WITHDRAW_AMOUNT_QUERY ||
+                ip == BANK_WITHDRAW_REPEAT_QUERY;
+            /* stick.asm:query_input_state returns gvar_timer_flag in AL and
+             * gvar_skip_flag in AH.  BANKP's amount selector consumes both
+             * as held levels: AL drives accelerated repeats and AH bit 0
+             * commits the selected deposit/withdraw amount. */
             registers[ZEL_TINY86_AX] = (u16)(
-                (registers[ZEL_TINY86_AX] & 0xFF00u) | state->direction);
+                state->direction | ((u16)memory[linear(GAME_SEG, 0xFF16)] << 8));
+            if ((ip == BANK_DEPOSIT_AMOUNT_QUERY ||
+                 ip == BANK_WITHDRAW_AMOUNT_QUERY) &&
+                (memory[linear(GAME_SEG, 0xFF16)] & 1u)) {
+                /* The amount loop consumes this Space make as AH bit 0.
+                 * Retire the host one-shot too, otherwise the intercepted
+                 * 106TOWN menu poll replays it and immediately re-enters the
+                 * same deposit/withdraw selector after the transaction. */
+                memory[linear(GAME_SEG, 0xFF1D)] = 0;
+                state->pending_space = 0;
+                state->allow_poll_once = 0;
+            }
+            state->bank_query_yield = bank_amount_query ? ip : 0;
             zel_room86_set_ip((u16)(ip + 2u));
             return 1;
         }
@@ -223,9 +271,13 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
         !load_payload_to(memory, base + 0x3000, "gtmcga.bin") ||
         !load_payload_to(memory, base + 0x6000, "town.bin") ||
         !load_payload_to(memory, base + 0xA000, program) ||
+        !load_fill_to(memory, linear(DATA_SEG, 0xE200), "itemp.grp") ||
         base + 0xF500 + font_size > zel_room86_memory_size()) {
         free(font); return 0;
     }
+    /* game.asm loads itemp.grp at (CS+1000h):E200h and relocates its seven
+     * GMMCGA source pointers before any room program can draw equipment. */
+    relocate_words(memory, linear(DATA_SEG, 0xE200), 7, 0xE200);
     memcpy(memory + base + 0xF500, font, font_size);
     free(font);
     for (u16 offset = 0; offset < 6; offset += 2) {
@@ -300,11 +352,30 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                   (u16)(read_u16(memory, base + 0xFF1B) + 1u));
         write_u16(memory, base + 0xFF50,
                   (u16)(read_u16(memory, base + 0xFF50) + 1u));
-        const int result = zel_room86_run(INSTRUCTIONS_PER_PIT);
-        if (result == ZEL_TINY86_HALTED) {
-            g_room_vm.active = 0;
-            break;
+        const u32 amount_before =
+            ((u32)memory[base + 0xAD29] << 16) |
+            read_u16(memory, base + 0xAD2A);
+        u16 previous_repeat_query = 0;
+        for (unsigned slice = 0; slice < 8; ++slice) {
+            g_room_vm.bank_query_yield = 0;
+            const int result = zel_room86_run(INSTRUCTIONS_PER_PIT);
+            if (result == ZEL_TINY86_HALTED) {
+                g_room_vm.active = 0;
+                break;
+            }
+            const u16 query = g_room_vm.bank_query_yield;
+            const int repeat_query =
+                query == BANK_DEPOSIT_REPEAT_QUERY ||
+                query == BANK_WITHDRAW_REPEAT_QUERY;
+            const u32 amount_after =
+                ((u32)memory[base + 0xAD29] << 16) |
+                read_u16(memory, base + 0xAD2A);
+            if (!direction || !query ||
+                (repeat_query && amount_after != amount_before) ||
+                (repeat_query && previous_repeat_query == query)) break;
+            previous_repeat_query = repeat_query ? query : 0;
         }
+        if (!g_room_vm.active) break;
         if (g_room_vm.at_input_poll) break;
     }
     memcpy(game_seg, memory + base, 0x10000);
