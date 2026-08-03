@@ -21,6 +21,8 @@ enum {
     ROKA_TILE_BYTES = 48,
     GFMCA_ROKA_MAP_FILE_OFFSET = 0x173F,
     FMAN_TILE_DATA = 0x0333,
+    FMAN_TILE_COUNT = 0xE6,
+    FMAN_TILE_BYTES = 32,
 };
 
 static const u8 HERO_PALETTE[16] = {
@@ -66,9 +68,11 @@ static void decode_roka_tile(const u8 *src, u8 *dst) {
             const u8 b = *src++;
             const u8 c = *src++;
             u8 pixels[4];
-            pixels[0] = (u8)(a >> 2);
-            pixels[1] = (u8)(((a & 3) << 4) | (b >> 4));
-            pixels[2] = (u8)(((b & 0x0F) << 2) | (c >> 6));
+            /* lodsw is little-endian. 206GFMCA moves its high byte first,
+             * then shifts DL twice more as an independent byte. */
+            pixels[0] = (u8)(b >> 2);
+            pixels[1] = (u8)(((b & 3) << 4) | (a >> 4));
+            pixels[2] = (u8)(((a & 0x0F) << 2) | (c >> 6));
             pixels[3] = (u8)(c & 0x3F);
             for (u8 i = 0; i < 4; ++i)
                 *dst++ = pixels[i] ? roka_transform_pixel(pixels[i]) : 0;
@@ -116,55 +120,123 @@ static int stage_roka_background(zeliard_cavern_transition_t *transition,
     return 0;
 }
 
-static int fman_pixel(const u8 *tile, u8 row, u8 x) {
-    const u16 p0 = (u16)(((u16)tile[row * 4] << 8) | tile[row * 4 + 1]);
-    const u16 p1 = (u16)(((u16)tile[row * 4 + 2] << 8) | tile[row * 4 + 3]);
-    const u16 combined = (u16)(p0 | p1);
-    const u16 row_mask = (u16)~(combined | (combined >> 1) |
-                                (u16)(combined << 2));
-    const u8 s1 = (u8)(15 - x * 2);
-    const u8 s2 = (u8)(14 - x * 2);
-    if (((row_mask >> s2) & 3) == 3) return -1;
-    const u8 nibble = (u8)((((p1 >> s1) & 1) << 3) |
-        (((p0 >> s1) & 1) << 2) | (((p1 >> s2) & 1) << 1) |
-        ((p0 >> s2) & 1));
-    return HERO_PALETTE[nibble];
+static u16 rol16(u16 value, u8 *carry) {
+    *carry = (u8)(value >> 15);
+    return (u16)((value << 1) | *carry);
+}
+
+static u16 fman_expand_word(u16 *plane_a, u16 *plane_b) {
+    u16 out = 0;
+    for (u8 i = 0; i < 4; ++i) {
+        u8 carry;
+        *plane_a = rol16(*plane_a, &carry);
+        out = (u16)((out << 1) | carry);
+        *plane_b = rol16(*plane_b, &carry);
+        out = (u16)((out << 1) | carry);
+        *plane_a = rol16(*plane_a, &carry);
+        out = (u16)((out << 1) | carry);
+        *plane_b = rol16(*plane_b, &carry);
+        out = (u16)((out << 1) | carry);
+    }
+    return out;
+}
+
+static u8 fman_transparency_mask(u16 source_mask) {
+    u8 out = 0;
+    for (u8 i = 0; i < 8; ++i) {
+        u8 pair = 0;
+        for (u8 bit = 0; bit < 2; ++bit) {
+            const u8 carry = (u8)(source_mask >> 15);
+            source_mask = (u16)((source_mask << 1) | carry);
+            pair = (u8)((pair << 1) | carry);
+        }
+        out = (u8)((out << 1) | (pair == 3));
+    }
+    return out;
+}
+
+static void preprocess_fman(zeliard_cavern_transition_t *transition) {
+    /* 206GFMCA:drv2_fn_20 (entry 4EDD): expand each four-plane source
+     * row into the two words consumed by mca_fetch_color_lut, while D000
+     * receives the eight-bit background-preservation mask. */
+    for (u16 tile = 0; tile < FMAN_TILE_COUNT; ++tile) {
+        u8 *pixels = transition->fman + FMAN_TILE_DATA +
+                     (size_t)tile * FMAN_TILE_BYTES;
+        for (u8 row = 0; row < 8; ++row) {
+            const u8 *src = pixels + row * 4;
+            u16 plane_b = (u16)(((u16)src[0] << 8) | src[1]);
+            u16 plane_a = (u16)(((u16)src[2] << 8) | src[3]);
+            const u16 combined = (u16)(plane_a | plane_b);
+            const u16 spread = (u16)(combined | (combined >> 1) |
+                                     (u16)(combined << 1));
+            const u16 source_mask = (u16)~spread;
+            const u16 first = fman_expand_word(&plane_a, &plane_b);
+            const u16 second = fman_expand_word(&plane_a, &plane_b);
+            pixels[row * 4] = (u8)first;
+            pixels[row * 4 + 1] = (u8)(first >> 8);
+            pixels[row * 4 + 2] = (u8)second;
+            pixels[row * 4 + 3] = (u8)(second >> 8);
+            transition->fman_masks[(size_t)tile * 8 + row] =
+                fman_transparency_mask(source_mask);
+        }
+    }
 }
 
 static void draw_fman_layer(const zeliard_cavern_transition_t *transition,
-                            u16 frame_base, u8 frame, int x, int y,
-                            u8 *vga) {
-    const u8 *indices = transition->fman + frame_base + (frame & 3u) * 9u;
+                            u16 frame_offset, int x, int y, u8 *vga) {
+    const u8 *indices = transition->fman + frame_offset;
     for (u8 cell = 0; cell < 9; ++cell) {
         const u8 tile_index = indices[cell];
         if (tile_index == 0) continue;
         const size_t tile_offset = FMAN_TILE_DATA + (size_t)tile_index * 32;
         if (tile_offset + 32 > sizeof(transition->fman)) continue;
         const u8 *tile = transition->fman + tile_offset;
-        const int cell_x = x + (cell / 3) * 8;
-        const int cell_y = y + (cell % 3) * 8;
+        const u8 *masks = transition->fman_masks + (size_t)tile_index * 8;
+        const int cell_x = x + (cell % 3) * 8;
+        const int cell_y = y + (cell / 3) * 8;
         for (u8 row = 0; row < 8; ++row) {
+            u16 words[2] = {
+                (u16)(tile[row * 4] | ((u16)tile[row * 4 + 1] << 8)),
+                (u16)(tile[row * 4 + 2] |
+                      ((u16)tile[row * 4 + 3] << 8)),
+            };
             for (u8 col = 0; col < 8; ++col) {
-                const int color = fman_pixel(tile, row, col);
+                const u8 preserve = (u8)((masks[row] >> (7 - col)) & 1);
+                u16 *word = &words[col / 4];
+                u8 color = 0;
+                for (u8 bit = 0; bit < 4; ++bit) {
+                    color = (u8)((color << 1) | (*word >> 15));
+                    *word <<= 1;
+                }
                 const int px = cell_x + col;
                 const int py = cell_y + row;
-                if (color >= 0 && px >= 0 && px < 320 && py >= 0 && py < 200)
-                    vga[(size_t)py * 320 + px] = (u8)color;
+                if (!preserve && px >= 0 && px < 320 && py >= 0 && py < 200)
+                    vga[(size_t)py * 320 + px] = HERO_PALETTE[color];
             }
         }
     }
 }
 
 static void draw_hero(zeliard_cavern_transition_t *transition, u8 *vga) {
-    const int x = ((int)transition->packed_x * 4) % 320;
+    /* 206GFMCA:hero_sprite_col_blit_pos forms one linear mode-13h address:
+     * BL * 320 + BH * 4. A large BH therefore carries into Y. */
+    const unsigned address = 0x6Eu * 320u + transition->packed_x * 4u;
+    const int x = (int)(address % 320u);
+    const int y = (int)(address / 320u);
     const u8 frame = (u8)(transition->pose & 3);
-    if (transition->direction) {
-        draw_fman_layer(transition, 0x075, frame, x, 0x6E, vga);
-        draw_fman_layer(transition, 0x1B9, frame, x, 0x6E, vga);
-    } else {
-        draw_fman_layer(transition, 0x000, frame, x, 0x6E, vga);
-        draw_fman_layer(transition, 0x117, frame, x, 0x6E, vga);
-    }
+    const u16 body = transition->direction ? 0x075 : 0x000;
+    const u16 overlay = transition->direction ? 0x1B9 : 0x117;
+
+    /* 206GFMCA:render_frame_rows, ordinary walking state. The first
+     * equipment layer is behind Duke on alternating poses; the body and
+     * second equipment layer are then drawn in their original order. */
+    if ((frame & 1u) == 0)
+        draw_fman_layer(transition,
+                        (u16)(overlay + (((frame + 2u) & 3u) * 9u)),
+                        x, y, vga);
+    draw_fman_layer(transition, (u16)(body + frame * 9u), x, y, vga);
+    draw_fman_layer(transition,
+                    (u16)(overlay + 0x1Bu + frame * 9u), x, y, vga);
 }
 
 static void render_step(zeliard_cavern_transition_t *transition,
@@ -191,6 +263,7 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
         platform_log("200FIGHT FMAN payload decode failed");
         return -2;
     }
+    preprocess_fman(transition);
     if (stage_roka_background(transition, vga)) return -2;
     palette_set_game_mcga();
 

@@ -76,17 +76,20 @@ static int run_direction(u8 direction) {
         transition.roka_tiles, sizeof(transition.roka_tiles));
     const unsigned long long map_hash = fnv1a64(
         transition.roka_map, sizeof(transition.roka_map));
+    const unsigned long long masks_hash = fnv1a64(
+        transition.fman_masks, sizeof(transition.fman_masks));
     printf("cavern_transition_%s: first=%016llx final=%016llx "
-           "tiles=%016llx map=%016llx steps=%u packed_x=%02x\n",
+           "tiles=%016llx map=%016llx masks=%016llx steps=%u packed_x=%02x\n",
            direction ? "right_to_left" : "left_to_right",
            first_hash, final_hash, tiles_hash, map_hash,
-           transition.step, transition.packed_x);
+           masks_hash, transition.step, transition.packed_x);
     const unsigned long long expected_first = direction
-        ? 0xAE4B7B039A2FF776ULL : 0x9AD666D4443574F5ULL;
+        ? 0x2F7A76CFDD9C1E9EULL : 0xB82F15545073A286ULL;
     return ok && first_hash == expected_first &&
-        final_hash == 0x38B622AF55C515BCULL &&
-        tiles_hash == 0xF3A66951FE6F86FDULL &&
-        map_hash == 0xE6059A8DF57C7540ULL;
+        final_hash == 0xB82F15545073A286ULL &&
+        tiles_hash == 0x3865589F91D3AFCBULL &&
+        map_hash == 0xE6059A8DF57C7540ULL &&
+        masks_hash == 0x89E910ADEFD499C0ULL;
 }
 
 int main(void) {

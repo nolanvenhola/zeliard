@@ -19,6 +19,7 @@ typedef struct {
     u8 roka_map[28 * 18];
     u8 roka_tiles[0x7C * 64];
     u8 fman[8176];
+    u8 fman_masks[0xE6 * 8];
     u8 background[0x10000];
 } zeliard_cavern_transition_t;
 
