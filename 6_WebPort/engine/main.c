@@ -13,6 +13,7 @@
 #include "render/town_mcga.h"
 #include "game/opening.h"
 #include "game/town_runtime.h"
+#include "game/cavern_transition.h"
 #include "game/room_masm_vm.h"
 #include "game/inventory_masm_vm.h"
 #include "audio/opening_audio.h"
@@ -43,6 +44,7 @@ static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
+static zeliard_cavern_transition_t g_cavern_transition;
 static zel_input_state_t g_input;
 static u32 g_input_subtick_accum;
 
@@ -59,6 +61,7 @@ static void terminate_session(void) {
 
 static int inventory_can_open(void) {
     return g_scene == SCENE_GAME &&
+        !g_cavern_transition.active && !g_cavern_transition.complete &&
         !zeliard_inventory_masm_vm_active() &&
         !g_town_runtime.dialog.active &&
         !g_town_runtime.room.active &&
@@ -119,6 +122,7 @@ static void game_memory_init(void) {
     memset(g_game_segments, 0, sizeof(g_game_segments));
     memset(g_game_vga, 0, sizeof(g_game_vga));
     memset(&g_game_exec, 0, sizeof(g_game_exec));
+    memset(&g_cavern_transition, 0, sizeof(g_cavern_transition));
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
         g_game_exec.segment[i] = g_game_segments[i];
         g_game_exec.segment_size[i] = ZELIARD_GAME_SEGMENT_SIZE;
@@ -261,6 +265,16 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         return;
     }
     if (g_scene == SCENE_GAME) {
+        if (g_cavern_transition.active || g_cavern_transition.complete) {
+            const int frames = zeliard_cavern_transition_advance_pit(
+                &g_cavern_transition, g_game_segments[0],
+                sizeof(g_game_segments[0]), g_game_vga,
+                sizeof(g_game_vga), input_ticks);
+            if (frames > 0)
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            zel_opening_audio_tick(dt_ms);
+            return;
+        }
         if (zeliard_inventory_masm_vm_active()) {
             const u16 timer_counter = (u16)(g_game_segments[0][0xFF18] |
                 ((u16)g_game_segments[0][0xFF19] << 8));
@@ -292,6 +306,17 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             platform_log("zeliard_tick: 106TOWN live frame failed (%d)", frames);
         } else if (frames > 0) {
             memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+        }
+        if (g_town_runtime.cavern_exit_requested) {
+            zel_opening_audio_stop();
+            if (zeliard_cavern_transition_begin(
+                    &g_cavern_transition, g_game_segments[0],
+                    sizeof(g_game_segments[0]), g_game_vga,
+                    sizeof(g_game_vga)) != 0) {
+                platform_log("200FIGHT: cavern transition start failed");
+            } else {
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            }
         }
         /* 106TOWN:door_type_shop invokes INT 60h AX=1 after the blocking
          * MCGA entry fade and reloads/plays the current town score only after
@@ -449,6 +474,9 @@ EXPORT int              zeliard_inventory_active(void) {
 }
 EXPORT int              zeliard_town_area(void) { return (int)g_town_runtime.area; }
 EXPORT int              zeliard_town_cavern_exit_requested(void) { return g_town_runtime.cavern_exit_requested; }
+EXPORT int              zeliard_cavern_transition_active(void) { return g_cavern_transition.active; }
+EXPORT int              zeliard_cavern_transition_complete(void) { return g_cavern_transition.complete; }
+EXPORT int              zeliard_cavern_transition_step(void) { return g_cavern_transition.step; }
 EXPORT int              zeliard_test_enter_room(int kind) {
     if (g_scene != SCENE_GAME || g_town_runtime.room.active ||
         (kind != ZEL_ROOM_KING && kind != ZEL_ROOM_SAGE &&
