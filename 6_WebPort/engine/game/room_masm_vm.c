@@ -469,8 +469,12 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
     const u8 raw_input_active = (u8)(game_seg[0x02BC] != 0);
     const u8 raw_space_down = raw_input_active
         ? (u8)(game_seg[0xFF16] & 1u) : (u8)(space != 0);
+    /* stick.asm presents Enter and Alt/button-B through different raw
+     * masks, but both become 106TOWN's secondary FF1E menu action. */
     const u8 raw_enter_down = raw_input_active
-        ? (u8)(read_u16(game_seg, 0xFF18) & 1u) : (u8)(enter != 0);
+        ? (u8)((read_u16(game_seg, 0xFF18) & 1u) |
+               (game_seg[0xFF16] & 2u))
+        : (u8)(enter != 0);
     if (!raw_space_down) g_room_vm.host_space_latched = 0;
     if (!raw_enter_down) g_room_vm.host_enter_latched = 0;
     if (!direction) g_room_vm.host_direction_latched = 0;

@@ -902,9 +902,9 @@ int zeliard_room_advance_pit(zeliard_room_runtime_t *room,
         if (!zeliard_room_masm_vm_advance(
                 game_seg, game_size, vga, vga_size, 1,
                 game_seg[GVAR_INPUT_DIRECTION],
-                (u8)(game_seg[GVAR_SPACEBAR_STATE] |
-                     game_seg[GVAR_SKIP_FLAG2]),
-                game_seg[GVAR_ENTER_KEY] == 0x0D)) return -2;
+                game_seg[GVAR_SPACEBAR_STATE],
+                (u8)(game_seg[GVAR_ENTER_KEY] == 0x0D ||
+                     game_seg[GVAR_SKIP_FLAG2]))) return -2;
         const u8 cue = zeliard_room_masm_vm_take_sound_cue();
         if (cue) room->pending_sound_cue = cue;
         if (!zeliard_room_masm_vm_active()) {

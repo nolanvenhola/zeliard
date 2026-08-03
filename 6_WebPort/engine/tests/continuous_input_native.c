@@ -12,6 +12,7 @@ enum {
     INPUT_DIRECTION = 0xFF17,
     TIMER_COUNTER = 0xFF18,
     SPACE_ACTION = 0xFF1D,
+    CANCEL_ACTION = 0xFF1E,
     SOUND_FLAG = 0xFF27,
     ASCII_ACTION = 0xFF29,
     VOLUME_B = 0xFF75,
@@ -57,6 +58,21 @@ int main(void) {
     zel_input_advance_pit(&input, mem, 5);
     ok &= mem[PAUSE_LATCH] == 0xFF;
     printf("continuous_input:space_enter_edges: %s\n", ok ? "PASS" : "FAIL");
+
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_ALT);
+    ok &= mem[SKIP_FLAG] == 2 && mem[CANCEL_ACTION] == 0;
+    ok &= zel_input_advance_pit(&input, mem, 5) == ZEL_INPUT_ACTION_NONE;
+    ok &= mem[CANCEL_ACTION] == 0xFF;
+    mem[CANCEL_ACTION] = 0;
+    zel_input_key_up(&input, mem, ZEL_INPUT_KEY_ALT);
+    ok &= mem[SKIP_FLAG] == 0;
+    zel_input_advance_pit(&input, mem, 5);
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_ALT);
+    zel_input_advance_pit(&input, mem, 5);
+    ok &= mem[CANCEL_ACTION] == 0xFF;
+    zel_input_release_all(&input, mem, 1);
+    ok &= mem[SKIP_FLAG] == 0 && mem[CANCEL_ACTION] == 0;
+    printf("continuous_input:alt_cancel_latch: %s\n", ok ? "PASS" : "FAIL");
 
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_F1);
     actions = zel_input_advance_pit(&input, mem, 5);

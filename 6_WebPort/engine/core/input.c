@@ -40,6 +40,7 @@ static const key_binding_t KEY_BINDINGS[] = {
     {ZEL_INPUT_KEY_DOWN,   0x50, 2, 0, 0,      1u << 2, 1},
     {ZEL_INPUT_KEY_UP,     0x48, 1, 0, 0,      1u << 3, 1},
     {ZEL_INPUT_KEY_SPACE,  0x39, 0, 1, 0,      1u << 4, 0},
+    {ZEL_INPUT_KEY_ALT,    0x38, 0, 2, 0,      1u << 9, 0},
     {ZEL_INPUT_KEY_ENTER,  0x1C, 0, 0, 0x0001, 1u << 5, 0},
     {ZEL_INPUT_KEY_ESCAPE, 0x01, 0, 0, 0x0008, 1u << 6, 0},
     {ZEL_INPUT_KEY_F1,     0x3B, 0, 0, 0x1000, 1u << 7, 0},
@@ -213,6 +214,7 @@ void zel_input_release_all(zel_input_state_t *state, u8 *mem,
     state->held_keys = 0;
     if (clear_actions) {
         mem[GVAR_SPACEBAR_STATE] = 0;
+        mem[GVAR_STATE_B] = 0;
         mem[GVAR_ENTER_KEY] = 0;
     }
 }

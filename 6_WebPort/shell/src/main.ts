@@ -448,6 +448,7 @@ async function boot() {
     window.addEventListener('keydown', (e: KeyboardEvent) => {
         const keycodes: Record<string, number> = {
             Enter: 13,
+            Alt: 18,
             ' ': 32,
             ArrowLeft: 37,
             ArrowUp: 38,
@@ -483,6 +484,7 @@ async function boot() {
     window.addEventListener('keyup', (e: KeyboardEvent) => {
         const keycodes: Record<string, number> = {
             Enter: 13,
+            Alt: 18,
             ' ': 32,
             ArrowLeft: 37,
             ArrowUp: 38,
