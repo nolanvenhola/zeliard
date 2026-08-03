@@ -32,11 +32,13 @@ enum {
     BANK_DEPOSIT_REPEAT_QUERY = 0xA2FE,
     BANK_WITHDRAW_AMOUNT_QUERY = 0xA477,
     BANK_WITHDRAW_REPEAT_QUERY = 0xA49D,
+    SAGE_NAME_INPUT_POLL = 0xA592,
     INSTRUCTIONS_PER_PIT = 6000,
 };
 
 typedef struct {
     u8 active;
+    zeliard_room_kind_t kind;
     u8 at_input_poll;
     u8 input_kind;
     u8 allow_poll_once;
@@ -46,13 +48,23 @@ typedef struct {
     u8 pending_enter;
     u8 host_space_latched;
     u8 host_enter_latched;
+    u8 host_direction_latched;
     u16 bank_query_yield;
     u8 pending_sound_cue;
+    u8 pending_ascii;
+    u8 dos_handle_open;
+    u8 dos_write_ok;
+    char save_name[13];
+    u8 save_record[0x100];
     u8 *graphic;
     size_t graphic_size;
 } room_vm_state_t;
 
 static room_vm_state_t g_room_vm;
+static u32 g_save_serial;
+static char g_save_name[13];
+static u8 g_save_record[0x100];
+static u8 g_force_save_failure;
 
 static size_t linear(u16 segment, u16 offset) {
     return (size_t)segment * 16u + offset;
@@ -124,10 +136,34 @@ static int room_step(void *context, u16 cs, u16 ip) {
     u8 *memory = zel_room86_memory();
     if (cs == GAME_SEG && ip == SAR_STUB) {
         u16 *registers = zel_room86_registers();
-        const size_t destination = linear(
-            registers[ZEL_TINY86_ES], registers[ZEL_TINY86_DI]);
-        if (destination + state->graphic_size <= zel_room86_memory_size())
-            memcpy(memory + destination, state->graphic, state->graphic_size);
+        const u8 operation = (u8)registers[ZEL_TINY86_AX];
+        if (operation == 2) {
+            const size_t destination = linear(
+                registers[ZEL_TINY86_ES], registers[ZEL_TINY86_DI]);
+            if (destination + state->graphic_size <= zel_room86_memory_size())
+                memcpy(memory + destination, state->graphic,
+                       state->graphic_size);
+        } else if (operation == 6) {
+            /* stick.asm:scan_savefile_dir builds a count byte, 255 near
+             * pointers, then fixed nine-byte base-name records. */
+            char names[0xFF][9] = {{0}};
+            const size_t count = platform_list_save_names(names, 0xFF);
+            /* The loader descriptor at A907 resolves the service output to
+             * game_seg:E000; ES:DI are not loader outputs at this callsite. */
+            const u16 output_offset = 0xE000;
+            const size_t output = linear(GAME_SEG, output_offset);
+            if (output + 0xAF6 <= zel_room86_memory_size()) {
+                memset(memory + output, 0, 0xAF6);
+                memory[output] = (u8)count;
+                for (size_t index = 0; index < 0xFF; ++index)
+                    write_u16(memory, output + 1 + index * 2,
+                              (u16)(output_offset + 0x201 +
+                                    index * 9));
+                for (size_t index = 0; index < count; ++index)
+                    memcpy(memory + output + 0x201 + index * 9,
+                           names[index], sizeof(names[index]));
+            }
+        }
         return 0;
     }
     /* The room chunk is entered by 106TOWN with a near call through A000h.
@@ -136,8 +172,84 @@ static int room_step(void *context, u16 cs, u16 ip) {
         state->active = 0;
         return 1;
     }
+    if (cs == GAME_SEG && state->kind == ZEL_ROOM_SAGE &&
+        ip == SAGE_NAME_INPUT_POLL) {
+        if (state->pending_ascii) {
+            memory[linear(GAME_SEG, 0xFF29)] = state->pending_ascii;
+            state->pending_ascii = 0;
+            state->at_input_poll = 0;
+            state->input_kind = ZEL_ROOM_VM_INPUT_NONE;
+            return 0;
+        }
+        if ((read_u16(memory, linear(GAME_SEG, 0xFF18)) & 1u) ||
+            memory[linear(GAME_SEG, 0xFF1E)]) {
+            state->at_input_poll = 0;
+            state->input_kind = ZEL_ROOM_VM_INPUT_NONE;
+            return 0;
+        }
+        state->at_input_poll = 1;
+        state->input_kind = ZEL_ROOM_VM_INPUT_NAME;
+        return 1;
+    }
     if (cs == GAME_SEG) {
         const size_t instruction = linear(cs, ip);
+        if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x21) {
+            u16 *registers = zel_room86_registers();
+            const u8 function = (u8)(registers[ZEL_TINY86_AX] >> 8);
+            if (function == 0x3C) {
+                const size_t source = linear(registers[ZEL_TINY86_DS],
+                                             registers[ZEL_TINY86_DX]);
+                size_t length = 0;
+                while (length + 1 < sizeof(state->save_name) &&
+                       source + length < zel_room86_memory_size() &&
+                       memory[source + length]) {
+                    state->save_name[length] = (char)memory[source + length];
+                    ++length;
+                }
+                state->save_name[length] = '\0';
+                state->dos_handle_open = 1;
+                state->dos_write_ok = 0;
+                registers[ZEL_TINY86_AX] = 5;
+                zel_room86_set_flags(0x0202);
+            } else if (function == 0x40 && state->dos_handle_open &&
+                       registers[ZEL_TINY86_BX] == 5 &&
+                       registers[ZEL_TINY86_CX] == 0x100) {
+                const size_t source = linear(registers[ZEL_TINY86_DS],
+                                             registers[ZEL_TINY86_DX]);
+                if (source + sizeof(state->save_record) <=
+                    zel_room86_memory_size()) {
+                    memcpy(state->save_record, memory + source,
+                           sizeof(state->save_record));
+                    state->dos_write_ok = (u8)(!g_force_save_failure &&
+                        platform_save_record(state->save_name,
+                            state->save_record, sizeof(state->save_record)));
+                    registers[ZEL_TINY86_AX] = state->dos_write_ok
+                        ? 0x100 : 5;
+                    zel_room86_set_flags(state->dos_write_ok
+                        ? 0x0202 : 0x0203);
+                } else {
+                    registers[ZEL_TINY86_AX] = 5;
+                    zel_room86_set_flags(0x0203);
+                }
+            } else if (function == 0x3E && state->dos_handle_open &&
+                       registers[ZEL_TINY86_BX] == 5) {
+                state->dos_handle_open = 0;
+                if (state->dos_write_ok) {
+                    memcpy(g_save_name, state->save_name,
+                           sizeof(g_save_name));
+                    memcpy(g_save_record, state->save_record,
+                           sizeof(g_save_record));
+                    ++g_save_serial;
+                }
+                registers[ZEL_TINY86_AX] = 0;
+                zel_room86_set_flags(0x0202);
+            } else {
+                registers[ZEL_TINY86_AX] = 1;
+                zel_room86_set_flags(0x0203);
+            }
+            zel_room86_set_ip((u16)(ip + 2u));
+            return 1;
+        }
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
             u16 *registers = zel_room86_registers();
             const int bank_amount_query =
@@ -164,6 +276,9 @@ static int room_step(void *context, u16 cs, u16 ip) {
             }
             state->bank_query_yield = bank_amount_query ? ip : 0;
             zel_room86_set_ip((u16)(ip + 2u));
+            if (state->kind == ZEL_ROOM_SAGE &&
+                registers[ZEL_TINY86_AX] == 0)
+                return 0;
             return 1;
         }
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x60) {
@@ -171,7 +286,7 @@ static int room_step(void *context, u16 cs, u16 ip) {
              * instead posted to gvar_volume (FF75h) and consumed by the
              * timer-driven SNDADLIB service. */
             zel_room86_set_ip((u16)(ip + 2u));
-            return 1;
+            return state->kind == ZEL_ROOM_SAGE ? 0 : 1;
         }
     }
     if (cs == GAME_SEG && ip == TOWN_POLL_AFTER_TICK) {
@@ -233,11 +348,13 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
     const char *program = kind == ZEL_ROOM_ARMORY ? "armrpro.bin" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drugpro.bin" :
                           kind == ZEL_ROOM_CHURCH ? "churpro.bin" :
-                          kind == ZEL_ROOM_BANK ? "bankpro.bin" : NULL;
+                          kind == ZEL_ROOM_BANK ? "bankpro.bin" :
+                          kind == ZEL_ROOM_SAGE ? "kenjpro.bin" : NULL;
     const char *graphic = kind == ZEL_ROOM_ARMORY ? "armr.grp" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drug.grp" :
                           kind == ZEL_ROOM_CHURCH ? "church.grp" :
-                          kind == ZEL_ROOM_BANK ? "bank.grp" : NULL;
+                          kind == ZEL_ROOM_BANK ? "bank.grp" :
+                          kind == ZEL_ROOM_SAGE ? "kenja.grp" : NULL;
     if (!program || !graphic || !game_seg || game_size < 0x10000 ||
         !vga || vga_size < 0x10000) return 0;
 
@@ -260,6 +377,7 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
     memset(&g_room_vm, 0, sizeof(g_room_vm));
     g_room_vm.graphic = decoded;
     g_room_vm.graphic_size = decoded_size;
+    g_room_vm.kind = kind;
     zel_room86_reset(bios, (unsigned)bios_size);
     free(bios);
     u8 *memory = zel_room86_memory();
@@ -290,7 +408,7 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
     memory[base + SAR_STUB] = 0xC3;
 
     u16 *registers = zel_room86_registers();
-    registers[ZEL_TINY86_AX] = 1;
+    registers[ZEL_TINY86_AX] = kind == ZEL_ROOM_SAGE ? 0 : 1;
     registers[ZEL_TINY86_CS] = GAME_SEG;
     registers[ZEL_TINY86_DS] = GAME_SEG;
     registers[ZEL_TINY86_ES] = DATA_SEG;
@@ -298,7 +416,7 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
     registers[ZEL_TINY86_SP] = 0xFFF8;
     write_u16(memory, linear(STACK_SEG, 0xFFF8), 0);
     write_u16(memory, linear(STACK_SEG, 0xFFFA), 0);
-    zel_room86_set_ip(0xA000);
+    zel_room86_set_ip(kind == ZEL_ROOM_SAGE ? 0xA027 : 0xA000);
     zel_room86_set_flags(0x0202);
     zel_room86_set_step_callback(room_step, &g_room_vm);
     g_room_vm.active = 1;
@@ -330,17 +448,22 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
         ? (u8)(read_u16(game_seg, 0xFF18) & 1u) : (u8)(enter != 0);
     if (!raw_space_down) g_room_vm.host_space_latched = 0;
     if (!raw_enter_down) g_room_vm.host_enter_latched = 0;
+    if (!direction) g_room_vm.host_direction_latched = 0;
     const u8 space_edge = (u8)(space && raw_space_down &&
                                !g_room_vm.host_space_latched);
     const u8 enter_edge = (u8)(enter && raw_enter_down &&
                                !g_room_vm.host_enter_latched);
+    const u8 direction_edge = (u8)(direction &&
+                                   !g_room_vm.host_direction_latched);
     if (space_edge) g_room_vm.host_space_latched = 1;
     if (enter_edge) g_room_vm.host_enter_latched = 1;
+    if (direction_edge) g_room_vm.host_direction_latched = 1;
     if (space_edge) memory[base + 0xFF1D] = 0xFF;
     if (enter_edge) memory[base + 0xFF29] = 0x0D;
     if (space_edge) g_room_vm.pending_space = 1;
     if (enter_edge) g_room_vm.pending_enter = 1;
-    if (direction || space_edge || enter_edge) g_room_vm.allow_poll_once = 1;
+    if (direction_edge || space_edge || enter_edge)
+        g_room_vm.allow_poll_once = 1;
     for (u32 tick = 0; tick < pit_ticks; ++tick) {
         const u8 sound_cue = memory[base + 0xFF75];
         if (sound_cue) {
@@ -393,6 +516,15 @@ u8 zeliard_room_masm_vm_take_sound_cue(void) {
     const u8 cue = g_room_vm.pending_sound_cue;
     g_room_vm.pending_sound_cue = 0;
     return cue;
+}
+void zeliard_room_masm_vm_text_key(u8 ascii) {
+    if (g_room_vm.active) g_room_vm.pending_ascii = ascii;
+}
+u32 zeliard_room_masm_vm_save_serial(void) { return g_save_serial; }
+const char *zeliard_room_masm_vm_save_name(void) { return g_save_name; }
+const u8 *zeliard_room_masm_vm_save_record(void) { return g_save_record; }
+void zeliard_room_masm_vm_force_save_failure(int fail) {
+    g_force_save_failure = (u8)(fail != 0);
 }
 void zeliard_room_masm_vm_stop(void) {
     g_room_vm.active = 0;

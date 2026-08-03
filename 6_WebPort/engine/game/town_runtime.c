@@ -665,8 +665,7 @@ static int run_live_frame(zeliard_town_runtime_t *town,
             return 0;
         }
         if (town->room.exit_requested ||
-            ((town->room.kind == ZEL_ROOM_SAGE ||
-              town->room.kind == ZEL_ROOM_VIEWING) &&
+            ((town->room.kind == ZEL_ROOM_VIEWING) &&
              (cs[GVAR_SPACEBAR_STATE] || cs[0xFF1E]))) {
             cs[GVAR_SPACEBAR_STATE] = 0;
             cs[0xFF1E] = 0;
@@ -770,11 +769,12 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
     if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_ENTER) {
         if (zeliard_room_enter(&town->room, town->pending_room_kind,
                                cs, 0x10000, vga, vga_size)) return -4;
-        if (town->area == ZEL_TOWN_AREA_MURALLA &&
+        if (town->room.kind == ZEL_ROOM_SAGE ||
+            (town->area == ZEL_TOWN_AREA_MURALLA &&
             (town->room.kind == ZEL_ROOM_ARMORY ||
              town->room.kind == ZEL_ROOM_DRUGSTORE ||
              town->room.kind == ZEL_ROOM_CHURCH ||
-             town->room.kind == ZEL_ROOM_BANK)) {
+             town->room.kind == ZEL_ROOM_BANK))) {
             if (!zeliard_room_masm_vm_start(
                     town->room.kind, cs, 0x10000, vga, vga_size)) return -5;
             town->room.exact_vm_active = 1;

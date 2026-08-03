@@ -13,6 +13,7 @@ type EngineExports = {
     _zeliard_key(keycode: number): void;
     _zeliard_key_down(keycode: number): void;
     _zeliard_key_up(keycode: number): void;
+    _zeliard_text_key(ascii: number): void;
     _zeliard_release_all_keys(): void;
     _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
     _zeliard_rgb_framebuf(): number; // optional RGB output for MCGA raster-DAC frames
@@ -42,6 +43,10 @@ type EngineExports = {
     _zeliard_town_area(): number;
     _zeliard_town_cavern_exit_requested(): number;
     _zeliard_test_enter_room(kind: number): number;
+    _zeliard_save_serial(): number;
+    _zeliard_save_name(): number;
+    _zeliard_save_record(): number;
+    _zeliard_load_record(record: number, size: number): number;
     _malloc(size: number): number;
     _free(pointer: number): void;
 };
@@ -59,6 +64,9 @@ const statusEl = document.getElementById('status')!;
 const startButton = document.getElementById('start') as HTMLButtonElement;
 const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
+const saveControlsEl = document.getElementById('save-controls') as HTMLDivElement;
+const saveSelectEl = document.getElementById('save-select') as HTMLSelectElement;
+const loadSaveEl = document.getElementById('load-save') as HTMLButtonElement;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
@@ -205,6 +213,57 @@ async function boot() {
     let lastPhase = -1;
     let lastPhaseElapsedBucket = -1;
     let lastPaused = false;
+    let lastSaveSerial = Module._zeliard_save_serial();
+
+    const listSaves = () => Object.keys(localStorage)
+        .filter((key) => key.startsWith('zeliard.save.'))
+        .sort()
+        .map((key) => {
+            try {
+                const value = JSON.parse(localStorage.getItem(key) ?? 'null');
+                return value?.version === 1 && typeof value.name === 'string' &&
+                    Array.isArray(value.record) && value.record.length === 0x100 &&
+                    value.record.every((byte: unknown) => Number.isInteger(byte) &&
+                        (byte as number) >= 0 && (byte as number) <= 0xFF)
+                    ? value : null;
+            } catch {
+                return null;
+            }
+        }).filter((save): save is { version: number; name: string; record: number[] } =>
+            save !== null);
+    (window as any).__zeliardSaves = listSaves;
+    const loadSave = (name: string) => {
+        const save = listSaves().find((candidate) =>
+            candidate.name.toUpperCase() === name.toUpperCase() ||
+            candidate.name.toUpperCase() === `${name.toUpperCase()}.USR`);
+        if (!save) return false;
+        const pointer = Module._malloc(0x100);
+        if (!pointer) return false;
+        Module.HEAPU8.set(save.record, pointer);
+        const loaded = Module._zeliard_load_record(pointer, 0x100) !== 0;
+        Module._free(pointer);
+        return loaded;
+    };
+    (window as any).__zeliardLoadSave = loadSave;
+    const refreshSaveControls = () => {
+        const saves = listSaves();
+        const selected = saveSelectEl.value;
+        saveSelectEl.replaceChildren(...saves.map((save) => {
+            const option = document.createElement('option');
+            option.value = save.name;
+            option.textContent = save.name.replace(/\.usr$/i, '');
+            return option;
+        }));
+        if (saves.some((save) => save.name === selected))
+            saveSelectEl.value = selected;
+        saveControlsEl.hidden = saves.length === 0;
+    };
+    loadSaveEl.addEventListener('click', () => {
+        if (!saveSelectEl.value) return;
+        if (!loadSave(saveSelectEl.value))
+            setStatus('saved game could not be loaded');
+    });
+    refreshSaveControls();
 
     function sceneName(scene: number): string {
         switch (scene) {
@@ -319,8 +378,15 @@ async function boot() {
             F2: 113,
         };
         const keycode = keycodes[e.key];
-        if (keycode === undefined)
+        if (keycode === undefined) {
+            if (!e.repeat && (e.key === 'Backspace' ||
+                /^[a-zA-Z0-9]$/.test(e.key))) {
+                e.preventDefault();
+                Module._zeliard_text_key(e.key === 'Backspace'
+                    ? 8 : e.key.toUpperCase().charCodeAt(0));
+            }
             return;
+        }
         e.preventDefault();
         if (e.repeat)
             return;
@@ -367,6 +433,20 @@ async function boot() {
         const tickMs = Math.floor(tickRemainderMs);
         tickRemainderMs -= tickMs;
         Module._zeliard_tick(tickMs);
+        const saveSerial = Module._zeliard_save_serial();
+        if (saveSerial !== lastSaveSerial) {
+            lastSaveSerial = saveSerial;
+            const namePointer = Module._zeliard_save_name();
+            let name = '';
+            for (let at = namePointer;
+                 Module.HEAPU8[at] && name.length < 12; ++at)
+                name += String.fromCharCode(Module.HEAPU8[at]);
+            const recordPointer = Module._zeliard_save_record();
+            const record = Array.from(Module.HEAPU8.subarray(
+                recordPointer, recordPointer + 0x100));
+            console.log(`[zeliard] saved ${name} (${record.length} bytes)`);
+            refreshSaveControls();
+        }
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,

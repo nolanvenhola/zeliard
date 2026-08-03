@@ -222,6 +222,40 @@ def king_dialog_remaining_line_oracles(program: Path, graphic: Path) -> bool:
     return True
 
 
+def sage_state_oracles(program: Path, graphic: Path) -> bool:
+    """Pin KENJP's pure tier classifier and seven spell award handlers."""
+    tiers = []
+    for level, experience, sage_id, expected in (
+        (0, 24, 1, 0), (0, 25, 1, 1), (0, 38, 1, 2),
+        (0, 50, 1, 3), (3, 420, 1, 4),
+    ):
+        machine = build_machine(program, graphic)
+        base = GAME_SEG << 4
+        machine.mem_write(base + 0x8D, bytes((level,)))
+        machine.mem_write(base + 0x8E, experience.to_bytes(2, "little"))
+        machine.mem_write(base + 0xC006, bytes((sage_id,)))
+        run_near_proc(machine, 0xA22E)
+        actual = machine.reg_read(UC_X86_REG_AX)
+        tiers.append(actual)
+        if actual != expected:
+            return False
+
+    spells = []
+    for spell, entry in enumerate(range(0xA93B, 0xA954, 4), 1):
+        machine = build_machine(program, graphic)
+        run_until_boundary(machine, entry, 0xA973)
+        base = GAME_SEG << 4
+        selected = int.from_bytes(machine.mem_read(base + 0x9D, 1), "little")
+        known = int.from_bytes(machine.mem_read(base + 0xBA + spell, 1), "little")
+        spells.append((selected, known))
+        if selected != spell or known != 0xFF:
+            return False
+    print("felishika_sage_state: tiers=" + ",".join(map(str, tiers)) +
+          " spells=" + ",".join(f"{selected}/{known:02x}"
+                                  for selected, known in spells))
+    return True
+
+
 def main() -> int:
     king_program = MASM_ROOT / "bin" / "zelres2" / "210KINGP.bin"
     king_graphic = MASM_ROOT / "bin" / "zelres2" / "218KINGG.grp"
@@ -276,6 +310,7 @@ def main() -> int:
     king_interaction = king_interaction_oracles(king_program, king_graphic)
     king_dialog_lines = king_dialog_remaining_line_oracles(
         king_program, king_graphic)
+    sage_state_ok = sage_state_oracles(sage_program, sage_graphic)
     ok = fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
         fnv1a64(king_state) == EXPECTED_KING_STATE and \
         king_interaction and king_dialog_lines and \
@@ -283,7 +318,7 @@ def main() -> int:
         fnv1a64(omoya_state) == EXPECTED_OMOYA_STATE and \
         fnv1a64(omoya_artwork) == EXPECTED_OMOYA_ARTWORK and \
         fnv1a64(sage_frame) == EXPECTED_SAGE_FRAME and \
-        fnv1a64(sage_state) == EXPECTED_SAGE_STATE
+        fnv1a64(sage_state) == EXPECTED_SAGE_STATE and sage_state_ok
     print(f"VERDICT: {'PASS' if ok else 'FAIL'}: "
           "release-MASM Felishika room frames and king interaction")
     return 0 if ok else 1

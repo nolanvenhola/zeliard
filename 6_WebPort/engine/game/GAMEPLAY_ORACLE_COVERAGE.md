@@ -97,6 +97,9 @@ Town live-runtime coverage:
 | `zeliard_town_detect_facing_targets` | Oracle-backed | `106TOWN` target-scan branches mirrored by `town_facing_targets:right` native fixture |
 | `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`; release-byte memory diffs over active/inactive events and two NPC ticks |
 | `zeliard_room_enter` / `zeliard_room_leave` | Oracle-backed stable frames and transitions | `proc_equivalence/test_felishika_room_frames_oracle.py`, `test_gmmcga_building_fade_oracle.py`; release `210KINGP`/`211OMOYP`/`217KENJP` prologues plus both `106TOWN` building-boundary fades |
+| `zeliard_room_masm_vm` Sage menu, hints, power, spells, and exit | Release-byte executed and oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; pure tier outputs and all seven spell handlers, plus `felishika_rooms_native` full command flows, first/repeat visits, level/HP/experience/charge diffs |
+| Sage `Record Experience` DOS proxy | Release-byte executed and oracle-backed | `felishika_rooms_native`; exact 8-character editor path, `.usr` suffix, INT 21h create/write/close, 256-byte payload identity, persisted-file identity, and write-failure retry |
+| `zeliard_load_record` saved-game restore | Oracle-backed integration | `main_controls_native`, `regression/test_player_record_contract.py`, `proc_equivalence/test_game_bootstrap_sequence.py`; strict 256-byte validation and existing `AX=FFFFh` bootstrap with progression/equipment/NPC-state round trip |
 
 Town MCGA dispatch coverage:
 

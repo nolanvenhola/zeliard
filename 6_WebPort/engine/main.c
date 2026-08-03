@@ -324,6 +324,15 @@ EXPORT void zeliard_key_up(int keycode) {
     zel_input_key_up(&g_input, g_game_segments[0], keycode);
 }
 
+EXPORT void zeliard_text_key(int ascii) {
+    if (g_scene != SCENE_GAME || !g_town_runtime.room.active ||
+        g_town_runtime.room.kind != ZEL_ROOM_SAGE) return;
+    if (ascii >= 'a' && ascii <= 'z') ascii -= 'a' - 'A';
+    if ((ascii >= 'A' && ascii <= 'Z') ||
+        (ascii >= '0' && ascii <= '9') || ascii == 8)
+        zeliard_room_masm_vm_text_key((u8)ascii);
+}
+
 EXPORT void zeliard_release_all_keys(void) {
     zel_input_release_all(&g_input, g_game_segments[0], 1);
 }
@@ -381,6 +390,30 @@ EXPORT int              zeliard_room_input_kind(void) {
 }
 EXPORT int              zeliard_room_ip(void) {
     return zeliard_room_masm_vm_active() ? zeliard_room_masm_vm_ip() : -1;
+}
+EXPORT u32              zeliard_save_serial(void) {
+    return zeliard_room_masm_vm_save_serial();
+}
+EXPORT const char      *zeliard_save_name(void) {
+    return zeliard_room_masm_vm_save_name();
+}
+EXPORT const u8        *zeliard_save_record(void) {
+    return zeliard_room_masm_vm_save_record();
+}
+EXPORT int              zeliard_load_record(const u8 *record, int size) {
+    u8 snapshot[ZEL_PLAYER_RECORD_SIZE];
+    if (!record || size != ZEL_PLAYER_RECORD_SIZE) return 0;
+    memcpy(snapshot, record, sizeof(snapshot));
+
+    zeliard_room_masm_vm_stop();
+    zeliard_inventory_masm_vm_stop();
+    zel_opening_audio_stop();
+    game_memory_init();
+    memcpy(g_game_segments[0], snapshot, sizeof(snapshot));
+    g_paused = 0;
+    g_input_subtick_accum = 0;
+    if (!enter_game_scene()) return 0;
+    return 1;
 }
 EXPORT int              zeliard_town_dialog_active(void) {
     return g_town_runtime.dialog.active != 0;
