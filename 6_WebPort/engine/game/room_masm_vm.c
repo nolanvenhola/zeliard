@@ -268,12 +268,22 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
     memcpy(memory + base + 0xFF16, game_seg + 0xFF16, 4);
     memory[base + 0xFF17] = direction;
     g_room_vm.direction = direction;
-    /* 106TOWN:poll_menu_input clears FF1D before polling. A latch copied
-     * back at a VM timeslice boundary is still the same physical press. */
-    const u8 space_edge = (u8)(space && !g_room_vm.host_space_latched);
-    const u8 enter_edge = (u8)(enter && !g_room_vm.host_enter_latched);
-    g_room_vm.host_space_latched = (u8)(space != 0);
-    g_room_vm.host_enter_latched = (u8)(enter != 0);
+    /* FF16 bit 0 and FF18 bit 0 are stick.asm's physical key masks; FF1D
+     * and FF29 are sampled action latches. Reset edge ownership on raw
+     * key-up, not when a room proc happens to clear an action byte. */
+    const u8 raw_input_active = (u8)(game_seg[0x02BC] != 0);
+    const u8 raw_space_down = raw_input_active
+        ? (u8)(game_seg[0xFF16] & 1u) : (u8)(space != 0);
+    const u8 raw_enter_down = raw_input_active
+        ? (u8)(read_u16(game_seg, 0xFF18) & 1u) : (u8)(enter != 0);
+    if (!raw_space_down) g_room_vm.host_space_latched = 0;
+    if (!raw_enter_down) g_room_vm.host_enter_latched = 0;
+    const u8 space_edge = (u8)(space && raw_space_down &&
+                               !g_room_vm.host_space_latched);
+    const u8 enter_edge = (u8)(enter && raw_enter_down &&
+                               !g_room_vm.host_enter_latched);
+    if (space_edge) g_room_vm.host_space_latched = 1;
+    if (enter_edge) g_room_vm.host_enter_latched = 1;
     if (space_edge) memory[base + 0xFF1D] = 0xFF;
     if (enter_edge) memory[base + 0xFF29] = 0x0D;
     if (space_edge) g_room_vm.pending_space = 1;

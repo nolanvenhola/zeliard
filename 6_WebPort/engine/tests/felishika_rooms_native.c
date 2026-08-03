@@ -515,6 +515,76 @@ static int vm_run_to_next_poll(u8 *cs, u8 *vga, u8 direction, u8 space,
     return 1;
 }
 
+static int vm_browser_space_pulse(zel_input_state_t *input,
+                                  u8 *cs, u8 *vga, unsigned *ticks) {
+    const u16 start_ip = zeliard_room_masm_vm_ip();
+    const int start_kind = zeliard_room_masm_vm_input_kind();
+    const unsigned long long start_frame = fnv1a64(vga, 0x10000);
+    int progressed = 0;
+    int sampled = 0;
+    zel_input_key_down(input, cs, ZEL_INPUT_KEY_SPACE);
+    for (unsigned tick = 0; tick < 2000; ++tick) {
+        zel_input_advance_pit(input, cs, 1);
+        sampled |= cs[0xFF1D] != 0;
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, cs[0xFF1D], 0))
+            return 0;
+        ++*ticks;
+        progressed |= zeliard_room_masm_vm_ip() != start_ip ||
+                      zeliard_room_masm_vm_input_kind() != start_kind ||
+                      fnv1a64(vga, 0x10000) != start_frame;
+        if (sampled && progressed && zeliard_room_masm_vm_at_input_poll()) break;
+    }
+    zel_input_key_up(input, cs, ZEL_INPUT_KEY_SPACE);
+    /* stick.asm samples the released raw key at one of its five-PIT
+     * subsample boundaries before it can emit another Space action. */
+    for (unsigned tick = 0; tick < 5; ++tick) {
+        zel_input_advance_pit(input, cs, 1);
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, cs[0xFF1D], 0))
+            return 0;
+        ++*ticks;
+    }
+    return sampled && progressed && zeliard_room_masm_vm_at_input_poll();
+}
+
+static int muralla_release_vm_drugstore_text_repress(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_DRUGSTORE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    zel_input_state_t input;
+    zel_input_init(&input, cs);
+    zel_input_advance_pit(&input, cs, 10);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    /* 215DRUGP: Description -> question -> item menu -> item intro ->
+     * Ken'ko's multi-page description. Each slash is a fresh key wait. */
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT;
+    const unsigned long long intro_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT;
+    const unsigned long long description_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    ok &= intro_frame != description_frame;
+    printf("muralla_release_vm_drugstore_text_repress: ticks=%u "
+           "frames=%016llx>%016llx kind=%d\n", ticks, intro_frame,
+           description_frame, zeliard_room_masm_vm_input_kind());
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int muralla_release_vm_armory_buy(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -812,6 +882,7 @@ int main(void) {
                    muralla_release_vm_menu_frames() &&
                    muralla_release_vm_browser_space() &&
                    muralla_release_vm_held_space_edge() &&
+                   muralla_release_vm_drugstore_text_repress() &&
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
                    muralla_release_vm_church_heal() &&
