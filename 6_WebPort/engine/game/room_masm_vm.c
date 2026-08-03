@@ -28,6 +28,10 @@ enum {
     TOWN_TEXT_WAIT_INPUT = 0x71DF,
     TOWN_TEXT_WAIT_REPEAT = 0x71E9,
     TOWN_TEXT_WAIT_AFTER_TICK = 0x71EC,
+    BANK_DEPOSIT_AMOUNT_QUERY = 0xA2D8,
+    BANK_DEPOSIT_REPEAT_QUERY = 0xA2FE,
+    BANK_WITHDRAW_AMOUNT_QUERY = 0xA477,
+    BANK_WITHDRAW_REPEAT_QUERY = 0xA49D,
     INSTRUCTIONS_PER_PIT = 6000,
 };
 
@@ -42,6 +46,7 @@ typedef struct {
     u8 pending_enter;
     u8 host_space_latched;
     u8 host_enter_latched;
+    u16 bank_query_yield;
     u8 pending_sound_cue;
     u8 *graphic;
     size_t graphic_size;
@@ -135,12 +140,29 @@ static int room_step(void *context, u16 cs, u16 ip) {
         const size_t instruction = linear(cs, ip);
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
             u16 *registers = zel_room86_registers();
+            const int bank_amount_query =
+                ip == BANK_DEPOSIT_AMOUNT_QUERY ||
+                ip == BANK_DEPOSIT_REPEAT_QUERY ||
+                ip == BANK_WITHDRAW_AMOUNT_QUERY ||
+                ip == BANK_WITHDRAW_REPEAT_QUERY;
             /* stick.asm:query_input_state returns gvar_timer_flag in AL and
              * gvar_skip_flag in AH.  BANKP's amount selector consumes both
              * as held levels: AL drives accelerated repeats and AH bit 0
              * commits the selected deposit/withdraw amount. */
             registers[ZEL_TINY86_AX] = (u16)(
                 state->direction | ((u16)memory[linear(GAME_SEG, 0xFF16)] << 8));
+            if ((ip == BANK_DEPOSIT_AMOUNT_QUERY ||
+                 ip == BANK_WITHDRAW_AMOUNT_QUERY) &&
+                (memory[linear(GAME_SEG, 0xFF16)] & 1u)) {
+                /* The amount loop consumes this Space make as AH bit 0.
+                 * Retire the host one-shot too, otherwise the intercepted
+                 * 106TOWN menu poll replays it and immediately re-enters the
+                 * same deposit/withdraw selector after the transaction. */
+                memory[linear(GAME_SEG, 0xFF1D)] = 0;
+                state->pending_space = 0;
+                state->allow_poll_once = 0;
+            }
+            state->bank_query_yield = bank_amount_query ? ip : 0;
             zel_room86_set_ip((u16)(ip + 2u));
             return 1;
         }
@@ -330,11 +352,30 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                   (u16)(read_u16(memory, base + 0xFF1B) + 1u));
         write_u16(memory, base + 0xFF50,
                   (u16)(read_u16(memory, base + 0xFF50) + 1u));
-        const int result = zel_room86_run(INSTRUCTIONS_PER_PIT);
-        if (result == ZEL_TINY86_HALTED) {
-            g_room_vm.active = 0;
-            break;
+        const u32 amount_before =
+            ((u32)memory[base + 0xAD29] << 16) |
+            read_u16(memory, base + 0xAD2A);
+        u16 previous_repeat_query = 0;
+        for (unsigned slice = 0; slice < 8; ++slice) {
+            g_room_vm.bank_query_yield = 0;
+            const int result = zel_room86_run(INSTRUCTIONS_PER_PIT);
+            if (result == ZEL_TINY86_HALTED) {
+                g_room_vm.active = 0;
+                break;
+            }
+            const u16 query = g_room_vm.bank_query_yield;
+            const int repeat_query =
+                query == BANK_DEPOSIT_REPEAT_QUERY ||
+                query == BANK_WITHDRAW_REPEAT_QUERY;
+            const u32 amount_after =
+                ((u32)memory[base + 0xAD29] << 16) |
+                read_u16(memory, base + 0xAD2A);
+            if (!direction || !query ||
+                (repeat_query && amount_after != amount_before) ||
+                (repeat_query && previous_repeat_query == query)) break;
+            previous_repeat_query = repeat_query ? query : 0;
         }
+        if (!g_room_vm.active) break;
         if (g_room_vm.at_input_poll) break;
     }
     memcpy(game_seg, memory + base, 0x10000);

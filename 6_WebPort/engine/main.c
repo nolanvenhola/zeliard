@@ -379,6 +379,9 @@ EXPORT int              zeliard_room_kind(void) { return (int)g_town_runtime.roo
 EXPORT int              zeliard_room_input_kind(void) {
     return zeliard_room_masm_vm_input_kind();
 }
+EXPORT int              zeliard_room_ip(void) {
+    return zeliard_room_masm_vm_active() ? zeliard_room_masm_vm_ip() : -1;
+}
 EXPORT int              zeliard_town_dialog_active(void) {
     return g_town_runtime.dialog.active != 0;
 }
@@ -396,6 +399,22 @@ EXPORT int              zeliard_test_enter_room(int kind) {
     return zeliard_town_begin_room_transition(
         &g_town_runtime, (zeliard_room_kind_t)kind,
         g_game_vga, sizeof(g_game_vga));
+}
+
+EXPORT int zeliard_test_game_u8(unsigned offset) {
+    return offset < sizeof(g_game_segments[0]) ? g_game_segments[0][offset] : -1;
+}
+
+EXPORT int zeliard_test_game_u16(unsigned offset) {
+    if (offset + 1 >= sizeof(g_game_segments[0])) return -1;
+    return g_game_segments[0][offset] |
+           ((int)g_game_segments[0][offset + 1] << 8);
+}
+
+EXPORT int zeliard_test_game_set_u8(unsigned offset, unsigned value) {
+    if (offset >= sizeof(g_game_segments[0])) return -1;
+    g_game_segments[0][offset] = (u8)value;
+    return 0;
 }
 
 #if !defined(__EMSCRIPTEN__) && !defined(ZELIARD_NO_MAIN)

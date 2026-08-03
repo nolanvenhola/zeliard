@@ -833,7 +833,8 @@ static int muralla_release_vm_bank_amount_input(u8 withdraw) {
         ? change_ticks[2] - change_ticks[1] : 0;
     const unsigned last_gap = change_count > 2
         ? change_ticks[change_count - 1] - change_ticks[change_count - 2] : 0;
-    ok &= change_count > 8 && selected > 8 && last_gap < first_gap;
+    ok &= change_count == 20 && selected == 20 &&
+          first_gap == 34 && last_gap == 17;
 
     /* query_input_state returns the held Space mask in AH bit 0. */
     cs[0xFF16] = 1;
