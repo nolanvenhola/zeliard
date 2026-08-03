@@ -9,7 +9,7 @@ from pathlib import Path
 
 from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, UC_PROT_ALL, Uc
 from unicorn.x86_const import (
-    UC_X86_REG_BP, UC_X86_REG_CS, UC_X86_REG_CX, UC_X86_REG_DS,
+    UC_X86_REG_BP, UC_X86_REG_BX, UC_X86_REG_CS, UC_X86_REG_CX, UC_X86_REG_DS,
     UC_X86_REG_ES, UC_X86_REG_IP, UC_X86_REG_SI, UC_X86_REG_SP,
     UC_X86_REG_SS,
 )
@@ -28,6 +28,7 @@ CODE_SEG, STACK_SEG = 0x1000, 0x8000
 RET_SENTINEL = 0x0080
 ENTRY_PREPROCESS_FMAN = 0x4EDD
 ENTRY_COMPOSE_HERO = 0x39A3
+ENTRY_BLIT_HERO = 0x40D7
 EXPECTED = {
     (0, 0): (0xBFC85115E00A5F6B, 0x51FB025D18001B0A,
              0xD7A6BC1D6AA4A904, 0x16A349B328945A09),
@@ -37,6 +38,12 @@ EXPECTED = {
              0x51E81E55648CB3CB, 0xBD3D9913B19E7B82),
     (1, 1): (0x289B30DA7218A7C6, 0x486AAD227B69F1D2,
              0x6CE49FAD7D3C9070, 0x18BD73799858BB81),
+}
+EXPECTED_BLITS = {
+    (0, 0): (0x45123C16CCB30D8F, (50, 110, 63, 133)),
+    (0, 1): (0xBDFEE836ED26003A, (50, 110, 68, 133)),
+    (1, 0): (0xE47B0B91396F41A7, (256, 110, 269, 133)),
+    (1, 1): (0xCB3361656075F072, (251, 110, 269, 133)),
 }
 
 
@@ -88,6 +95,7 @@ def main() -> int:
     ok = True
     for facing, shield in EXPECTED:
         actual_cycle = []
+        first_blit = None
         for pose in range(1, 5):
             mu.mem_write((CODE_SEG << 4) + 0x5000, bytes(0x400))
             state = {
@@ -102,15 +110,33 @@ def main() -> int:
             call(mu, ENTRY_COMPOSE_HERO)
             actual_cycle.append(fnv1a64(bytes(mu.mem_read(
                 (CODE_SEG << 4) + 0x511D, 9 * 64))))
+            if pose == 1:
+                mu.mem_write(0xA0000, bytes(0x10000))
+                mu.mem_write((CODE_SEG << 4) + 0xFF37, b"\x00")
+                packed_bx = 0x3E6E if facing else 0x0C6E
+                call(mu, ENTRY_BLIT_HERO,
+                     ((UC_X86_REG_BX, packed_bx),))
+                frame = bytes(mu.mem_read(0xA0000, 0x10000))
+                occupied = [index for index, value in enumerate(frame[:64000])
+                            if value]
+                first_blit = (
+                    fnv1a64(frame),
+                    (min(index % 320 for index in occupied),
+                     min(index // 320 for index in occupied),
+                     max(index % 320 for index in occupied),
+                     max(index // 320 for index in occupied)),
+                )
         actual = tuple(actual_cycle)
-        case_ok = actual == EXPECTED[(facing, shield)]
+        case_ok = (actual == EXPECTED[(facing, shield)] and
+                   first_blit == EXPECTED_BLITS[(facing, shield)])
         ok &= case_ok
         hashes = ", ".join(f"{value:016x}" for value in actual)
         print(f"gfmcga_transition_hero facing={facing} shield={shield}: "
-              f"{'PASS' if case_ok else 'FAIL'} cycle=({hashes})")
+              f"{'PASS' if case_ok else 'FAIL'} cycle=({hashes}) "
+              f"first_blit={first_blit[0]:016x} bbox={first_blit[1]}")
 
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
-          ": release-MASM shield-aware check_c3 hero cells")
+          ": release-MASM shield-aware check_c3 hero cells and VGA blits")
     return 0 if ok else 1
 
 

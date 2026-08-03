@@ -226,8 +226,6 @@ static void compose_fman_cells(zeliard_cavern_transition_t *transition,
                 if (!preserve) {
                     const size_t pixel = (size_t)row * 8 + col;
                     target[pixel] = HERO_PALETTE[color];
-                    transition->hero_coverage[
-                        (size_t)target_cell * 64 + pixel] = 1;
                 }
             }
         }
@@ -249,7 +247,6 @@ static void compose_ordinary_hero(zeliard_cavern_transition_t *transition,
     u16 frame_offset;
 
     memset(transition->hero_cells, 0, sizeof(transition->hero_cells));
-    memset(transition->hero_coverage, 0, sizeof(transition->hero_coverage));
 
     /* 206GFMCA:3ABE-3B7F. The shield bank is selected on the rear
      * equipment pass for a left-facing Duke. */
@@ -322,13 +319,12 @@ static void blit_hero(zeliard_cavern_transition_t *transition,
         const int cell_x = x + (cell % 3) * 8;
         const int cell_y = y + (cell / 3) * 8;
         const u8 *pixels = transition->hero_cells + (size_t)cell * 64;
-        const u8 *coverage = transition->hero_coverage + (size_t)cell * 64;
         for (u8 row = 0; row < 8; ++row) {
             const int py = cell_y + row;
             if (py < 0 || py >= 200) continue;
             for (u8 col = 0; col < 8; ++col) {
                 const int px = cell_x + col;
-                if (coverage[row * 8 + col] && px >= 0 && px < 320)
+                if (px >= 0 && px < 320)
                     vga[(size_t)py * 320 + px] = pixels[row * 8 + col];
             }
         }
@@ -373,7 +369,9 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
     game_seg[GVAR_FLAG_RIDING] = 0;
 
     transition->direction = game_seg[PLAYER_BOSS_INTRO_FLAG] ? 1 : 0;
-    transition->packed_x = transition->direction ? 0x40 : 0xA6;
+    /* 200FIGHT:check_c3 loads BX with 0A6Eh, not A66Eh. BH is the
+     * packed horizontal component advanced by two before each blit. */
+    transition->packed_x = transition->direction ? 0x40 : 0x0A;
     transition->pose = 0;
     transition->wait_target = (u8)(4u * game_seg[GVAR_ANIM_SPEED]);
     if (transition->wait_target == 0) transition->wait_target = 1;
