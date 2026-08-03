@@ -842,6 +842,15 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
         cs[GVAR_FRAME_TIMER]++;
         write_u16(cs, 0xFF1B, (u16)(read_u16(cs, 0xFF1B) + 1));
         write_u16(cs, 0xFF50, (u16)(read_u16(cs, 0xFF50) + 1));
+        if (town->dialog.active &&
+            (town->dialog.scroll_active ||
+             town->dialog.scroll_resume_pending)) {
+            const int result = zeliard_town_dialog_advance_pit(
+                &town->dialog, cs, vga, vga_size);
+            if (result < 0) return -3;
+            if (result > 0) frames = 1;
+            continue;
+        }
         if (town->room.active &&
             (town->room.kind == ZEL_ROOM_KING ||
              town->room.kind == ZEL_ROOM_CHURCH ||

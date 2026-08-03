@@ -25,6 +25,8 @@ from test_town_first_dialog_oracle import (  # noqa: E402
     payload, simulate_ret, write_u16,
 )
 
+GMM_SCROLL_ROW = 0x2857
+
 
 def main() -> int:
     paths = {
@@ -76,8 +78,11 @@ def main() -> int:
 
     pages: list[int] = []
     glyphs: list[tuple[int, int, int]] = []
+    scroll_steps: list[int] = []
+    scroll_return_ip: int | None = None
 
     def code_hook(uc: Uc, address: int, _size: int, _user: object) -> None:
+        nonlocal scroll_return_ip
         ip = address - base
         if uc.reg_read(UC_X86_REG_IP) == RETURN_IP:
             uc.emu_stop()
@@ -94,6 +99,15 @@ def main() -> int:
             glyphs.append((uc.reg_read(UC_X86_REG_AX) & 0xFFFF,
                            uc.reg_read(UC_X86_REG_BX) & 0xFFFF,
                            uc.reg_read(UC_X86_REG_CX) & 0xFFFF))
+        if ip == GMM_SCROLL_ROW:
+            sp = uc.reg_read(UC_X86_REG_SP) & 0xFFFF
+            scroll_return_ip = int.from_bytes(bytes(uc.mem_read(
+                (uc.reg_read(UC_X86_REG_SS) << 4) + sp, 2)), "little")
+            return
+        if scroll_return_ip is not None and ip == scroll_return_ip:
+            scroll_steps.append(fnv1a64(bytes(
+                uc.mem_read(VGA_SEG << 4, 0x10000))))
+            scroll_return_ip = None
 
     mu.hook_add(UC_HOOK_CODE, code_hook)
     mu.emu_start(base + TRY_TAKE_FACING_ITEM, 0, count=10_000_000)
@@ -102,16 +116,31 @@ def main() -> int:
     npc = bytes(mu.mem_read(base + 0xCEAF, 8))
     text_pc = int.from_bytes(bytes(mu.mem_read(base + 0x7C58, 2)), "little")
     page_hashes = [f"{value:016x}" for value in pages]
+    scroll_hashes = [f"{value:016x}" for value in scroll_steps]
+    expected_scroll_steps = [
+        0x24CB66E41A5DBC53, 0x2F82EE743B806666,
+        0xDF3B4F3D058423F8, 0xA46EC27677EF7F79,
+        0xB3D9F195B1809D75, 0x2EBB4276EE9495B7,
+        0x59E8958980B3871C, 0xDE632A2E14D1B0ED,
+        0x6B1AD5219D0E042D, 0xFFB12319111FCC4D,
+        0xE4D74FD15F086069, 0xA0081FC4DF3B4CFB,
+        0xF720A98B0BA13DF4, 0x61FFD82C7CCA92DF,
+        0x4492CCC49406CFC1, 0x8F17880A59A7B1A0,
+        0xDC510002420EE61F, 0x167E5948F1B2CF1D,
+        0xC0C74121CDF987FD, 0x15344942CA81D4BD,
+    ]
     ok = (
         mu.reg_read(UC_X86_REG_IP) == RETURN_IP
         and final_vga == background
         and npc == bytes.fromhex("8200022503030006")
         and len(glyphs) == 207
         and pages == [0x2CE6A7710F269E11, 0xB95556613E17D5DA]
+        and scroll_steps == expected_scroll_steps
         and text_pc == 0xCD23
     )
     print(f"town_muralla_dialog: pages={page_hashes} glyphs={len(glyphs)} "
           f"text_pc={text_pc:04x} final={fnv1a64(final_vga):016x}")
+    print(f"town_muralla_dialog: scroll_steps={scroll_hashes}")
     print("VERDICT: " + ("PASS" if ok else "FAIL"))
     return 0 if ok else 1
 
