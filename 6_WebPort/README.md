@@ -63,6 +63,17 @@ cd shell ; npm run dev
 You should see a 320x200 diagonal-gradient test pattern animating, with
 yellow/blue/dark-blue corner markers verifying the palette is plumbed.
 
+## Save files
+
+Zeliard saves are the original raw 256-byte `.usr` player records. In the web
+build, **Record Experience** downloads `NAME.usr`; **Open .usr** imports the
+same binary format. These files can be moved between the DOS game, native
+port, and browser port. The browser also keeps an internal localStorage copy
+for its saved-game selector, but that copy is not the portable file.
+
+Native builds create `NAME.usr` in the process working directory. For example,
+running from `6_WebPort/engine` places the file in that directory.
+
 ## Native parity build
 
 ```bash

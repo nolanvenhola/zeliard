@@ -16,4 +16,8 @@ u8* platform_load_asset(const char *name, size_t *out_size);
 /* Log a message.  Web: console.log; Native: stderr. */
 void platform_log(const char *fmt, ...);
 
+/* DOS-file proxy used by the exact Sage/save runtime. */
+int platform_save_record(const char *name, const u8 *record, size_t size);
+size_t platform_list_save_names(char (*names)[9], size_t capacity);
+
 #endif

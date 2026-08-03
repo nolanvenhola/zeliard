@@ -1043,6 +1043,286 @@ static int king_followup_scripts(void) {
     return ok;
 }
 
+static int sage_release_vm_menu(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    /* 106TOWN stores one-based sage id 1 for Marid before entering KENJP. */
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const unsigned long long frame = fnv1a64(vga, 0x10000);
+    const u16 script = (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8));
+    printf("sage_release_vm_menu: ticks=%u ip=%04x script=%04x "
+           "kind=%d frame=%016llx\n", ticks, zeliard_room_masm_vm_ip(),
+           script, zeliard_room_masm_vm_input_kind(), frame);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int sage_release_vm_record(void) {
+    remove("DUKE.usr");
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const u8 menu0 = cs[0xFF56];
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u8 menu1 = cs[0xFF56];
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u8 menu2 = cs[0xFF56];
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u8 menu3 = cs[0xFF56];
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u32 serial_before = zeliard_room_masm_vm_save_serial();
+    static const char name[] = "DUKE";
+    size_t name_at = 0;
+    int entered = 0;
+    for (unsigned step = 0; ok && step < 30000 &&
+         zeliard_room_masm_vm_save_serial() == serial_before; ++step) {
+        u8 acknowledge = 0;
+        u8 enter_key = 0;
+        if (cs[0xFF74]) {
+            if (name_at < sizeof(name) - 1)
+                zeliard_room_masm_vm_text_key((u8)name[name_at++]);
+            else if (!entered) {
+                cs[0xFF18] |= 1;
+                enter_key = 1;
+                entered = 1;
+            }
+        } else if (zeliard_room_masm_vm_at_input_poll() ||
+                   (step != 0 && step % 400 == 0)) {
+            acknowledge = 1;
+        }
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, enter_key);
+        if (enter_key) cs[0xFF18] &= (u8)~1u;
+        ++ticks;
+    }
+    const u32 serial_after = zeliard_room_masm_vm_save_serial();
+    unsigned prompt_ticks = 0;
+    while (ok && zeliard_room_masm_vm_active() &&
+           !zeliard_room_masm_vm_at_input_poll() && prompt_ticks < 10000) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
+        ++prompt_ticks;
+    }
+    const int continue_prompt = zeliard_room_masm_vm_active() &&
+        zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU &&
+        cs[0xFF52] == 2 && cs[0xFF53] == 2;
+    const unsigned long long continue_prompt_frame = fnv1a64(vga, 0x10000);
+    printf("sage_release_vm_record: ticks=%u menu=%u>%u>%u>%u cmd=%u "
+           "serial=%u>%u name=%s input=%02x len=%u ip=%04x script=%04x "
+           "timer=%u/%u speed=%u continue_prompt=%d/%u/%016llx\n", ticks,
+           menu0, menu1, menu2, menu3, cs[0xBB14], serial_before,
+           serial_after, zeliard_room_masm_vm_save_name(), cs[0xFF74],
+           cs[0xBB25], zeliard_room_masm_vm_ip(),
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           cs[0xFF1A], (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8)),
+           cs[0xFF33], continue_prompt, prompt_ticks, continue_prompt_frame);
+    ok &= serial_after == serial_before + 1 &&
+           strcmp(zeliard_room_masm_vm_save_name(), "DUKE.usr") == 0 &&
+           memcmp(zeliard_room_masm_vm_save_record(), cs, 0x100) == 0 &&
+           continue_prompt &&
+           continue_prompt_frame == 0xE4601DA85E58BFBFULL;
+    FILE *saved = fopen("DUKE.usr", "rb");
+    u8 disk_record[0x100];
+    ok &= saved && fread(disk_record, 1, sizeof(disk_record), saved) ==
+                   sizeof(disk_record) &&
+          memcmp(disk_record, cs, sizeof(disk_record)) == 0;
+    if (saved) fclose(saved);
+    remove("DUKE.usr");
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int sage_drive_option(u8 *cs, u8 *vga, u8 option,
+                             unsigned *ticks) {
+    if (!vm_reach_menu(cs, vga, ticks)) return 0;
+    for (u8 row = 0; row < option; ++row)
+        if (!vm_run_to_next_poll(cs, vga, 2, 0, ticks)) return 0;
+    if (!vm_run_to_next_poll(cs, vga, 0, 1, ticks)) return 0;
+    int left_menu = zeliard_room_masm_vm_input_kind() !=
+        ZEL_ROOM_VM_INPUT_MENU;
+    for (unsigned step = 0; zeliard_room_masm_vm_active() &&
+         *ticks < 30000; ++step) {
+        if (left_menu && zeliard_room_masm_vm_input_kind() ==
+                ZEL_ROOM_VM_INPUT_MENU)
+            return 1;
+        left_menu |= zeliard_room_masm_vm_input_kind() !=
+            ZEL_ROOM_VM_INPUT_MENU;
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll() &&
+            zeliard_room_masm_vm_input_kind() != ZEL_ROOM_VM_INPUT_NAME;
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0))
+            return 0;
+        ++*ticks;
+    }
+    return option == 0 && !zeliard_room_masm_vm_active();
+}
+
+static int sage_release_vm_progression(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    cs[ZEL_PLAYER_HERO_LEVEL] = 0;
+    cs[ZEL_PLAYER_EXPERIENCE] = 0xFF;
+    cs[ZEL_PLAYER_EXPERIENCE + 1] = 0x7F;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= sage_drive_option(cs, vga, 1, &ticks);
+    const u16 experience = (u16)(cs[ZEL_PLAYER_EXPERIENCE] |
+        ((u16)cs[ZEL_PLAYER_EXPERIENCE + 1] << 8));
+    const u16 hp = (u16)(cs[ZEL_PLAYER_HP] |
+        ((u16)cs[ZEL_PLAYER_HP + 1] << 8));
+    const u16 hp_max = (u16)(cs[ZEL_PLAYER_HP_MAX] |
+        ((u16)cs[ZEL_PLAYER_HP_MAX + 1] << 8));
+    printf("sage_release_vm_progression: ticks=%u level=%u exp=%u "
+           "hp=%u/%u selected=%u charges=%02x%02x%02x%02x%02x%02x%02x "
+           "max=%02x%02x%02x%02x%02x%02x%02x known=%02x%02x%02x%02x%02x%02x%02x "
+           "sages=%02x save=%02x last=%02x kind=%d\n",
+           ticks, cs[ZEL_PLAYER_HERO_LEVEL], experience, hp, hp_max,
+           cs[ZEL_PLAYER_SELECTED_SPELL],
+           cs[0xAB], cs[0xAC], cs[0xAD], cs[0xAE], cs[0xAF], cs[0xB0], cs[0xB1],
+           cs[0xB4], cs[0xB5], cs[0xB6], cs[0xB7], cs[0xB8], cs[0xB9], cs[0xBA],
+           cs[0xBB], cs[0xBC], cs[0xBD], cs[0xBE], cs[0xBF], cs[0xC0], cs[0xC1],
+           cs[0xE5], cs[0xC4], cs[0xC5],
+           zeliard_room_masm_vm_input_kind());
+    ok &= cs[ZEL_PLAYER_HERO_LEVEL] == 1 && experience == 149 &&
+          hp == 120 && hp_max == 120 &&
+          memcmp(cs + ZEL_PLAYER_SPELL_CHARGES,
+                 cs + ZEL_PLAYER_SPELL_CHARGES_MAX, 7) == 0 &&
+          cs[ZEL_PLAYER_SAGES_SPOKEN] == 0x80;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int sage_release_vm_save_failure(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    for (u8 row = 0; row < 3; ++row)
+        ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u32 serial = zeliard_room_masm_vm_save_serial();
+    static const char name[] = "FAIL";
+    size_t name_at = 0;
+    int entered = 0, retried = 0;
+    zeliard_room_masm_vm_force_save_failure(1);
+    for (unsigned step = 0; ok && step < 20000 && !retried; ++step) {
+        u8 acknowledge = 0, enter_key = 0;
+        if (cs[0xFF74] && !entered) {
+            if (name_at < sizeof(name) - 1)
+                zeliard_room_masm_vm_text_key((u8)name[name_at++]);
+            else {
+                cs[0xFF18] |= 1;
+                enter_key = 1;
+                entered = 1;
+            }
+        } else if (entered && cs[0xFF74] &&
+                   zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_NAME) {
+            retried = 1;
+        } else if (zeliard_room_masm_vm_at_input_poll() ||
+                   (step != 0 && step % 200 == 0)) {
+            acknowledge = 1;
+        }
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, enter_key);
+        if (enter_key) cs[0xFF18] &= (u8)~1u;
+        ++ticks;
+    }
+    zeliard_room_masm_vm_force_save_failure(0);
+    printf("sage_release_vm_save_failure: ticks=%u retried=%d serial=%u>%u\n",
+           ticks, retried, serial, zeliard_room_masm_vm_save_serial());
+    ok &= retried && zeliard_room_masm_vm_save_serial() == serial;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int sage_release_vm_spells_and_options(void) {
+    int ok = 1;
+    for (u8 sage = 2; sage <= 8; ++sage) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+            free(cs); free(vga); return 0;
+        }
+        cs[0xC006] = sage;
+        unsigned ticks = 0;
+        ok &= zeliard_room_masm_vm_start(
+            ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+        ok &= vm_reach_menu(cs, vga, &ticks);
+        const u8 spell = (u8)(sage - 1);
+        const u8 spoken = (u8)(0x80u >> (sage - 1));
+        printf("sage_release_vm_spell_%u: ticks=%u selected=%u known=%02x "
+               "spoken=%02x\n", sage, ticks,
+               cs[ZEL_PLAYER_SELECTED_SPELL],
+               cs[ZEL_PLAYER_SPELL_KNOWN + spell - 1],
+               cs[ZEL_PLAYER_SAGES_SPOKEN]);
+        ok &= cs[ZEL_PLAYER_SELECTED_SPELL] == spell &&
+              cs[ZEL_PLAYER_SPELL_KNOWN + spell - 1] == 0xFF &&
+              (cs[ZEL_PLAYER_SAGES_SPOKEN] & spoken) != 0;
+        u8 first_visit[0x100];
+        memcpy(first_visit, cs, sizeof(first_visit));
+        zeliard_room_masm_vm_stop();
+
+        ticks = 0;
+        ok &= zeliard_room_masm_vm_start(
+            ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+        ok &= vm_reach_menu(cs, vga, &ticks);
+        ok &= memcmp(first_visit, cs, sizeof(first_visit)) == 0;
+        zeliard_room_masm_vm_stop();
+        free(cs); free(vga);
+    }
+
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    unsigned ticks = 0;
+    ok &= zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    u8 before[0x100];
+    memcpy(before, cs, sizeof(before));
+    ok &= sage_drive_option(cs, vga, 2, &ticks);
+    ok &= memcmp(before, cs, sizeof(before)) == 0;
+    zeliard_room_masm_vm_stop();
+
+    ticks = 0;
+    ok &= zeliard_room_masm_vm_start(
+        ZEL_ROOM_SAGE, cs, 0x10000, vga, 0x10000);
+    ok &= sage_drive_option(cs, vga, 0, &ticks);
+    ok &= !zeliard_room_masm_vm_active();
+    printf("sage_release_vm_options: ticks=%u listen_unchanged=1 exit=1\n",
+           ticks);
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 int main(void) {
     const unsigned long long king = render_king();
     const unsigned long long sage = render_sage();
@@ -1067,7 +1347,12 @@ int main(void) {
                    muralla_release_vm_bank_amount_input(0) &&
                    muralla_release_vm_bank_amount_input(1) &&
                    king_first_visit_script() &&
-                   king_followup_scripts();
+                   king_followup_scripts() &&
+                   sage_release_vm_menu() &&
+                   sage_release_vm_record() &&
+                   sage_release_vm_save_failure() &&
+                   sage_release_vm_progression() &&
+                   sage_release_vm_spells_and_options();
     printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",
            king, sage, omoya);
     printf("VERDICT: %s: C room frames match release MASM\n", ok ? "PASS" : "FAIL");

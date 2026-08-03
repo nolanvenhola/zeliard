@@ -237,6 +237,7 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     room->kind = kind;
     room->active = 1;
     room->exit_requested = 0;
+    room->session_exit_requested = 0;
     room->script_state = 0;
     room->pending_sound_cue = 0;
     room->exact_vm_active = 0;
@@ -315,6 +316,7 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
     room->alternate_transition_requested = 0;
     room->entry_frame_prepared = 0;
     room->exit_requested = 0;
+    room->session_exit_requested = 0;
     room->script_state = 0;
     room->pending_sound_cue = 0;
     if (room->exact_vm_active) zeliard_room_masm_vm_stop();
@@ -900,12 +902,14 @@ int zeliard_room_advance_pit(zeliard_room_runtime_t *room,
         if (!zeliard_room_masm_vm_advance(
                 game_seg, game_size, vga, vga_size, 1,
                 game_seg[GVAR_INPUT_DIRECTION],
-                (u8)(game_seg[GVAR_SPACEBAR_STATE] |
-                     game_seg[GVAR_SKIP_FLAG2]),
-                game_seg[GVAR_ENTER_KEY] == 0x0D)) return -2;
+                game_seg[GVAR_SPACEBAR_STATE],
+                (u8)(game_seg[GVAR_ENTER_KEY] == 0x0D ||
+                     game_seg[GVAR_SKIP_FLAG2]))) return -2;
         const u8 cue = zeliard_room_masm_vm_take_sound_cue();
         if (cue) room->pending_sound_cue = cue;
         if (!zeliard_room_masm_vm_active()) {
+            room->session_exit_requested =
+                (u8)zeliard_room_masm_vm_session_exit_requested();
             zeliard_room_masm_vm_stop();
             room->exact_vm_active = 0;
             room->exit_requested = 1;

@@ -101,6 +101,41 @@ async function sampleOption({ name, kind, down, preSpaces = 1, rect }) {
   return { name, before, count: bounds.unique, bounds };
 }
 
+async function cancelShop(name, kind) {
+  await enterRoom(kind);
+  const before = await page.evaluate(() => ({
+    ip: window.__zeliard._zeliard_room_ip(),
+    input: window.__zeliard._zeliard_room_input_kind(),
+  }));
+  await page.keyboard.down('Alt');
+  const sampled = await page.evaluate(() => {
+    const module = window.__zeliard;
+    let rawAlt = false, cancelLatch = false;
+    for (let tick = 0; tick < 200; ++tick) {
+      module._zeliard_tick(5);
+      rawAlt ||= (module._zeliard_test_game_u8(0xFF16) & 2) !== 0;
+      cancelLatch ||= module._zeliard_test_game_u8(0xFF1E) !== 0;
+      if (module._zeliard_room_kind() === 0) break;
+    }
+    return { rawAlt, cancelLatch, room: module._zeliard_room_kind(),
+      ip: module._zeliard_room_ip(), input: module._zeliard_room_input_kind() };
+  });
+  await page.keyboard.up('Alt');
+  const result = await page.evaluate((sampled) => {
+    const module = window.__zeliard;
+    for (let tick = 0; module._zeliard_room_kind() !== 0 && tick < 2000;
+         ++tick)
+      module._zeliard_tick(5);
+    return { ...sampled, room: module._zeliard_room_kind(),
+      ip: module._zeliard_room_ip(), input: module._zeliard_room_input_kind() };
+  }, sampled);
+  if (!result.rawAlt || !result.cancelLatch ||
+      (result.room === kind && result.ip === before.ip &&
+       result.input === before.input))
+    throw new Error(`${name} Alt cancel failed: ${JSON.stringify({ before, result })}`);
+  return `${name}=cancelled`;
+}
+
 try {
   const results = [await sampleOption({
     // 212ARMRP render_shopkeeper_frame: BX=0717h -> (56, 23).
@@ -119,9 +154,15 @@ try {
   if (staticResults.length)
     throw new Error(`static MASM animation regions: ${staticResults.map(
       ({ name, count }) => `${name}=${count}`).join(', ')}`);
+  const cancels = [
+    await cancelShop('armory', 4),
+    await cancelShop('witchcraft', 5),
+    await cancelShop('bank', 7),
+  ];
   console.log(`shop_animations_browser: PASS ${results.map(
     ({ name, count }) => `${name}=${count}`).join(' ')}`);
-  console.log('VERDICT: PASS: MASM shop animations reach browser framebuffer');
+  console.log(`shop_alt_cancel_browser: PASS ${cancels.join(' ')}`);
+  console.log('VERDICT: PASS: MASM shop animations and Alt cancel reach browser');
 } finally {
   await browser.close();
 }

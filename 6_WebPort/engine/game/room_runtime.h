@@ -20,6 +20,7 @@ typedef struct {
     u8 alternate_transition_requested;
     u8 entry_frame_prepared;
     u8 exit_requested;
+    u8 session_exit_requested;
     u8 script_state;
     u8 script_delay;
     u8 script_command;
