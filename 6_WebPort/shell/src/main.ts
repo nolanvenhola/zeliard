@@ -64,9 +64,13 @@ const statusEl = document.getElementById('status')!;
 const startButton = document.getElementById('start') as HTMLButtonElement;
 const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
-const saveControlsEl = document.getElementById('save-controls') as HTMLDivElement;
+const storedSaveControlsEl = document.getElementById(
+    'stored-save-controls') as HTMLSpanElement;
 const saveSelectEl = document.getElementById('save-select') as HTMLSelectElement;
 const loadSaveEl = document.getElementById('load-save') as HTMLButtonElement;
+const downloadSaveEl = document.getElementById(
+    'download-save') as HTMLButtonElement;
+const openSaveEl = document.getElementById('open-save') as HTMLInputElement;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
@@ -232,19 +236,41 @@ async function boot() {
         }).filter((save): save is { version: number; name: string; record: number[] } =>
             save !== null);
     (window as any).__zeliardSaves = listSaves;
-    const loadSave = (name: string) => {
-        const save = listSaves().find((candidate) =>
-            candidate.name.toUpperCase() === name.toUpperCase() ||
-            candidate.name.toUpperCase() === `${name.toUpperCase()}.USR`);
-        if (!save) return false;
+    const loadRecord = (record: ArrayLike<number>) => {
+        if (record.length !== 0x100) return false;
         const pointer = Module._malloc(0x100);
         if (!pointer) return false;
-        Module.HEAPU8.set(save.record, pointer);
+        Module.HEAPU8.set(record, pointer);
         const loaded = Module._zeliard_load_record(pointer, 0x100) !== 0;
         Module._free(pointer);
         return loaded;
     };
+    const findSave = (name: string) => listSaves().find((candidate) =>
+            candidate.name.toUpperCase() === name.toUpperCase() ||
+            candidate.name.toUpperCase() === `${name.toUpperCase()}.USR`);
+    const loadSave = (name: string) => {
+        const save = findSave(name);
+        if (!save) return false;
+        return loadRecord(save.record);
+    };
     (window as any).__zeliardLoadSave = loadSave;
+    const downloadRecord = (name: string, record: ArrayLike<number>) => {
+        if (record.length !== 0x100) return false;
+        const filename = name.toLowerCase().endsWith('.usr')
+            ? name : `${name}.usr`;
+        const url = URL.createObjectURL(new Blob(
+            [Uint8Array.from(record)], { type: 'application/octet-stream' }));
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        return true;
+    };
+    (window as any).__zeliardDownloadSave = (name: string) => {
+        const save = findSave(name);
+        return !!save && downloadRecord(save.name, save.record);
+    };
     const refreshSaveControls = () => {
         const saves = listSaves();
         const selected = saveSelectEl.value;
@@ -256,12 +282,38 @@ async function boot() {
         }));
         if (saves.some((save) => save.name === selected))
             saveSelectEl.value = selected;
-        saveControlsEl.hidden = saves.length === 0;
+        storedSaveControlsEl.hidden = saves.length === 0;
     };
     loadSaveEl.addEventListener('click', () => {
         if (!saveSelectEl.value) return;
         if (!loadSave(saveSelectEl.value))
             setStatus('saved game could not be loaded');
+    });
+    downloadSaveEl.addEventListener('click', () => {
+        const save = findSave(saveSelectEl.value);
+        if (!save || !downloadRecord(save.name, save.record))
+            setStatus('saved game could not be downloaded');
+    });
+    openSaveEl.addEventListener('change', async () => {
+        const file = openSaveEl.files?.[0];
+        openSaveEl.value = '';
+        if (!file) return;
+        const record = new Uint8Array(await file.arrayBuffer());
+        if (record.length !== 0x100) {
+            setStatus(`${file.name} is not a 256-byte Zeliard save`);
+            return;
+        }
+        const base = file.name.replace(/\.usr$/i, '').slice(0, 8);
+        const name = `${base || 'ZELIARD'}.usr`;
+        localStorage.setItem(`zeliard.save.${name.toUpperCase()}`,
+            JSON.stringify({ version: 1, name, record: Array.from(record) }));
+        refreshSaveControls();
+        if (!loadRecord(record)) {
+            setStatus(`${file.name} could not be loaded`);
+            return;
+        }
+        saveSelectEl.value = name;
+        setStatus(`loaded ${name}`);
     });
     refreshSaveControls();
 
@@ -446,6 +498,7 @@ async function boot() {
                 recordPointer, recordPointer + 0x100));
             console.log(`[zeliard] saved ${name} (${record.length} bytes)`);
             refreshSaveControls();
+            downloadRecord(name, record);
         }
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,

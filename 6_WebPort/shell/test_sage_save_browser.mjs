@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { readFile } from 'node:fs/promises';
 
 const url = process.argv[2] ?? 'http://127.0.0.1:5177/';
 const browser = await chromium.launch({ headless: true });
@@ -87,7 +88,11 @@ try {
   }
   const serialBefore = await page.evaluate(() =>
     window.__zeliard._zeliard_save_serial());
+  const downloadPromise = page.waitForEvent('download');
   await pulse(13);
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  const downloadedRecord = await readFile(downloadPath);
   await page.waitForFunction((serial) =>
     window.__zeliard._zeliard_save_serial() === serial + 1,
     serialBefore, { timeout: 30000 });
@@ -118,27 +123,47 @@ try {
   });
   assert(persisted.name === 'CODEX.usr' && persisted.size === 0x100,
     'browser save payload mismatch', persisted);
+  const persistedRecord = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('zeliard.save.CODEX.USR')).record);
+  assert(download.suggestedFilename() === 'CODEX.usr' &&
+    downloadedRecord.length === 0x100 &&
+    downloadedRecord.equals(Buffer.from(persistedRecord)),
+    'portable .usr download mismatch', {
+      name: download.suggestedFilename(), size: downloadedRecord.length });
 
-  const restored = await page.evaluate(() => {
+  const expected = await page.evaluate(() => {
     const module = window.__zeliard;
     const expectedGoldHigh = module._zeliard_test_game_u8(0x85);
     const expectedSages = module._zeliard_test_game_u8(0xE5);
     module._zeliard_test_game_set_u8(0x85, expectedGoldHigh ^ 0xFF);
-    const loaded = window.__zeliardLoadSave('CODEX');
+    return { expectedGoldHigh, expectedSages };
+  });
+  await page.locator('#open-save').setInputFiles({
+    name: 'CODEX.usr',
+    mimeType: 'application/octet-stream',
+    buffer: downloadedRecord,
+  });
+  await page.waitForFunction(() =>
+    window.__zeliard._zeliard_scene() === 2 &&
+    window.__zeliard._zeliard_town_area() === 1);
+  const restored = await page.evaluate((saved) => {
+    const module = window.__zeliard;
     let frameHash = 0xCBF29CE484222325n;
     const frame = module._zeliard_framebuf();
     for (let index = 0; index < 320 * 200; ++index) {
       frameHash ^= BigInt(module.HEAPU8[frame + index]);
       frameHash = BigInt.asUintN(64, frameHash * 0x100000001B3n);
     }
-    return { loaded, scene: module._zeliard_scene(),
-      goldHigh: module._zeliard_test_game_u8(0x85), expectedGoldHigh,
-      sages: module._zeliard_test_game_u8(0xE5), expectedSages,
+    return { loaded: true, scene: module._zeliard_scene(),
+      goldHigh: module._zeliard_test_game_u8(0x85),
+      expectedGoldHigh: saved.expectedGoldHigh,
+      sages: module._zeliard_test_game_u8(0xE5),
+      expectedSages: saved.expectedSages,
       area: module._zeliard_town_area(),
       position: module._zeliard_test_game_u16(0x80),
       column: module._zeliard_test_game_u8(0x83),
       frameHash: frameHash.toString(16).padStart(16, '0') };
-  });
+  }, expected);
   assert(restored.loaded && restored.scene === 2 &&
     restored.goldHigh === restored.expectedGoldHigh &&
     restored.sages === restored.expectedSages && restored.area === 1 &&
@@ -148,8 +173,9 @@ try {
     'Muralla saved-game frame mismatch', restored);
   assert(pageErrors.length === 0, 'browser errors', pageErrors);
   console.log(JSON.stringify({ verdict: 'PASS', continuePrompt, persisted,
-    restored }));
-  console.log('VERDICT: PASS: exact Sage save, continue prompt, and restore');
+    download: { name: download.suggestedFilename(),
+      size: downloadedRecord.length }, restored }));
+  console.log('VERDICT: PASS: exact Sage .usr save, prompt, import, and restore');
 } finally {
   await browser.close();
 }
