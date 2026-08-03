@@ -33,6 +33,7 @@ const VERIFIED_DATA_HASHES = new Map([
     ['zelres2/data/249UGM2S.msd', '6743ee4a9bcd6a6fd2a4717712c2d0767dfdff1e3650d30910d2df81aa3ab9f0'],
     ['zelres3/data/320MP10.mdt', '5f27a710ed0470de24d2aa5c3c8b13b9269dee47585fa2e4385961451d1ed66a'],
     ['zelres3/data/351FMAN.grp', 'f8ac50e4c6d0fc9038914751360b6eb89ab90f14f39b7be500814494a3e11dda'],
+    ['zelres3/data/352ROKA.grp', 'cd72a12bb051de507ba3e52aad335d6fed099d0db31b75dd5c7a703926d5d693'],
     ['zelres3/data/374MPP1.grp', '4987c57069e1af6583cad22829049d9b6be98efa687fa092c63594153b7a868c'],
 ]);
 
@@ -112,10 +113,9 @@ const ASSET_MAP = [
     ['zelres2/data/247MGT2S.msd', 'mgt2.msd'],
     ['zelres2/data/248UGM1S.msd', 'ugm1.msd'],
     ['zelres2/data/249UGM2S.msd', 'ugm2.msd'],
-    /* 200FIGHT cold entry for Muralla's first cavern route. */
-    ['zelres3/data/320MP10.mdt', 'mp10.mdt'],
+    /* 200FIGHT cold entry: forced ROKA doorway crossing. */
     ['zelres3/data/351FMAN.grp', 'fman.grp'],
-    ['zelres3/data/374MPP1.grp', 'mpp1.grp'],
+    ['zelres3/data/352ROKA.grp', 'roka.grp'],
 ];
 
 const EXTRA_ASSET_MAP = [

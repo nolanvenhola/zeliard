@@ -46,12 +46,9 @@ static int run_direction(u8 direction) {
     ok &= transition.packed_x == (direction ? 0x3E : 0xA8);
     ok &= game[0x84] == 7;
     ok &= game[0xC2] == (direction ? 0x41 : 0x40);
-    ok &= transition.map_width == 0x00F0;
     ok &= transition.wait_target == 20;
-    ok &= (direction ? game[0xC013] == 0x1A
-                     : game[0xC013] == 0xFF);
-    ok &= (direction ? game[0xC014] == 0x00
-                     : game[0xC014] == 0xFF);
+    ok &= transition.roka_map[0] == 0x07;
+    ok &= transition.roka_map[sizeof(transition.roka_map) - 1] == 0x06;
 
     const unsigned long long first_hash = playfield_hash(vga);
     ok &= zeliard_cavern_transition_advance_pit(
@@ -75,22 +72,28 @@ static int run_direction(u8 direction) {
     ok &= transition.pose == 0x1A && game[0xE7] == 0x1A;
 
     const unsigned long long final_hash = playfield_hash(vga);
+    const unsigned long long tiles_hash = fnv1a64(
+        transition.roka_tiles, sizeof(transition.roka_tiles));
+    const unsigned long long map_hash = fnv1a64(
+        transition.roka_map, sizeof(transition.roka_map));
     printf("cavern_transition_%s: first=%016llx final=%016llx "
-           "steps=%u packed_x=%02x\n",
+           "tiles=%016llx map=%016llx steps=%u packed_x=%02x\n",
            direction ? "right_to_left" : "left_to_right",
-           first_hash, final_hash, transition.step, transition.packed_x);
+           first_hash, final_hash, tiles_hash, map_hash,
+           transition.step, transition.packed_x);
     const unsigned long long expected_first = direction
-        ? 0x8C75BEF27064A08CULL : 0x48D95049BE5ACC4BULL;
+        ? 0xAE4B7B039A2FF776ULL : 0x9AD666D4443574F5ULL;
     return ok && first_hash == expected_first &&
-        final_hash == 0x0704EC9455A7754AULL &&
-        fnv1a64(transition.pattern_tiles,
-                sizeof(transition.pattern_tiles)) == 0x6756A16ADA39B5E7ULL &&
-        fnv1a64(transition.map_tiles, sizeof(transition.map_tiles)) != 0;
+        final_hash == 0x38B622AF55C515BCULL &&
+        tiles_hash == 0xF3A66951FE6F86FDULL &&
+        map_hash == 0xE6059A8DF57C7540ULL;
 }
 
 int main(void) {
-    const int ok = run_direction(0) && run_direction(1);
-    printf("VERDICT: %s: 200FIGHT check_c3 forced-run transition\n",
+    const int left_ok = run_direction(0);
+    const int right_ok = run_direction(1);
+    const int ok = left_ok && right_ok;
+    printf("VERDICT: %s: 200FIGHT ROKA check_c3 forced-run transition\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

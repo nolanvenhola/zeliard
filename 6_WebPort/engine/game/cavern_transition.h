@@ -16,9 +16,8 @@ typedef struct {
     u8 packed_x;
     u8 wait_ticks;
     u8 wait_target;
-    u16 map_width;
-    u8 map_tiles[240 * 64];
-    u8 pattern_tiles[26 * 64];
+    u8 roka_map[28 * 18];
+    u8 roka_tiles[0x7C * 64];
     u8 fman[8176];
     u8 background[0x10000];
 } zeliard_cavern_transition_t;
