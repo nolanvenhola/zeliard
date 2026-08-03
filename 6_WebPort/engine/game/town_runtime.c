@@ -46,6 +46,16 @@ static const town_area_asset_t TOWN_AREA_ASSETS[] = {
     {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp"},
 };
 
+static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {
+    for (size_t index = 0;
+         index < sizeof(TOWN_AREA_ASSETS) / sizeof(TOWN_AREA_ASSETS[0]);
+         ++index) {
+        if (TOWN_AREA_ASSETS[index].area_id == area_id)
+            return &TOWN_AREA_ASSETS[index];
+    }
+    return NULL;
+}
+
 static u16 read_u16(const u8 *memory, u16 offset) {
     return (u16)(memory[offset] | ((u16)memory[(u16)(offset + 1)] << 8));
 }
@@ -299,7 +309,6 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             return -1;
     }
     memset(town, 0, sizeof(*town));
-    town->area = ZEL_TOWN_AREA_FELISHIKA;
     town->facing_item_position = 0xFFFF;
     town->facing_npc_position = 0xFFFF;
     town->facing_door_type = 0xFF;
@@ -307,6 +316,11 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     zeliard_player_state_t player;
     if (!zeliard_player_state_bind(&player, cs, game->segment_size[0]))
         return -1;
+    const u8 saved_area = zeliard_player_read_u8(
+        &player, PLAYER_CURRENT_AREA);
+    const town_area_asset_t *area_assets = town_assets_for_area_id(saved_area);
+    if (!area_assets) return -1;
+    town->area = area_assets->area;
     u8 *cs_1000 = game->segment[1];
     u8 *cs_2000 = game->segment[2];
     u8 *cs_3000 = game->segment[3];
@@ -334,21 +348,24 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             "tman.grp", 0x1000, 0x6000, 2}))
         return -2;
 
-    /* stick.asm AL=1, AH=80h selects CMAP.MDT and loads its raw MDT body. */
-    if (!load_raw_chunk("cmap.mdt", cs + TOWN_DESCRIPTOR,
+    /* game.asm:start_load_game passes save_sage (C4h) as loader function 1's
+     * AH selector.  The MDT and pattern bank must therefore be chosen as one
+     * saved-area transaction; mixing Muralla position state with CMAP/CPAT
+     * corrupts the transparent middle layer. */
+    if (!load_raw_chunk(area_assets->map_asset, cs + TOWN_DESCRIPTOR,
                         0x10000 - TOWN_DESCRIPTOR, NULL) ||
         !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_LOAD_CMAP, "game.asm:load_first_level", "cmap.mdt",
-            0, TOWN_DESCRIPTOR, 1}))
+            ZEL_TOWN_EVENT_LOAD_CMAP, "game.asm:load_first_level",
+            area_assets->map_asset, 0, TOWN_DESCRIPTOR, 1}))
         return -2;
     if (!decode_town_header(cs, town)) return -3;
 
-    /* 106TOWN:load_town_pattern_chunk, palette index zero -> CPAT.GRP. */
-    if (load_pattern_bank(game, "cpat.grp"))
+    /* 106TOWN:load_town_pattern_chunk selects the pattern paired with MDT. */
+    if (load_pattern_bank(game, area_assets->pattern_asset))
         return -4;
     if (!append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_LOAD_CPAT, "106TOWN:load_town_pattern_chunk",
-            "cpat.grp", 0x1000, TOWN_PATTERN_DEST, 2}))
+            area_assets->pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2}))
         return -4;
 
     if (zeliard_mole_render_mcga(cs_3000, 0x10000, vga, vga_size) ||

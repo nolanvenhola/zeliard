@@ -43,6 +43,10 @@ try {
     module._zeliard_opening_set_phase_for_test(3);
     module._zeliard_key(13);
     module._zeliard_tick(0);
+    module._zeliard_test_game_set_u8(0x80, 0x20);
+    module._zeliard_test_game_set_u8(0x81, 0x00);
+    module._zeliard_test_game_set_u8(0x83, 0x10);
+    module._zeliard_test_game_set_u8(0xC4, 0x81);
     module._zeliard_test_enter_room(2);
   });
   await page.waitForFunction(() => window.__zeliard._zeliard_room_kind() === 2,
@@ -121,14 +125,27 @@ try {
     const expectedSages = module._zeliard_test_game_u8(0xE5);
     module._zeliard_test_game_set_u8(0x85, expectedGoldHigh ^ 0xFF);
     const loaded = window.__zeliardLoadSave('CODEX');
+    let frameHash = 0xCBF29CE484222325n;
+    const frame = module._zeliard_framebuf();
+    for (let index = 0; index < 320 * 200; ++index) {
+      frameHash ^= BigInt(module.HEAPU8[frame + index]);
+      frameHash = BigInt.asUintN(64, frameHash * 0x100000001B3n);
+    }
     return { loaded, scene: module._zeliard_scene(),
       goldHigh: module._zeliard_test_game_u8(0x85), expectedGoldHigh,
-      sages: module._zeliard_test_game_u8(0xE5), expectedSages };
+      sages: module._zeliard_test_game_u8(0xE5), expectedSages,
+      area: module._zeliard_town_area(),
+      position: module._zeliard_test_game_u16(0x80),
+      column: module._zeliard_test_game_u8(0x83),
+      frameHash: frameHash.toString(16).padStart(16, '0') };
   });
   assert(restored.loaded && restored.scene === 2 &&
     restored.goldHigh === restored.expectedGoldHigh &&
-    restored.sages === restored.expectedSages,
+    restored.sages === restored.expectedSages && restored.area === 1 &&
+    restored.position === 0x20 && restored.column === 0x10,
     'saved-game bootstrap did not restore the record', restored);
+  assert(restored.frameHash === '776b165581f82eb8',
+    'Muralla saved-game frame mismatch', restored);
   assert(pageErrors.length === 0, 'browser errors', pageErrors);
   console.log(JSON.stringify({ verdict: 'PASS', continuePrompt, persisted,
     restored }));

@@ -26,6 +26,7 @@ int zeliard_sound_cue(void);
 void zeliard_opening_set_phase_for_test(int phase);
 int zeliard_load_record(const u8 *record, int size);
 int zeliard_test_game_u8(int offset);
+int zeliard_town_area(void);
 
 static unsigned long long fnv1a64(const u8 *data, size_t size) {
     unsigned long long hash = 0xCBF29CE484222325ULL;
@@ -219,6 +220,7 @@ int main(void) {
     record[0x93] = 1;          /* shield */
     record[0x9D] = 3;          /* selected spell */
     record[0xBD] = 0xFF;       /* Fuego learned */
+    record[0xC4] = 0x81;       /* saved at Muralla's Sage */
     record[0xE5] = 0xE0;       /* first three sages spoken */
     const int gold_before_invalid = zeliard_test_game_u8(0x85);
     const int invalid_rejected = !zeliard_load_record(record, 0xFF) &&
@@ -234,15 +236,23 @@ int main(void) {
         zeliard_test_game_u8(0x8D) == 7 &&
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
-        zeliard_test_game_u8(0x9D) == 3 &&
-        zeliard_test_game_u8(0xBD) == 0xFF &&
-        zeliard_test_game_u8(0xE5) == 0xE0;
+         zeliard_test_game_u8(0x9D) == 3 &&
+         zeliard_test_game_u8(0xBD) == 0xFF &&
+         zeliard_test_game_u8(0xC4) == 0x81 &&
+         zeliard_town_area() == 1 &&
+         zeliard_test_game_u8(0xE5) == 0xE0;
+    const unsigned long long restored_frame = fnv1a64(
+        g_framebuf, ZELIARD_FB_SIZE);
+    const int restored_muralla_frame =
+        restored_frame == 0xCB57D41686D4A49DULL;
+    ok &= restored_muralla_frame;
     ok &= restored;
     printf("main_controls:save_restore_bootstrap: %s invalid=%d level=%d "
-           "spell=%d sages=%02x cumulative=%d\n", restored ? "PASS" : "FAIL",
+           "spell=%d sages=%02x area=%d frame=%016llx cumulative=%d\n",
+           restored && restored_muralla_frame ? "PASS" : "FAIL",
            invalid_rejected,
            zeliard_test_game_u8(0x8D), zeliard_test_game_u8(0x9D),
-           zeliard_test_game_u8(0xE5), ok);
+           zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame, ok);
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

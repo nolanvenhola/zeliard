@@ -210,7 +210,8 @@ static bool enter_game_scene(void) {
         return false;
     }
     g_scene = SCENE_GAME;
-    platform_log("zeliard_tick: first castle frame ready (%u boot, %u town events)",
+    platform_log("zeliard_tick: saved town frame ready (area=%u, %u boot, %u town events)",
+                 (unsigned)g_town_runtime.area,
                  (unsigned)g_game_exec.event_count,
                  (unsigned)g_town_runtime.event_count);
     return true;
