@@ -1,5 +1,6 @@
 #include "cavern_transition.h"
 
+#include "../core/player_state.h"
 #include "../load/fill_buffer.h"
 #include "../platform/platform.h"
 #include "../render/palette.h"
@@ -12,6 +13,15 @@ enum {
     PLAYER_POSE = 0x00E7,
     PLAYER_BOSS_INTRO_FLAG = 0x00C3,
     GVAR_ANIM_SPEED = 0xFF33,
+    GVAR_COLOR_SELECT = 0xFF36,
+    GVAR_FLAG_SHIELD = 0xFF38,
+    GVAR_FLAG_CLIMBING = 0xFF39,
+    GVAR_FLAG_RIDING = 0xFF3A,
+    GVAR_EQUIP_BYTE = 0xFF3D,
+    GVAR_HERO_FRAME = 0xFF3F,
+    GVAR_FLAG_HERO_STATE = 0xFF40,
+    GVAR_WEAPON_STATE = 0xFF41,
+    GVAR_SHIELD_SELECT = 0xFF42,
     PLAYFIELD_X = 48,
     PLAYFIELD_Y = 14,
     PLAYFIELD_COLS = 28,
@@ -60,22 +70,25 @@ static u8 roka_transform_pixel(u8 value) {
 }
 
 static void decode_roka_tile(const u8 *src, u8 *dst) {
-    /* 206GFMCA:mca_sprite_2block_render: two 3-byte blocks produce eight
-     * chunky MCGA pixels, followed by the selected component transform. */
+    /* 200FIGHT first calls GMMCGA:2C2A. It extracts sixteen 3-bit planar
+     * pixels from each six-byte source row. 206GFMCA:4614 then pairs those
+     * pixels into eight 6-bit MCGA indices and applies transform slot zero. */
     for (u8 row = 0; row < 8; ++row) {
-        for (u8 block = 0; block < 2; ++block) {
-            const u8 a = *src++;
-            const u8 b = *src++;
-            const u8 c = *src++;
-            u8 pixels[4];
-            /* lodsw is little-endian. 206GFMCA moves its high byte first,
-             * then shifts DL twice more as an independent byte. */
-            pixels[0] = (u8)(b >> 2);
-            pixels[1] = (u8)(((b & 3) << 4) | (a >> 4));
-            pixels[2] = (u8)(((a & 0x0F) << 2) | (c >> 6));
-            pixels[3] = (u8)(c & 0x3F);
-            for (u8 i = 0; i < 4; ++i)
-                *dst++ = pixels[i] ? roka_transform_pixel(pixels[i]) : 0;
+        const u16 plane_0 = (u16)(((u16)src[0] << 8) | src[1]);
+        const u16 plane_1 = (u16)(((u16)src[2] << 8) | src[3]);
+        const u16 plane_2 = (u16)(((u16)src[4] << 8) | src[5]);
+        src += 6;
+        for (u8 pixel = 0; pixel < 8; ++pixel) {
+            const u8 left_bit = (u8)(15u - pixel * 2u);
+            const u8 right_bit = (u8)(left_bit - 1u);
+            const u8 left = (u8)((((plane_2 >> left_bit) & 1u) << 2) |
+                                 (((plane_1 >> left_bit) & 1u) << 1) |
+                                  ((plane_0 >> left_bit) & 1u));
+            const u8 right = (u8)((((plane_2 >> right_bit) & 1u) << 2) |
+                                  (((plane_1 >> right_bit) & 1u) << 1) |
+                                   ((plane_0 >> right_bit) & 1u));
+            const u8 packed = (u8)((left << 3) | right);
+            *dst++ = packed ? roka_transform_pixel(packed) : 0;
         }
     }
 }
@@ -182,18 +195,20 @@ static void preprocess_fman(zeliard_cavern_transition_t *transition) {
     }
 }
 
-static void draw_fman_layer(const zeliard_cavern_transition_t *transition,
-                            u16 frame_offset, int x, int y, u8 *vga) {
+static void compose_fman_cells(zeliard_cavern_transition_t *transition,
+                               u16 frame_offset, u8 output_cell,
+                               u8 cell_count) {
     const u8 *indices = transition->fman + frame_offset;
-    for (u8 cell = 0; cell < 9; ++cell) {
+    for (u8 cell = 0; cell < cell_count; ++cell) {
         const u8 tile_index = indices[cell];
+        const u8 target_cell = (u8)(output_cell + cell);
+        if (target_cell >= 9) break;
         if (tile_index == 0) continue;
         const size_t tile_offset = FMAN_TILE_DATA + (size_t)tile_index * 32;
         if (tile_offset + 32 > sizeof(transition->fman)) continue;
         const u8 *tile = transition->fman + tile_offset;
         const u8 *masks = transition->fman_masks + (size_t)tile_index * 8;
-        const int cell_x = x + (cell % 3) * 8;
-        const int cell_y = y + (cell / 3) * 8;
+        u8 *target = transition->hero_cells + (size_t)target_cell * 64;
         for (u8 row = 0; row < 8; ++row) {
             u16 words[2] = {
                 (u16)(tile[row * 4] | ((u16)tile[row * 4 + 1] << 8)),
@@ -208,35 +223,110 @@ static void draw_fman_layer(const zeliard_cavern_transition_t *transition,
                     color = (u8)((color << 1) | (*word >> 15));
                     *word <<= 1;
                 }
-                const int px = cell_x + col;
-                const int py = cell_y + row;
-                if (!preserve && px >= 0 && px < 320 && py >= 0 && py < 200)
-                    vga[(size_t)py * 320 + px] = HERO_PALETTE[color];
+                if (!preserve)
+                    target[(size_t)row * 8 + col] = HERO_PALETTE[color];
             }
         }
     }
 }
 
-static void draw_hero(zeliard_cavern_transition_t *transition, u8 *vga) {
+static u8 shield_state_get(const u8 *game_seg) {
+    const u8 shield = game_seg[ZEL_PLAYER_SHIELD];
+    if (shield == 0) return 0;
+    return shield >= 4 ? 2 : 1;
+}
+
+static void compose_ordinary_hero(zeliard_cavern_transition_t *transition,
+                                  const u8 *game_seg) {
+    const u8 facing = (u8)(game_seg[PLAYER_FACING_DIRECTION] & 1u);
+    const u8 pose = game_seg[PLAYER_POSE];
+    const u8 shield_state = shield_state_get(game_seg);
+    const u8 flag_shield = game_seg[GVAR_FLAG_SHIELD];
+    u16 frame_offset;
+
+    memset(transition->hero_cells, 0, sizeof(transition->hero_cells));
+
+    /* 206GFMCA:3ABE-3B7F. The shield bank is selected on the rear
+     * equipment pass for a left-facing Duke. */
+    frame_offset = facing ? 0x01B9 : 0x0117;
+    if (shield_state && !facing) {
+        frame_offset = (u16)(frame_offset + 0x006C +
+            (flag_shield & 9u) + (shield_state > 1 ? 0x001B : 0));
+        compose_fman_cells(transition, frame_offset,
+                           flag_shield ? 3 : 0,
+                           flag_shield ? 6 : 9);
+    } else if (!flag_shield && pose != 0x80) {
+        const u8 rear_pose = (u8)((pose + 2u) & 3u);
+        if ((rear_pose & 1u) == 0) {
+            frame_offset = (u16)(frame_offset + rear_pose * 9u);
+            compose_fman_cells(transition, frame_offset, 0, 9);
+        }
+    }
+
+    /* 206GFMCA:3B80-3BFC. These state tests choose a complete body bank,
+     * not an overlay applied to a generic walking sprite. */
+    frame_offset = facing ? 0x0075 : 0x0000;
+    if (game_seg[ZEL_PLAYER_INIT_COMPLETE]) {
+        frame_offset = (u16)(frame_offset + 0x005A + (pose & 3u) * 9u);
+    } else if (flag_shield) {
+        frame_offset = (u16)(frame_offset + 0x002D);
+    } else if (game_seg[GVAR_EQUIP_BYTE] & 0x80u) {
+        frame_offset = (u16)(frame_offset + 0x003F);
+    } else if (game_seg[GVAR_SHIELD_SELECT] == 1) {
+        frame_offset = (u16)(frame_offset + 0x0048);
+    } else if (game_seg[GVAR_SHIELD_SELECT] == 2) {
+        frame_offset = (u16)(frame_offset + 0x0051);
+    } else if (game_seg[GVAR_EQUIP_BYTE] == 0x7F) {
+        frame_offset = (u16)(frame_offset + 0x0036);
+    } else if (pose == 0x80) {
+        frame_offset = (u16)(frame_offset + 0x0024);
+    } else {
+        frame_offset = (u16)(frame_offset + (pose & 3u) * 9u);
+    }
+    compose_fman_cells(transition, frame_offset, 0, 9);
+
+    if (game_seg[ZEL_PLAYER_INIT_COMPLETE]) return;
+
+    /* 206GFMCA:3C05-3CDA. The shield bank moves to the front equipment
+     * pass when Duke faces right. */
+    frame_offset = facing ? 0x01B9 : 0x0117;
+    if (shield_state && facing) {
+        frame_offset = (u16)(frame_offset + 0x006C +
+            (flag_shield & 9u) + (shield_state > 1 ? 0x001B : 0));
+    } else if (flag_shield) {
+        frame_offset = (u16)(frame_offset + 0x001B);
+    } else if (pose == 0x80) {
+        frame_offset = (u16)(frame_offset + 0x001B);
+    } else {
+        frame_offset = (u16)(frame_offset + (pose & 3u) * 9u);
+    }
+    compose_fman_cells(transition, frame_offset,
+                       flag_shield ? 3 : 0,
+                       flag_shield ? 6 : 9);
+}
+
+static void blit_hero(zeliard_cavern_transition_t *transition,
+                      const u8 *game_seg, u8 *vga) {
     /* 206GFMCA:hero_sprite_col_blit_pos forms one linear mode-13h address:
      * BL * 320 + BH * 4. A large BH therefore carries into Y. */
     const unsigned address = 0x6Eu * 320u + transition->packed_x * 4u;
     const int x = (int)(address % 320u);
     const int y = (int)(address / 320u);
-    const u8 frame = (u8)(transition->pose & 3);
-    const u16 body = transition->direction ? 0x075 : 0x000;
-    const u16 overlay = transition->direction ? 0x1B9 : 0x117;
-
-    /* 206GFMCA:render_frame_rows, ordinary walking state. The first
-     * equipment layer is behind Duke on alternating poses; the body and
-     * second equipment layer are then drawn in their original order. */
-    if ((frame & 1u) == 0)
-        draw_fman_layer(transition,
-                        (u16)(overlay + (((frame + 2u) & 3u) * 9u)),
-                        x, y, vga);
-    draw_fman_layer(transition, (u16)(body + frame * 9u), x, y, vga);
-    draw_fman_layer(transition,
-                    (u16)(overlay + 0x1Bu + frame * 9u), x, y, vga);
+    compose_ordinary_hero(transition, game_seg);
+    for (u8 cell = 0; cell < 9; ++cell) {
+        const int cell_x = x + (cell % 3) * 8;
+        const int cell_y = y + (cell / 3) * 8;
+        const u8 *pixels = transition->hero_cells + (size_t)cell * 64;
+        for (u8 row = 0; row < 8; ++row) {
+            const int py = cell_y + row;
+            if (py < 0 || py >= 200) continue;
+            for (u8 col = 0; col < 8; ++col) {
+                const int px = cell_x + col;
+                if (px >= 0 && px < 320)
+                    vga[(size_t)py * 320 + px] = pixels[row * 8 + col];
+            }
+        }
+    }
 }
 
 static void render_step(zeliard_cavern_transition_t *transition,
@@ -248,7 +338,7 @@ static void render_step(zeliard_cavern_transition_t *transition,
         transition->packed_x = (u8)(transition->packed_x - 2);
     else
         transition->packed_x = (u8)(transition->packed_x + 2);
-    draw_hero(transition, vga);
+    blit_hero(transition, game_seg, vga);
     transition->step++;
 }
 
@@ -267,9 +357,18 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
     if (stage_roka_background(transition, vga)) return -2;
     palette_set_game_mcga();
 
+    /* 200FIGHT:enter_combat_screen calls reset_combat_state immediately
+     * before check_c3. Preserve equipment in the player record, but clear
+     * the transient combat/render state exactly as that path does. */
+    game_seg[GVAR_EQUIP_BYTE] = 0;
+    game_seg[GVAR_FLAG_SHIELD] = 0;
+    game_seg[GVAR_COLOR_SELECT] = 0;
+    game_seg[PLAYER_POSE] = 0;
+    game_seg[GVAR_FLAG_RIDING] = 0;
+
     transition->direction = game_seg[PLAYER_BOSS_INTRO_FLAG] ? 1 : 0;
     transition->packed_x = transition->direction ? 0x40 : 0xA6;
-    transition->pose = game_seg[PLAYER_POSE];
+    transition->pose = 0;
     transition->wait_target = (u8)(4u * game_seg[GVAR_ANIM_SPEED]);
     if (transition->wait_target == 0) transition->wait_target = 1;
     if (transition->direction) game_seg[PLAYER_FACING_DIRECTION] |= 1;

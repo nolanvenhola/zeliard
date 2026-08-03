@@ -20,6 +20,8 @@ typedef struct {
     u8 roka_tiles[0x7C * 64];
     u8 fman[8176];
     u8 fman_masks[0xE6 * 8];
+    /* 206GFMCA:sprite_tmp_buf, nine cell-major 8x8 blocks. */
+    u8 hero_cells[9 * 64];
     u8 background[0x10000];
 } zeliard_cavern_transition_t;
 

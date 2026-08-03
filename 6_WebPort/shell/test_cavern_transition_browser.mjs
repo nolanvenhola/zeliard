@@ -30,6 +30,8 @@ try {
     m._zeliard_test_game_set_u8(0x80, 0xB9);
     m._zeliard_test_game_set_u8(0x81, 0);
     m._zeliard_test_game_set_u8(0x83, 0x10);
+    /* Exercise 206GFMCA:shield_state_get and the shield-specific FMAN bank. */
+    m._zeliard_test_game_set_u8(0x93, 1);
     m._zeliard_test_game_set_u8(0xFF2A, 0xDF);
     m._zeliard_test_game_set_u8(0xFF2B, 0xC5);
     m._zeliard_key_down(38);
