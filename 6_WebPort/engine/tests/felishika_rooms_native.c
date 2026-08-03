@@ -16,6 +16,19 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
     return value;
 }
 
+static unsigned long long frame_rect_hash(const u8 *frame, u16 x, u16 y,
+                                          u16 width, u16 height) {
+    unsigned long long value = 0xCBF29CE484222325ULL;
+    for (u16 row = 0; row < height; ++row) {
+        const u8 *pixel = frame + (size_t)(y + row) * 320u + x;
+        for (u16 column = 0; column < width; ++column) {
+            value ^= pixel[column];
+            value *= 0x100000001B3ULL;
+        }
+    }
+    return value;
+}
+
 static u8 *read_file(const char *path, size_t *size) {
     FILE *file = fopen(path, "rb");
     if (!file) return NULL;
@@ -605,11 +618,15 @@ static int muralla_release_vm_armory_buy(void) {
     ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
     const u32 gold = ((u32)cs[0x85] << 16) |
                      ((u32)cs[0x87] << 8) | cs[0x86];
+    const unsigned long long sword_frame = frame_rect_hash(
+        vga, 192, 171, 20, 18);
     printf("muralla_release_vm_armory_buy: ticks=%u gold=%u sword=%u "
-           "inventory=%02x\n", ticks, gold, cs[0x92], cs[0xD2]);
+           "inventory=%02x frame=%016llx\n", ticks, gold, cs[0x92],
+           cs[0xD2], sword_frame);
     /* 212ARMRP:weapon_commit replaces player:sword; there is no carried
      * sword array. The old tier is returned through script_give_item. */
-    ok &= cs[0x92] == 1 && gold == 1350 && cs[0xD2] == 0xC0;
+    ok &= cs[0x92] == 1 && gold == 1350 && cs[0xD2] == 0xC0 &&
+          sword_frame == 0xACE1EEC895369B0AULL;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -642,11 +659,23 @@ static int muralla_release_vm_armory_replace_shield(void) {
         ((u16)cs[ZEL_PLAYER_SHIELD_HP + 1] << 8));
     const u16 shield_max = (u16)(cs[ZEL_PLAYER_SHIELD_HP_MAX] |
         ((u16)cs[ZEL_PLAYER_SHIELD_HP_MAX + 1] << 8));
+    const unsigned long long shield_frame = frame_rect_hash(
+        vga, 246, 164, 24, 32);
+    const unsigned long long shield_icon = frame_rect_hash(
+        vga, 250, 164, 16, 16);
+    const unsigned long long shield_field = frame_rect_hash(
+        vga, 246, 186, 24, 10);
     printf("muralla_release_vm_armory_shield: ticks=%u gold=%u shield=%u "
-           "hp=%u/%u inventory=%02x\n", ticks, gold,
-           cs[ZEL_PLAYER_SHIELD], shield_hp, shield_max, cs[0xDB]);
+           "hp=%u/%u inventory=%02x frame=%016llx icon=%016llx "
+           "field=%016llx\n",
+           ticks, gold,
+           cs[ZEL_PLAYER_SHIELD], shield_hp, shield_max, cs[0xDB],
+           shield_frame, shield_icon, shield_field);
     ok &= cs[ZEL_PLAYER_SHIELD] == 1 && gold == 1025 &&
-        shield_hp == 30 && shield_max == 30 && cs[0xDB] == 0xC0;
+        shield_hp == 30 && shield_max == 30 && cs[0xDB] == 0xC0 &&
+        shield_frame == 0xE611803CA6AB2963ULL &&
+        shield_icon == 0x18FDBA10EBC3FCC6ULL &&
+        shield_field == 0x741B4FFF4B27D4F0ULL;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -741,6 +770,93 @@ static int muralla_release_vm_bank_exchange(void) {
            (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
            zeliard_room_masm_vm_input_kind());
     ok &= almas == 0 && gold == 60;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static u32 bank_amount(const u8 *cs) {
+    return ((u32)cs[0xAD29] << 16) |
+           (u16)(cs[0xAD2A] | ((u16)cs[0xAD2B] << 8));
+}
+
+static int bank_reach_amount_selector(u8 *cs, u8 *vga, u8 menu_row,
+                                      unsigned *ticks) {
+    if (!vm_reach_menu(cs, vga, ticks)) return 0;
+    for (u8 row = 0; row < menu_row; ++row)
+        if (!vm_run_to_next_poll(cs, vga, 2, 0, ticks)) return 0;
+
+    for (unsigned step = 0; step < 8000; ++step) {
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll();
+        if (!zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0)) return 0;
+        ++*ticks;
+        if (acknowledge && !zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, 0, 0)) return 0;
+        if (cs[0xAD2F] == 0x23 &&
+            (cs[0xAD2C] || cs[0xAD2D] || cs[0xAD2E])) return 1;
+    }
+    return 0;
+}
+
+static int muralla_release_vm_bank_amount_input(u8 withdraw) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    /* 213BANKP copies the selected account's 24-bit balance into AD2C:AD2E. */
+    if (withdraw) {
+        cs[0x88] = 0; cs[0x89] = 0xE8; cs[0x8A] = 0x03;
+    } else {
+        cs[0x85] = 0; cs[0x86] = 0xE8; cs[0x87] = 0x03;
+    }
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_BANK, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= bank_reach_amount_selector(cs, vga, withdraw ? 3 : 2, &ticks);
+
+    unsigned change_ticks[64] = {0};
+    size_t change_count = 0;
+    u32 previous = bank_amount(cs);
+    for (unsigned held = 1; ok && held <= 500; ++held) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 1, 0, 0);
+        const u32 amount = bank_amount(cs);
+        if (amount != previous && change_count < 64) {
+            change_ticks[change_count++] = held;
+            previous = amount;
+        }
+    }
+    const u32 selected = bank_amount(cs);
+    const unsigned first_gap = change_count > 2
+        ? change_ticks[2] - change_ticks[1] : 0;
+    const unsigned last_gap = change_count > 2
+        ? change_ticks[change_count - 1] - change_ticks[change_count - 2] : 0;
+    ok &= change_count > 8 && selected > 8 && last_gap < first_gap;
+
+    /* query_input_state returns the held Space mask in AH bit 0. */
+    cs[0xFF16] = 1;
+    for (unsigned held = 0; ok && held < 20; ++held)
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 1, 0);
+    cs[0xFF16] = 0;
+    for (unsigned settle = 0; ok && settle < 2000; ++settle) {
+        if (zeliard_room_masm_vm_at_input_poll()) break;
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
+    }
+    const u32 carried = ((u32)cs[0x85] << 16) |
+        (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
+    const u32 banked = ((u32)cs[0x88] << 16) |
+        (u16)(cs[0x89] | ((u16)cs[0x8A] << 8));
+    ok &= withdraw ? (carried == selected && banked == 1000 - selected)
+                   : (carried == 1000 - selected && banked == selected);
+    printf("muralla_release_vm_bank_%s: ticks=%u changes=%u amount=%u "
+           "gaps=%u>%u carried=%u banked=%u delay=%u\n",
+           withdraw ? "withdraw" : "deposit", ticks,
+           (unsigned)change_count, selected, first_gap, last_gap,
+           carried, banked, cs[0xAD2F]);
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -929,6 +1045,8 @@ int main(void) {
                    muralla_release_vm_church_heal() &&
                    muralla_release_vm_drug_buy() &&
                    muralla_release_vm_bank_exchange() &&
+                   muralla_release_vm_bank_amount_input(0) &&
+                   muralla_release_vm_bank_amount_input(1) &&
                    king_first_visit_script() &&
                    king_followup_scripts();
     printf("felishika_rooms: king=%016llx sage=%016llx omoya=%016llx\n",

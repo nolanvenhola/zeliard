@@ -317,9 +317,10 @@ int zeliard_gmmcga_draw_equipped_shield(u8 *vga, size_t vga_size,
         shield == 0)
         return -1;
 
-    /* GMMCGA:25FC multiplies AL by C0h and adds game_seg:[E204h]. */
-    size_t source = read_u16_le(item_seg + 0xE204) +
-                    (size_t)shield * 0xC0u;
+    /* GMMCGA:25FCh decrements the one-based shield id, multiplies it by
+     * C0h, and adds game_seg:[E202h] (anim_ptr_1). */
+    size_t source = read_u16_le(item_seg + 0xE202) +
+                    (size_t)(shield - 1u) * 0xC0u;
     const u16 x = (u16)((bx >> 8) * 4u + 2u);
     const u16 y = (u8)bx;
     if (source + 16u * 12u > item_size || x + 16u > 320u || y + 16u > 200u)

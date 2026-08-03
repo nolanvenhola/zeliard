@@ -92,6 +92,28 @@ static int load_raw_to(u8 *memory, size_t destination, const char *name) {
     return 1;
 }
 
+static int load_fill_to(u8 *memory, size_t destination, const char *name) {
+    size_t size = 0, output_size = 0;
+    u8 *file = load_asset(name, &size);
+    u8 *output = file ? fill_buffer_decompress(file, size, &output_size) : NULL;
+    free(file);
+    if (!output || destination + output_size > zel_room86_memory_size()) {
+        free(output);
+        return 0;
+    }
+    memcpy(memory + destination, output, output_size);
+    free(output);
+    return 1;
+}
+
+static void relocate_words(u8 *memory, size_t address, u8 count,
+                           u16 addend) {
+    for (u8 index = 0; index < count; ++index) {
+        const size_t at = address + (size_t)index * 2u;
+        write_u16(memory, at, (u16)(read_u16(memory, at) + addend));
+    }
+}
+
 static int room_step(void *context, u16 cs, u16 ip) {
     room_vm_state_t *state = context;
     u8 *memory = zel_room86_memory();
@@ -113,8 +135,12 @@ static int room_step(void *context, u16 cs, u16 ip) {
         const size_t instruction = linear(cs, ip);
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
             u16 *registers = zel_room86_registers();
+            /* stick.asm:query_input_state returns gvar_timer_flag in AL and
+             * gvar_skip_flag in AH.  BANKP's amount selector consumes both
+             * as held levels: AL drives accelerated repeats and AH bit 0
+             * commits the selected deposit/withdraw amount. */
             registers[ZEL_TINY86_AX] = (u16)(
-                (registers[ZEL_TINY86_AX] & 0xFF00u) | state->direction);
+                state->direction | ((u16)memory[linear(GAME_SEG, 0xFF16)] << 8));
             zel_room86_set_ip((u16)(ip + 2u));
             return 1;
         }
@@ -223,9 +249,13 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
         !load_payload_to(memory, base + 0x3000, "gtmcga.bin") ||
         !load_payload_to(memory, base + 0x6000, "town.bin") ||
         !load_payload_to(memory, base + 0xA000, program) ||
+        !load_fill_to(memory, linear(DATA_SEG, 0xE200), "itemp.grp") ||
         base + 0xF500 + font_size > zel_room86_memory_size()) {
         free(font); return 0;
     }
+    /* game.asm loads itemp.grp at (CS+1000h):E200h and relocates its seven
+     * GMMCGA source pointers before any room program can draw equipment. */
+    relocate_words(memory, linear(DATA_SEG, 0xE200), 7, 0xE200);
     memcpy(memory + base + 0xF500, font, font_size);
     free(font);
     for (u16 offset = 0; offset < 6; offset += 2) {

@@ -795,6 +795,8 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
             (zeliard_gmmcga_draw_equipped_shield(
                  vga, vga_size, game->segment[1], 0x10000,
                  shield, 0x3EA4) ||
+             zeliard_gmmcga_draw_status_line(
+                 vga, vga_size, 0, 0xC61C, 0x1700) ||
              zeliard_gmmcga_draw_shield_hp(vga, vga_size, cs, 0x10000)))
             return -4;
     }
@@ -820,6 +822,21 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
                 town, game, vga, vga_size);
             if (result < 0) return result;
             frames += result;
+            continue;
+        }
+        /* The exact room VM owns the same INT 8 clocks that its MASM busy
+         * waits observe.  Do not advance FF1A/FF1B/FF50 here as well: doing
+         * so doubles every shopkeeper and room-background animation rate. */
+        if (town->room.active && town->room.exact_vm_active) {
+            const int result = zeliard_room_advance_pit(
+                &town->room, cs, 0x10000, vga, vga_size);
+            if (result < 0) return result;
+            frames = 1;
+            if (result > 0) {
+                town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_LEAVE;
+                town->building_transition_pass = 0;
+                town->building_transition_ticks = 0;
+            }
             continue;
         }
         cs[GVAR_FRAME_TIMER]++;
