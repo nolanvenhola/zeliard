@@ -1110,18 +1110,31 @@ static int sage_release_vm_record(void) {
         ++ticks;
     }
     const u32 serial_after = zeliard_room_masm_vm_save_serial();
+    unsigned prompt_ticks = 0;
+    while (ok && zeliard_room_masm_vm_active() &&
+           !zeliard_room_masm_vm_at_input_poll() && prompt_ticks < 10000) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
+        ++prompt_ticks;
+    }
+    const int continue_prompt = zeliard_room_masm_vm_active() &&
+        zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU &&
+        cs[0xFF52] == 2 && cs[0xFF53] == 2;
+    const unsigned long long continue_prompt_frame = fnv1a64(vga, 0x10000);
     printf("sage_release_vm_record: ticks=%u menu=%u>%u>%u>%u cmd=%u "
            "serial=%u>%u name=%s input=%02x len=%u ip=%04x script=%04x "
-           "timer=%u/%u speed=%u\n", ticks,
+           "timer=%u/%u speed=%u continue_prompt=%d/%u/%016llx\n", ticks,
            menu0, menu1, menu2, menu3, cs[0xBB14], serial_before,
            serial_after, zeliard_room_masm_vm_save_name(), cs[0xFF74],
            cs[0xBB25], zeliard_room_masm_vm_ip(),
            (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
            cs[0xFF1A], (u16)(cs[0xFF50] | ((u16)cs[0xFF51] << 8)),
-           cs[0xFF33]);
+           cs[0xFF33], continue_prompt, prompt_ticks, continue_prompt_frame);
     ok &= serial_after == serial_before + 1 &&
            strcmp(zeliard_room_masm_vm_save_name(), "DUKE.usr") == 0 &&
-           memcmp(zeliard_room_masm_vm_save_record(), cs, 0x100) == 0;
+           memcmp(zeliard_room_masm_vm_save_record(), cs, 0x100) == 0 &&
+           continue_prompt &&
+           continue_prompt_frame == 0xE4601DA85E58BFBFULL;
     FILE *saved = fopen("DUKE.usr", "rb");
     u8 disk_record[0x100];
     ok &= saved && fread(disk_record, 1, sizeof(disk_record), saved) ==

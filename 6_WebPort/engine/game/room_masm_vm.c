@@ -183,6 +183,13 @@ static int room_step(void *context, u16 cs, u16 ip) {
         }
         if ((read_u16(memory, linear(GAME_SEG, 0xFF18)) & 1u) ||
             memory[linear(GAME_SEG, 0xFF1E)]) {
+            /* wait_name_input consumes this Enter itself.  Do not replay the
+             * host edge into the script's following prompt_yes_no call: the
+             * release code requires a fresh choice for "continue your
+             * quest?" after the file has been written. */
+            state->pending_space = 0;
+            state->pending_enter = 0;
+            state->allow_poll_once = 0;
             state->at_input_poll = 0;
             state->input_kind = ZEL_ROOM_VM_INPUT_NONE;
             return 0;

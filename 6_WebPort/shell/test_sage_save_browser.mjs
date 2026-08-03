@@ -89,6 +89,23 @@ try {
     serialBefore, { timeout: 30000 });
   await page.waitForFunction(() => !document.querySelector('#save-controls').hidden,
     null, { timeout: 5000 });
+  await page.waitForFunction(() =>
+    window.__zeliard._zeliard_room_input_kind() === 1,
+    null, { timeout: 30000 });
+
+  const continuePrompt = await page.evaluate(() => ({
+    kind: window.__zeliard._zeliard_room_input_kind(),
+    columns: window.__zeliard._zeliard_test_game_u8(0xFF52),
+    rows: window.__zeliard._zeliard_test_game_u8(0xFF53),
+    script: window.__zeliard._zeliard_test_game_u16(0xFF4C),
+  }));
+  await tick(1000);
+  continuePrompt.stillWaiting = await page.evaluate(() =>
+    window.__zeliard._zeliard_room_input_kind() === 1);
+  assert(continuePrompt.kind === 1 && continuePrompt.columns === 2 &&
+    continuePrompt.rows === 2 && continuePrompt.stillWaiting,
+    'continue-quest Yes/No prompt was not waiting for fresh input',
+    continuePrompt);
 
   const persisted = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem('zeliard.save.CODEX.USR'));
@@ -113,8 +130,9 @@ try {
     restored.sages === restored.expectedSages,
     'saved-game bootstrap did not restore the record', restored);
   assert(pageErrors.length === 0, 'browser errors', pageErrors);
-  console.log(JSON.stringify({ verdict: 'PASS', persisted, restored }));
-  console.log('VERDICT: PASS: exact Sage save and browser restore');
+  console.log(JSON.stringify({ verdict: 'PASS', continuePrompt, persisted,
+    restored }));
+  console.log('VERDICT: PASS: exact Sage save, continue prompt, and restore');
 } finally {
   await browser.close();
 }
