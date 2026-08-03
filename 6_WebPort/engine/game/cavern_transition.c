@@ -223,8 +223,12 @@ static void compose_fman_cells(zeliard_cavern_transition_t *transition,
                     color = (u8)((color << 1) | (*word >> 15));
                     *word <<= 1;
                 }
-                if (!preserve)
-                    target[(size_t)row * 8 + col] = HERO_PALETTE[color];
+                if (!preserve) {
+                    const size_t pixel = (size_t)row * 8 + col;
+                    target[pixel] = HERO_PALETTE[color];
+                    transition->hero_coverage[
+                        (size_t)target_cell * 64 + pixel] = 1;
+                }
             }
         }
     }
@@ -245,6 +249,7 @@ static void compose_ordinary_hero(zeliard_cavern_transition_t *transition,
     u16 frame_offset;
 
     memset(transition->hero_cells, 0, sizeof(transition->hero_cells));
+    memset(transition->hero_coverage, 0, sizeof(transition->hero_coverage));
 
     /* 206GFMCA:3ABE-3B7F. The shield bank is selected on the rear
      * equipment pass for a left-facing Duke. */
@@ -317,12 +322,13 @@ static void blit_hero(zeliard_cavern_transition_t *transition,
         const int cell_x = x + (cell % 3) * 8;
         const int cell_y = y + (cell / 3) * 8;
         const u8 *pixels = transition->hero_cells + (size_t)cell * 64;
+        const u8 *coverage = transition->hero_coverage + (size_t)cell * 64;
         for (u8 row = 0; row < 8; ++row) {
             const int py = cell_y + row;
             if (py < 0 || py >= 200) continue;
             for (u8 col = 0; col < 8; ++col) {
                 const int px = cell_x + col;
-                if (px >= 0 && px < 320)
+                if (coverage[row * 8 + col] && px >= 0 && px < 320)
                     vga[(size_t)py * 320 + px] = pixels[row * 8 + col];
             }
         }

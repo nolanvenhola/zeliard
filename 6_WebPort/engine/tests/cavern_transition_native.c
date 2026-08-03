@@ -72,6 +72,31 @@ static int run_direction(u8 direction, u8 shield) {
             transition.hero_cells, sizeof(transition.hero_cells));
     }
 
+    /* 206GFMCA builds sprite_tmp_buf on top of the cached background before
+     * its solid 24x24 copy. Transparent hero pixels must therefore retain
+     * the ledge, rather than replacing it with zero. */
+    const unsigned address = 0x6Eu * 320u + transition.packed_x * 4u;
+    const int sprite_x = (int)(address % 320u);
+    const int sprite_y = (int)(address / 320u);
+    unsigned preserved_background = 0;
+    for (u8 cell = 0; cell < 9; ++cell) {
+        for (u8 row = 0; row < 8; ++row) {
+            for (u8 col = 0; col < 8; ++col) {
+                const size_t source = (size_t)cell * 64 + row * 8 + col;
+                const int x = sprite_x + (cell % 3) * 8 + col;
+                const int y = sprite_y + (cell / 3) * 8 + row;
+                if (x < 0 || x >= 320 || y < 0 || y >= 200 ||
+                    transition.hero_coverage[source]) continue;
+                const size_t target = (size_t)y * 320 + x;
+                if (transition.background[target] != 0) {
+                    preserved_background++;
+                    ok &= vga[target] == transition.background[target];
+                }
+            }
+        }
+    }
+    if (!direction) ok &= preserved_background > 0;
+
     /* The MASM loop has 26 draw/wait iterations, followed immediately by
      * the final 0618h clear. No keyboard state is supplied to this API. */
     zeliard_cavern_transition_advance_pit(
@@ -94,11 +119,12 @@ static int run_direction(u8 direction, u8 shield) {
     printf("cavern_transition_%s_shield%u: first=%016llx "
            "heroes=%016llx,%016llx,%016llx,%016llx "
            "final=%016llx tiles=%016llx map=%016llx masks=%016llx "
-           "steps=%u packed_x=%02x\n",
+           "preserved=%u steps=%u packed_x=%02x\n",
            direction ? "right_to_left" : "left_to_right",
            shield, first_hash, hero_hashes[0], hero_hashes[1],
            hero_hashes[2], hero_hashes[3], final_hash, tiles_hash, map_hash,
-           masks_hash, transition.step, transition.packed_x);
+           masks_hash, preserved_background, transition.step,
+           transition.packed_x);
     static const unsigned long long expected_heroes[2][2][4] = {
         {
             {0xBFC85115E00A5F6BULL, 0x51FB025D18001B0AULL,
@@ -115,7 +141,7 @@ static int run_direction(u8 direction, u8 shield) {
     };
     const unsigned long long expected_first = direction
         ? (shield ? 0x94195577CA63DCB6ULL : 0x2C7C3B2E09750EA3ULL)
-        : (shield ? 0x7304BC06AFDB6360ULL : 0x78C4A6227D34DF1DULL);
+        : (shield ? 0xC0E9BBC6666CC794ULL : 0xEAA9FF9A250BC759ULL);
     for (u8 pose = 0; pose < 4; ++pose)
         ok &= hero_hashes[pose] == expected_heroes[direction][shield][pose];
     return ok && first_hash == expected_first &&
