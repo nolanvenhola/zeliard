@@ -3,8 +3,14 @@
 
 #include "../core/types.h"
 
+typedef enum {
+    ZEL_INVENTORY_CONTEXT_CAVERN = 0,
+    ZEL_INVENTORY_CONTEXT_TOWN = 1,
+} zeliard_inventory_context_t;
+
 int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
-                                    u8 *vga, size_t vga_size);
+                                    u8 *vga, size_t vga_size,
+                                    zeliard_inventory_context_t context);
 int zeliard_inventory_masm_vm_advance(u8 *game_seg, size_t game_size,
                                       u8 *vga, size_t vga_size,
                                       u32 pit_ticks, u8 direction,

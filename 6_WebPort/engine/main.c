@@ -10,6 +10,7 @@
 #include "core/input.h"
 #include "core/timer.h"
 #include "render/palette.h"
+#include "render/town_mcga.h"
 #include "game/opening.h"
 #include "game/town_runtime.h"
 #include "game/room_masm_vm.h"
@@ -56,9 +57,16 @@ static int inventory_can_open(void) {
 static void inventory_open(void) {
     if (!inventory_can_open()) return;
     memcpy(g_inventory_return_vga, g_game_vga, sizeof(g_inventory_return_vga));
+    /* Reproduce the selector's inherited framebuffer contract with the
+     * GMMCGA:2106 clear primitive: rows 14..157 of the 224-pixel playfield
+     * are black while the stone frame and HUD remain intact. */
+    if (zeliard_gmmcga_clear_playfield(g_game_vga, sizeof(g_game_vga))) {
+        platform_log("201SELCT: MCGA playfield clear failed");
+        return;
+    }
     if (!zeliard_inventory_masm_vm_start(
             g_game_segments[0], sizeof(g_game_segments[0]),
-            g_game_vga, sizeof(g_game_vga))) {
+            g_game_vga, sizeof(g_game_vga), ZEL_INVENTORY_CONTEXT_TOWN)) {
         platform_log("201SELCT: exact inventory overlay start failed");
         return;
     }

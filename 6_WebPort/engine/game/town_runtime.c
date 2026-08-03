@@ -782,6 +782,21 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
     } else if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_LEAVE) {
         if (zeliard_room_leave(&town->room, cs, 0x10000,
                                vga, vga_size)) return -4;
+        /* 212ARMRP commits directly to player sword/shield bytes and draws
+         * the corresponding GMMCGA slots. Our room shell restores the town
+         * frame, so repeat those exact driver calls against the live record. */
+        const u8 sword = cs[ZEL_PLAYER_SWORD];
+        if (sword && zeliard_gmmcga_draw_equipped_sword(
+                         vga, vga_size, game->segment[1], 0x10000,
+                         sword, 0x18AB))
+            return -4;
+        const u8 shield = cs[ZEL_PLAYER_SHIELD];
+        if (shield &&
+            (zeliard_gmmcga_draw_equipped_shield(
+                 vga, vga_size, game->segment[1], 0x10000,
+                 shield, 0x3EA4) ||
+             zeliard_gmmcga_draw_shield_hp(vga, vga_size, cs, 0x10000)))
+            return -4;
     }
     town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_NONE;
     town->pending_room_kind = ZEL_ROOM_NONE;

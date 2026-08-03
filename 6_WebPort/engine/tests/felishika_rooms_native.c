@@ -591,6 +591,7 @@ static int muralla_release_vm_armory_buy(void) {
         free(cs); free(vga); return 0;
     }
     cs[0xC006] = 1;
+    cs[ZEL_PLAYER_SWORD] = 2;
     cs[0x85] = 0; cs[0x86] = 0xE8; cs[0x87] = 0x03;
     int ok = zeliard_room_masm_vm_start(
         ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
@@ -606,7 +607,46 @@ static int muralla_release_vm_armory_buy(void) {
                      ((u32)cs[0x87] << 8) | cs[0x86];
     printf("muralla_release_vm_armory_buy: ticks=%u gold=%u sword=%u "
            "inventory=%02x\n", ticks, gold, cs[0x92], cs[0xD2]);
-    ok &= cs[0x92] == 1 && gold == 800 && cs[0xD2] == 0xC0;
+    /* 212ARMRP:weapon_commit replaces player:sword; there is no carried
+     * sword array. The old tier is returned through script_give_item. */
+    ok &= cs[0x92] == 1 && gold == 1350 && cs[0xD2] == 0xC0;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int muralla_release_vm_armory_replace_shield(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 1;
+    cs[ZEL_PLAYER_SHIELD] = 2;
+    cs[ZEL_PLAYER_SHIELD_HP] = 1;
+    cs[ZEL_PLAYER_SHIELD_HP_MAX] = 1;
+    cs[0x85] = 0; cs[0x86] = 0xE8; cs[0x87] = 0x03;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    const u16 shield_hp = (u16)(cs[ZEL_PLAYER_SHIELD_HP] |
+        ((u16)cs[ZEL_PLAYER_SHIELD_HP + 1] << 8));
+    const u16 shield_max = (u16)(cs[ZEL_PLAYER_SHIELD_HP_MAX] |
+        ((u16)cs[ZEL_PLAYER_SHIELD_HP_MAX + 1] << 8));
+    printf("muralla_release_vm_armory_shield: ticks=%u gold=%u shield=%u "
+           "hp=%u/%u inventory=%02x\n", ticks, gold,
+           cs[ZEL_PLAYER_SHIELD], shield_hp, shield_max, cs[0xDB]);
+    ok &= cs[ZEL_PLAYER_SHIELD] == 1 && gold == 1025 &&
+        shield_hp == 30 && shield_max == 30 && cs[0xDB] == 0xC0;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -885,6 +925,7 @@ int main(void) {
                    muralla_release_vm_drugstore_text_repress() &&
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
+                   muralla_release_vm_armory_replace_shield() &&
                    muralla_release_vm_church_heal() &&
                    muralla_release_vm_drug_buy() &&
                    muralla_release_vm_bank_exchange() &&

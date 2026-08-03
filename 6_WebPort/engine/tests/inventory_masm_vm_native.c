@@ -31,7 +31,7 @@ int main(void) {
     game[0xB2] = 100;
     game[0x90] = 100;
     const int started = zeliard_inventory_masm_vm_start(
-        game, 0x10000, vga, 0x10000);
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
     const unsigned long long frame = fnv1a64(vga, 64000);
     const unsigned long long state = fnv1a64(game, 233);
     printf("inventory_masm_entry: started=%d active=%d poll=%d ip=%04x "
@@ -79,7 +79,7 @@ int main(void) {
     game[0x90] = 100;
     game[0xFF18] = 1;
     ok &= zeliard_inventory_masm_vm_start(
-        game, 0x10000, vga, 0x10000);
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
     game[0xFF18] = 0;
     zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
                                       1, 0, 0, 0);
@@ -108,7 +108,7 @@ int main(void) {
     game[0xBB] = 1;
     game[0xBC] = 1;
     ok &= zeliard_inventory_masm_vm_start(
-        game, 0x10000, vga, 0x10000);
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
     const unsigned long long populated_entry = fnv1a64(vga, 64000);
     const u8 populated_cursor_before =
         zeliard_inventory_masm_vm_peek(0xADFB);
@@ -131,6 +131,21 @@ int main(void) {
         populated_left == 0x9300d8c22f08091eULL &&
         game[0x9D] == 2 && populated_cursor_before == 2 &&
         zeliard_inventory_masm_vm_peek(0xADFB) == 1;
+    zeliard_inventory_masm_vm_stop();
+
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA6] = 1;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_TOWN);
+    printf("inventory_masm_town_gate: flag=%02x active=%d poll=%d\n",
+           zeliard_inventory_masm_vm_peek(0xADF8),
+           zeliard_inventory_masm_vm_active(),
+           zeliard_inventory_masm_vm_at_input_poll());
+    ok &= zeliard_inventory_masm_vm_peek(0xADF8) == 0xFF &&
+        zeliard_inventory_masm_vm_active() &&
+        zeliard_inventory_masm_vm_at_input_poll();
     zeliard_inventory_masm_vm_stop();
     free(game); free(vga);
     printf("VERDICT: %s: release MASM 201SELCT entry frame\n",

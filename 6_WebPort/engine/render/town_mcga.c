@@ -310,6 +310,41 @@ int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
     return 0;
 }
 
+int zeliard_gmmcga_draw_equipped_shield(u8 *vga, size_t vga_size,
+                                        const u8 *item_seg, size_t item_size,
+                                        u8 shield, u16 bx) {
+    if (!vga || vga_size < 0x10000 || !item_seg || item_size < 0xE206 ||
+        shield == 0)
+        return -1;
+
+    /* GMMCGA:25FC multiplies AL by C0h and adds game_seg:[E204h]. */
+    size_t source = read_u16_le(item_seg + 0xE204) +
+                    (size_t)shield * 0xC0u;
+    const u16 x = (u16)((bx >> 8) * 4u + 2u);
+    const u16 y = (u8)bx;
+    if (source + 16u * 12u > item_size || x + 16u > 320u || y + 16u > 200u)
+        return -1;
+
+    size_t destination = (size_t)y * 320u + x;
+    for (u8 row = 0; row < 16; ++row) {
+        u16 p0 = byte_swap_u16(read_u16_le(item_seg + source));
+        u16 p1 = read_u16_le(item_seg + source + 6);
+        u16 p2 = byte_swap_u16(read_u16_le(item_seg + source + 8));
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+
+        p0 = byte_swap_u16(read_u16_le(item_seg + source + 2));
+        p1 = read_u16_le(item_seg + source + 4);
+        p2 = byte_swap_u16(read_u16_le(item_seg + source + 10));
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+        draw_equipment_four_pixels(vga, &destination, &p0, &p1, &p2);
+
+        source += 12;
+        destination += 304;
+    }
+    return 0;
+}
+
 int zeliard_gmmcga_clear_rect(u8 *vga, size_t vga_size, u16 bx, u16 cx) {
     if (!vga || vga_size < 0x10000) return -1;
     /* GMMCGA:2046 dispatches AL=0 directly to clear_screen_init. BX packs

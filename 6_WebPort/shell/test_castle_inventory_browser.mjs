@@ -58,10 +58,15 @@ try {
     module._zeliard_tick(16);
     const opened = module._zeliard_inventory_active();
     const entry = hashFrame();
+    const framebuffer = module._zeliard_framebuf();
+    let bottomBlack = true;
+    for (let x = 48; x < 272; ++x)
+      bottomBlack &&= module.HEAPU8[framebuffer + 157 * 320 + x] === 0;
     return {
       opened,
       before,
       entry,
+      bottomBlack,
     };
   });
   await page.waitForTimeout(100);
@@ -83,7 +88,8 @@ try {
     module._zeliard_key_up(13);
     return result;
   });
-  if (!selector.opened || selector.entry !== '5b011bc553bf64a3' ||
+  if (!selector.opened || !selector.bottomBlack ||
+      selector.entry !== '04877b2cfdbf6af6' ||
       !selectorReturn.closed ||
       selectorReturn.frame !== selector.before)
     throw new Error(`201SELCT interaction mismatch: ${JSON.stringify({ selector, selectorReturn })}`);

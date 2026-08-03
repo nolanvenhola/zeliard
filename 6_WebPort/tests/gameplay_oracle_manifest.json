@@ -333,6 +333,9 @@
     {"name": "place3:B_first_slot_nonzero", "proc": "try_place_3cell_entity_row", "input": {"si_base": 57600, "cell_23": 0, "cell_24": 66, "row": 0}, "expected": {"placed": false, "write_calls": 0, "row": 0}},
     {"name": "place3:C_all_clear", "proc": "try_place_3cell_entity_row", "input": {"si_base": 57600, "cell_23": 0, "cells_24_26": [0, 0, 0], "row": 0}, "expected": {"placed": true, "write_calls": 6, "write_targets": [57636, 57600, 57637, 57601, 57638, 57602], "row": 1}},
     {"name": "place3:C_row_wrap", "proc": "try_place_3cell_entity_row", "input": {"si_base": 57600, "cell_23": 0, "cells_24_26": [0, 0, 0], "row": 63}, "expected": {"placed": true, "write_calls": 6, "row": 0}},
-    {"name": "place3:D_third_slot_nonzero", "proc": "try_place_3cell_entity_row", "input": {"si_base": 57600, "cell_23": 0, "cell_26": 255, "row": 0}, "expected": {"placed": false, "write_calls": 0, "row": 0}}
+    {"name": "place3:D_third_slot_nonzero", "proc": "try_place_3cell_entity_row", "input": {"si_base": 57600, "cell_23": 0, "cell_26": 255, "row": 0}, "expected": {"placed": false, "write_calls": 0, "row": 0}},
+    {"name": "inventory_selector:town_item_gate", "proc": "201SELCT:A00B town entry", "input": {"item_slot_1": 1, "entry_ip": 40971}, "expected": {"has_items_flag_ADF8": 255, "input_poll_ip": 43628}},
+    {"name": "armory:replace_equipped_sword", "proc": "212ARMRP:weapon_commit", "input": {"sword": 2, "gold": 1000, "purchase": 1, "shop": 1}, "expected": {"sword": 1, "gold": 1350, "sword_shop_inventory_D2": 192}},
+    {"name": "armory:replace_equipped_shield", "proc": "212ARMRP:shield_commit", "input": {"shield": 2, "shield_hp": 1, "shield_hp_max": 1, "gold": 1000, "purchase": 1, "shop": 1}, "expected": {"shield": 1, "shield_hp": 30, "shield_hp_max": 30, "gold": 1025, "shield_shop_inventory_DB": 192}}
   ]
 }

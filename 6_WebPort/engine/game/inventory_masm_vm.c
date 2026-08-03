@@ -24,7 +24,9 @@ enum {
     ASSET_SEG_2 = 0x3000,
     STACK_SEG = 0x8000,
     VGA_SEG = 0xA000,
-    SELCT_ENTRY = 0x9FFC,
+    SELCT_LOAD_BASE = 0x9FFC,
+    SELCT_CAVERN_ENTRY = 0xA001,
+    SELCT_TOWN_ENTRY = 0xA00B,
     SELCT_POLL_INPUT = 0xAA6C,
     INSTRUCTIONS_PER_PIT = 12000,
 };
@@ -139,7 +141,8 @@ static int inventory_step(void *context, u16 cs, u16 ip) {
 }
 
 int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
-                                    u8 *vga, size_t vga_size) {
+                                    u8 *vga, size_t vga_size,
+                                    zeliard_inventory_context_t context) {
     if (!game_seg || game_size < 0x10000 || !vga || vga_size < 0x10000)
         return 0;
     size_t bios_size = 0;
@@ -158,7 +161,7 @@ int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
     size_t font_size = 0;
     if (!load_raw_to(memory, game + 0x0100, "stick.bin") ||
         !load_raw_to(memory, game + 0x2000, "gmmcga.bin") ||
-        !load_raw_to(memory, game + SELCT_ENTRY, "select.bin") ||
+        !load_raw_to(memory, game + SELCT_LOAD_BASE, "select.bin") ||
         !load_fill_to(memory, itemp + 0xE200, "itemp.grp", NULL) ||
         !load_fill_to(memory, asset2 + 0x0000, "magic.grp", NULL) ||
         !load_fill_to(memory, asset2 + 0x1800, "sword.grp", NULL) ||
@@ -182,7 +185,12 @@ int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
     registers[ZEL_TINY86_SS] = STACK_SEG;
     registers[ZEL_TINY86_SP] = 0xFFF8;
     write_u16(memory, linear(STACK_SEG, 0xFFF8), 0);
-    zel_inventory86_set_ip(SELCT_ENTRY);
+    /* 106TOWN enters at A00Bh, the embedded instruction that sets
+     * has_items_flag=FFh. 200FIGHT enters at A001h and clears the flag,
+     * enabling item use in caverns. */
+    zel_inventory86_set_ip(context == ZEL_INVENTORY_CONTEXT_TOWN
+                               ? SELCT_TOWN_ENTRY
+                               : SELCT_CAVERN_ENTRY);
     zel_inventory86_set_flags(0x0202);
     zel_inventory86_set_step_callback(inventory_step, &g_inventory_vm);
     g_inventory_vm.active = 1;

@@ -97,6 +97,11 @@ int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
                                        const u8 *item_seg, size_t item_size,
                                        u8 sword, u16 bx);
 
+/* GMMCGA:25FC, resident dispatch slot CS:2020. */
+int zeliard_gmmcga_draw_equipped_shield(u8 *vga, size_t vga_size,
+                                        const u8 *item_seg, size_t item_size,
+                                        u8 shield, u16 bx);
+
 /* Combined initial 106TOWN frame_update HUD call span. */
 int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
                                         u8 *game_seg, size_t game_size,
