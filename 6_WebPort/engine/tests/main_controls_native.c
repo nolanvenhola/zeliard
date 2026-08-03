@@ -10,6 +10,7 @@ void zeliard_key_down(int keycode);
 void zeliard_key_up(int keycode);
 int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
+int zeliard_inventory_active(void);
 int zeliard_test_enter_room(int kind);
 int zeliard_room_kind(void);
 int zeliard_phase(void);
@@ -161,6 +162,32 @@ int main(void) {
            dialog_dismissed);
     ok &= dialog_cue == 0x1E && zeliard_music_track() == 3 &&
           dialog_active && dialog_dismissed;
+
+    const unsigned long long pre_inventory_hash = fnv1a64(
+        g_framebuf, ZELIARD_FB_SIZE);
+    zeliard_key_down(13);
+    const int inventory_opened = zeliard_inventory_active();
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    const unsigned long long inventory_hash = fnv1a64(
+        g_framebuf, ZELIARD_FB_SIZE);
+    ok &= inventory_opened && zeliard_inventory_active() &&
+        inventory_hash != 0xCBF29CE484222325ULL;
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    const int inventory_closed = !zeliard_inventory_active();
+    const unsigned long long returned_town_hash = fnv1a64(
+        g_framebuf, ZELIARD_FB_SIZE);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    ok &= inventory_closed && returned_town_hash == pre_inventory_hash;
+    printf("main_controls:inventory_enter_cycle: %s frame=%016llx "
+           "returned=%016llx opened=%d closed=%d\n",
+           inventory_opened && inventory_closed &&
+               returned_town_hash == pre_inventory_hash ? "PASS" : "FAIL",
+           inventory_hash, returned_town_hash, inventory_opened,
+           inventory_closed);
 
     ok &= zeliard_test_enter_room(1) == 0;
     ok &= zeliard_music_track() == 3 && zeliard_room_kind() == 0;

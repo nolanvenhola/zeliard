@@ -35,6 +35,8 @@ ENGINE_SRC := \
 	game/room_runtime.c \
 	game/room_masm_vm.c \
 	third_party/8086tiny/room_8086tiny.c \
+	game/inventory_masm_vm.c \
+	third_party/8086tiny/inventory_8086tiny.c \
 	game/town_runtime.c \
 	game/gameplay_state.c
 
@@ -66,6 +68,8 @@ TEST_OPENING_SRC := \
 	game/room_runtime.c \
 	game/room_masm_vm.c \
 	third_party/8086tiny/room_8086tiny.c \
+	game/inventory_masm_vm.c \
+	third_party/8086tiny/inventory_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -97,6 +101,8 @@ TEST_OPENING_TRACE_SRC := \
 	game/room_runtime.c \
 	game/room_masm_vm.c \
 	third_party/8086tiny/room_8086tiny.c \
+	game/inventory_masm_vm.c \
+	third_party/8086tiny/inventory_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -171,6 +177,8 @@ TEST_MAIN_CONTROLS_SRC := \
 	game/room_runtime.c \
 	game/room_masm_vm.c \
 	third_party/8086tiny/room_8086tiny.c \
+	game/inventory_masm_vm.c \
+	third_party/8086tiny/inventory_8086tiny.c \
 	game/town_runtime.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -286,6 +294,12 @@ TEST_FELISHIKA_ROOMS_SRC := \
 	render/palette.c \
 	load/fill_buffer.c \
 	platform/platform_sdl.c
+TEST_INVENTORY_MASM_VM_SRC := \
+	tests/inventory_masm_vm_native.c \
+	game/inventory_masm_vm.c \
+	third_party/8086tiny/inventory_8086tiny.c \
+	load/fill_buffer.c \
+	platform/platform_sdl.c
 
 CFLAGS_COMMON := -std=gnu11 -Wall -Wextra -Wno-unused-parameter -O2 -fno-strict-aliasing -I. -Ithird_party/opal/include
 
@@ -297,7 +311,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_town_dialog_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_test_enter_room","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_test_enter_room","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -332,7 +346,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native build/inventory-masm-vm-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -359,6 +373,7 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/town-runtime-native
 	./build/town-first-dialog-native
 	./build/felishika-rooms-native
+	./build/inventory-masm-vm-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -459,6 +474,10 @@ build/town-first-dialog-native: $(TEST_TOWN_FIRST_DIALOG_SRC) Makefile
 build/felishika-rooms-native: $(TEST_FELISHIKA_ROOMS_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_FELISHIKA_ROOMS_SRC)
+
+build/inventory-masm-vm-native: $(TEST_INVENTORY_MASM_VM_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_INVENTORY_MASM_VM_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build

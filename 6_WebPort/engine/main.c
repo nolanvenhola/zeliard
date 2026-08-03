@@ -13,6 +13,7 @@
 #include "game/opening.h"
 #include "game/town_runtime.h"
 #include "game/room_masm_vm.h"
+#include "game/inventory_masm_vm.h"
 #include "audio/opening_audio.h"
 #include "load/game_loader.h"
 #include "platform/platform.h"
@@ -37,10 +38,32 @@ static game_scene_t g_scene = SCENE_OPENING;
 static int g_paused;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
 static zel_input_state_t g_input;
 static u32 g_input_subtick_accum;
+
+static int inventory_can_open(void) {
+    return g_scene == SCENE_GAME &&
+        !zeliard_inventory_masm_vm_active() &&
+        !g_town_runtime.dialog.active &&
+        !g_town_runtime.room.active &&
+        g_town_runtime.building_transition ==
+            ZEL_TOWN_BUILDING_TRANSITION_NONE;
+}
+
+static void inventory_open(void) {
+    if (!inventory_can_open()) return;
+    memcpy(g_inventory_return_vga, g_game_vga, sizeof(g_inventory_return_vga));
+    if (!zeliard_inventory_masm_vm_start(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            g_game_vga, sizeof(g_game_vga))) {
+        platform_log("201SELCT: exact inventory overlay start failed");
+        return;
+    }
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+}
 
 static bool game_fetch_asset(void *context, const char *name,
                              u8 **data, size_t *size) {
@@ -128,7 +151,7 @@ static void apply_input_actions(u32 actions) {
         if (g_scene == SCENE_OPENING) {
             g_game_segments[0][0xFF29] = 0;
             consume_opening_advance();
-        }
+        } else if (g_scene == SCENE_GAME) inventory_open();
     }
 }
 
@@ -215,6 +238,25 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         return;
     }
     if (g_scene == SCENE_GAME) {
+        if (zeliard_inventory_masm_vm_active()) {
+            const u16 timer_counter = (u16)(g_game_segments[0][0xFF18] |
+                ((u16)g_game_segments[0][0xFF19] << 8));
+            zeliard_inventory_masm_vm_advance(
+                g_game_segments[0], sizeof(g_game_segments[0]),
+                g_game_vga, sizeof(g_game_vga), input_ticks,
+                g_game_segments[0][0xFF17],
+                g_game_segments[0][0xFF1D] != 0,
+                (timer_counter & 1u) != 0);
+            if (zeliard_inventory_masm_vm_active()) {
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            } else {
+                memcpy(g_game_vga, g_inventory_return_vga,
+                       sizeof(g_inventory_return_vga));
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            }
+            zel_opening_audio_tick(dt_ms);
+            return;
+        }
         const int room_was_active = g_town_runtime.room.active;
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
@@ -331,6 +373,9 @@ EXPORT int              zeliard_room_input_kind(void) {
 }
 EXPORT int              zeliard_town_dialog_active(void) {
     return g_town_runtime.dialog.active != 0;
+}
+EXPORT int              zeliard_inventory_active(void) {
+    return zeliard_inventory_masm_vm_active();
 }
 EXPORT int              zeliard_town_area(void) { return (int)g_town_runtime.area; }
 EXPORT int              zeliard_town_cavern_exit_requested(void) { return g_town_runtime.cavern_exit_requested; }
