@@ -28,6 +28,7 @@ type EngineExports = {
     _zeliard_music_complete(track: number): void;
     _zeliard_music_attenuation(): number;
     _zeliard_paused(): number;
+    _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
     _zeliard_sound_cue(): number;
@@ -66,6 +67,7 @@ const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
 const storedSaveControlsEl = document.getElementById(
     'stored-save-controls') as HTMLSpanElement;
+const restartEl = document.getElementById('restart') as HTMLButtonElement;
 const saveSelectEl = document.getElementById('save-select') as HTMLSelectElement;
 const loadSaveEl = document.getElementById('load-save') as HTMLButtonElement;
 const downloadSaveEl = document.getElementById(
@@ -217,6 +219,7 @@ async function boot() {
     let lastPhase = -1;
     let lastPhaseElapsedBucket = -1;
     let lastPaused = false;
+    let lastTerminated = false;
     let lastSaveSerial = Module._zeliard_save_serial();
 
     const listSaves = () => Object.keys(localStorage)
@@ -282,12 +285,25 @@ async function boot() {
         }));
         if (saves.some((save) => save.name === selected))
             saveSelectEl.value = selected;
-        storedSaveControlsEl.hidden = saves.length === 0;
+        storedSaveControlsEl.hidden = saves.length === 0 ||
+            Module._zeliard_session_terminated() !== 0;
+    };
+    const refreshSessionControls = () => {
+        const terminated = Module._zeliard_session_terminated() !== 0;
+        restartEl.hidden = !terminated;
+        if (terminated) {
+            storedSaveControlsEl.hidden = true;
+            setStatus('session ended');
+        } else {
+            refreshSaveControls();
+        }
     };
     loadSaveEl.addEventListener('click', () => {
         if (!saveSelectEl.value) return;
         if (!loadSave(saveSelectEl.value))
             setStatus('saved game could not be loaded');
+        else
+            refreshSessionControls();
     });
     downloadSaveEl.addEventListener('click', () => {
         const save = findSave(saveSelectEl.value);
@@ -312,8 +328,20 @@ async function boot() {
             setStatus(`${file.name} could not be loaded`);
             return;
         }
+        refreshSessionControls();
         saveSelectEl.value = name;
         setStatus(`loaded ${name}`);
+    });
+    restartEl.addEventListener('click', () => {
+        Module._zeliard_init();
+        last = performance.now();
+        lastScene = -1;
+        lastPhase = -1;
+        lastPhaseElapsedBucket = -1;
+        lastPaused = false;
+        lastTerminated = false;
+        refreshSessionControls();
+        paintFrame();
     });
     refreshSaveControls();
 
@@ -485,6 +513,11 @@ async function boot() {
         const tickMs = Math.floor(tickRemainderMs);
         tickRemainderMs -= tickMs;
         Module._zeliard_tick(tickMs);
+        const terminated = Module._zeliard_session_terminated() !== 0;
+        if (terminated !== lastTerminated) {
+            lastTerminated = terminated;
+            refreshSessionControls();
+        }
         const saveSerial = Module._zeliard_save_serial();
         if (saveSerial !== lastSaveSerial) {
             lastSaveSerial = saveSerial;

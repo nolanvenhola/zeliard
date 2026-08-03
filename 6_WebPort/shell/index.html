@@ -42,13 +42,13 @@
         #save-controls, #stored-save-controls {
             display: flex; gap: 8px; align-items: center;
         }
-        #save-select, #load-save, #download-save, .file-button {
+        #save-select, #load-save, #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
         #save-select { min-width: 160px; padding: 0 8px; }
-        #load-save, #download-save, .file-button {
+        #load-save, #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
         }
     </style>
@@ -61,6 +61,7 @@
         </div>
         <div id="status">loading engine&hellip;</div>
         <div id="save-controls">
+            <button id="restart" type="button" hidden>Restart</button>
             <span id="stored-save-controls" hidden>
                 <select id="save-select" aria-label="Saved game"></select>
                 <button id="load-save" type="button">Load</button>

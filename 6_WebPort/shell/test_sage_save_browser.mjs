@@ -23,9 +23,11 @@ async function pulse(keycode) {
   for (let wait = 0; wait < 1200; ++wait) {
     await tick(5);
     const input = await page.evaluate(() =>
-      window.__zeliard._zeliard_room_input_kind());
-    sawBusy ||= input === 0;
-    if (sawBusy && input !== 0) break;
+      ({ kind: window.__zeliard._zeliard_room_input_kind(),
+        terminated: window.__zeliard._zeliard_session_terminated() }));
+    if (input.terminated) break;
+    sawBusy ||= input.kind === 0;
+    if (sawBusy && input.kind !== 0) break;
   }
 }
 
@@ -131,12 +133,55 @@ try {
     'portable .usr download mismatch', {
       name: download.suggestedFilename(), size: downloadedRecord.length });
 
-  const expected = await page.evaluate(() => {
+  await pulse(40);
+  await pulse(32);
+  await page.waitForFunction(() =>
+    window.__zeliard._zeliard_session_terminated() === 1,
+    null, { timeout: 10000 });
+  await page.waitForFunction(() =>
+    !document.querySelector('#restart').hidden &&
+    document.querySelector('#stored-save-controls').hidden,
+    null, { timeout: 5000 });
+  const terminated = await page.evaluate(() => {
     const module = window.__zeliard;
-    const expectedGoldHigh = module._zeliard_test_game_u8(0x85);
-    const expectedSages = module._zeliard_test_game_u8(0xE5);
-    module._zeliard_test_game_set_u8(0x85, expectedGoldHigh ^ 0xFF);
-    return { expectedGoldHigh, expectedSages };
+    const frame = module._zeliard_framebuf();
+    let nonzero = 0;
+    for (let index = 0; index < 320 * 200; ++index)
+      nonzero += module.HEAPU8[frame + index] !== 0 ? 1 : 0;
+    return {
+      terminated: module._zeliard_session_terminated(),
+      nonzero,
+      musicTrack: module._zeliard_music_track(),
+      restartHidden: document.querySelector('#restart').hidden,
+      storedControlsHidden:
+        document.querySelector('#stored-save-controls').hidden,
+      openHidden: document.querySelector('label[for="open-save"]').hidden,
+    };
+  });
+  assert(terminated.terminated === 1 && terminated.nonzero === 0 &&
+    terminated.musicTrack === 0 && !terminated.restartHidden &&
+    terminated.storedControlsHidden && !terminated.openHidden,
+    'Sage No did not produce the web session-end state', terminated);
+  await page.click('#restart');
+  await page.waitForFunction(() =>
+    window.__zeliard._zeliard_session_terminated() === 0 &&
+    window.__zeliard._zeliard_scene() === 1 &&
+    document.querySelector('#restart').hidden,
+    null, { timeout: 5000 });
+  const restarted = await page.evaluate(() => ({
+    terminated: window.__zeliard._zeliard_session_terminated(),
+    scene: window.__zeliard._zeliard_scene(),
+    restartHidden: document.querySelector('#restart').hidden,
+  }));
+
+  const expected = {
+    expectedGoldHigh: downloadedRecord[0x85],
+    expectedSages: downloadedRecord[0xE5],
+  };
+  await page.evaluate(() => {
+    const module = window.__zeliard;
+    module._zeliard_test_game_set_u8(
+      0x85, module._zeliard_test_game_u8(0x85) ^ 0xFF);
   });
   await page.locator('#open-save').setInputFiles({
     name: 'CODEX.usr',
@@ -145,7 +190,8 @@ try {
   });
   await page.waitForFunction(() =>
     window.__zeliard._zeliard_scene() === 2 &&
-    window.__zeliard._zeliard_town_area() === 1);
+    window.__zeliard._zeliard_town_area() === 1 &&
+    window.__zeliard._zeliard_session_terminated() === 0);
   const restored = await page.evaluate((saved) => {
     const module = window.__zeliard;
     let frameHash = 0xCBF29CE484222325n;
@@ -173,9 +219,10 @@ try {
     'Muralla saved-game frame mismatch', restored);
   assert(pageErrors.length === 0, 'browser errors', pageErrors);
   console.log(JSON.stringify({ verdict: 'PASS', continuePrompt, persisted,
+    terminated, restarted,
     download: { name: download.suggestedFilename(),
       size: downloadedRecord.length }, restored }));
-  console.log('VERDICT: PASS: exact Sage .usr save, prompt, import, and restore');
+  console.log('VERDICT: PASS: exact Sage save, No exit, import, and restore');
 } finally {
   await browser.close();
 }

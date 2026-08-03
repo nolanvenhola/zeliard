@@ -37,6 +37,7 @@ typedef enum {
 
 static game_scene_t g_scene = SCENE_OPENING;
 static int g_paused;
+static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
@@ -44,6 +45,17 @@ static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
 static zel_input_state_t g_input;
 static u32 g_input_subtick_accum;
+
+static void terminate_session(void) {
+    zeliard_room_masm_vm_stop();
+    zeliard_inventory_masm_vm_stop();
+    zel_opening_audio_stop();
+    zel_input_release_all(&g_input, g_game_segments[0], 1);
+    memset(g_game_vga, 0, sizeof(g_game_vga));
+    framebuf_clear(0);
+    g_paused = 0;
+    g_session_terminated = 1;
+}
 
 static int inventory_can_open(void) {
     return g_scene == SCENE_GAME &&
@@ -222,6 +234,7 @@ EXPORT void zeliard_init(void) {
     game_memory_init();
     g_scene = SCENE_OPENING;
     g_paused = 0;
+    g_session_terminated = 0;
     g_input_subtick_accum = 0;
     zel_opening_audio_init();
     opening_set_sound_cue_sink(zel_opening_audio_write_cue);
@@ -232,6 +245,7 @@ EXPORT void zeliard_init(void) {
 }
 
 EXPORT void zeliard_tick(u32 dt_ms) {
+    if (g_session_terminated) return;
     const int was_paused = g_paused;
     const u32 input_ticks =
         zel_timer_advance_ms(&g_input_subtick_accum, dt_ms);
@@ -270,6 +284,10 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
             input_ticks, g_game_segments[0][0xFF17]);
+        if (g_town_runtime.room.session_exit_requested) {
+            terminate_session();
+            return;
+        }
         if (frames < 0) {
             platform_log("zeliard_tick: 106TOWN live frame failed (%d)", frames);
         } else if (frames > 0) {
@@ -317,15 +335,18 @@ EXPORT void zeliard_tick(u32 dt_ms) {
 
 /* Browser keycodes enter the same make/break state machine as stick.asm. */
 EXPORT void zeliard_key_down(int keycode) {
+    if (g_session_terminated) return;
     apply_input_actions(zel_input_key_down(
         &g_input, g_game_segments[0], keycode));
 }
 
 EXPORT void zeliard_key_up(int keycode) {
+    if (g_session_terminated) return;
     zel_input_key_up(&g_input, g_game_segments[0], keycode);
 }
 
 EXPORT void zeliard_text_key(int ascii) {
+    if (g_session_terminated) return;
     if (g_scene != SCENE_GAME || !g_town_runtime.room.active ||
         g_town_runtime.room.kind != ZEL_ROOM_SAGE) return;
     if (ascii >= 'a' && ascii <= 'z') ascii -= 'a' - 'A';
@@ -335,11 +356,13 @@ EXPORT void zeliard_text_key(int ascii) {
 }
 
 EXPORT void zeliard_release_all_keys(void) {
+    if (g_session_terminated) return;
     zel_input_release_all(&g_input, g_game_segments[0], 1);
 }
 
 /* Compatibility pulse for older native callers. Browser code uses down/up. */
 EXPORT void zeliard_key(int keycode) {
+    if (g_session_terminated) return;
     /* Arm stick.asm's make-edge latch during an idle sample first. */
     apply_input_actions(zel_input_advance_pit(
         &g_input, g_game_segments[0], 10));
@@ -364,6 +387,7 @@ EXPORT int              zeliard_music_track(void) { return zel_opening_audio_mus
 EXPORT void             zeliard_music_complete(int track) { zel_opening_audio_music_complete(track); }
 EXPORT int              zeliard_music_attenuation(void) { return zel_opening_audio_attenuation(); }
 EXPORT int              zeliard_paused(void) { return g_paused; }
+EXPORT int              zeliard_session_terminated(void) { return g_session_terminated; }
 EXPORT int              zeliard_music_enabled(void) { return zel_opening_audio_music_enabled(); }
 EXPORT int              zeliard_sound_enabled(void) { return zel_opening_audio_sound_enabled(); }
 EXPORT int              zeliard_sound_cue(void) { return (int)zel_opening_audio_take_cue(); }
@@ -412,6 +436,7 @@ EXPORT int              zeliard_load_record(const u8 *record, int size) {
     game_memory_init();
     memcpy(g_game_segments[0], snapshot, sizeof(snapshot));
     g_paused = 0;
+    g_session_terminated = 0;
     g_input_subtick_accum = 0;
     if (!enter_game_scene()) return 0;
     return 1;

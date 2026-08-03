@@ -52,6 +52,7 @@ typedef struct {
     u16 bank_query_yield;
     u8 pending_sound_cue;
     u8 pending_ascii;
+    u8 session_exit_requested;
     u8 dos_handle_open;
     u8 dos_write_ok;
     char save_name[13];
@@ -134,6 +135,23 @@ static void relocate_words(u8 *memory, size_t address, u8 count,
 static int room_step(void *context, u16 cs, u16 ip) {
     room_vm_state_t *state = context;
     u8 *memory = zel_room86_memory();
+    if (cs == GAME_SEG && state->kind == ZEL_ROOM_SAGE) {
+        const size_t instruction = linear(cs, ip);
+        u16 *registers = zel_room86_registers();
+        /* 217KENJP A934-A93A is xor ax,ax followed by the only
+         * CS:jmp far [FF00] in KENJPRO. Intercept the exact release bytes
+         * before 8086tiny transfers control out of the emulated game. */
+        if (registers[ZEL_TINY86_AX] == 0 &&
+            memory[instruction] == 0x2E &&
+            memory[instruction + 1] == 0xFF &&
+            memory[instruction + 2] == 0x2E &&
+            memory[instruction + 3] == 0x00 &&
+            memory[instruction + 4] == 0xFF) {
+            state->session_exit_requested = 1;
+            state->active = 0;
+            return 1;
+        }
+    }
     if (cs == GAME_SEG && ip == SAR_STUB) {
         u16 *registers = zel_room86_registers();
         const u8 operation = (u8)registers[ZEL_TINY86_AX];
@@ -519,6 +537,9 @@ int zeliard_room_masm_vm_at_input_poll(void) {
 }
 int zeliard_room_masm_vm_input_kind(void) { return g_room_vm.input_kind; }
 int zeliard_room_masm_vm_active(void) { return g_room_vm.active; }
+int zeliard_room_masm_vm_session_exit_requested(void) {
+    return g_room_vm.session_exit_requested;
+}
 u8 zeliard_room_masm_vm_take_sound_cue(void) {
     const u8 cue = g_room_vm.pending_sound_cue;
     g_room_vm.pending_sound_cue = 0;

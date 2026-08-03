@@ -21,6 +21,7 @@ u16 zeliard_room_masm_vm_ip(void);
 int zeliard_room_masm_vm_at_input_poll(void);
 int zeliard_room_masm_vm_input_kind(void);
 int zeliard_room_masm_vm_active(void);
+int zeliard_room_masm_vm_session_exit_requested(void);
 u8 zeliard_room_masm_vm_take_sound_cue(void);
 void zeliard_room_masm_vm_text_key(u8 ascii);
 u32 zeliard_room_masm_vm_save_serial(void);
