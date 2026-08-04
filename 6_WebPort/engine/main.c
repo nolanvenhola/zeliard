@@ -52,6 +52,15 @@ static u8 g_fight_music_chunk = 0xFF;
 static u8 g_fight_boundary_selector = 0xFF;
 static u8 g_fight_started;
 
+static int fight_boundary_returns_to_town(u8 operation, u8 selector,
+                                          u16 dispatch) {
+    const int town_dispatch = operation == 0 &&
+        (dispatch == 0x6002 || dispatch == 0x601C);
+    const int town_warp = operation == 1 &&
+        (selector & 0x80u) && selector != 0x80u;
+    return town_dispatch || town_warp;
+}
+
 static void sync_fight_music(void) {
     const u8 chunk = zeliard_fight_masm_vm_music_chunk();
     if (chunk == g_fight_music_chunk) return;
@@ -353,7 +362,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                     zeliard_fight_masm_vm_exit_dispatch_slot();
                 const int town_warp = operation == 1 &&
                     (selector & 0x80u) && selector != 0x80u;
-                if ((operation == 0 && dispatch == 0x601C) || town_warp) {
+                if (fight_boundary_returns_to_town(
+                        operation, selector, dispatch)) {
                     g_cavern_transition.complete = 0;
                     g_fight_started = 0;
                     if (town_warp)
@@ -520,6 +530,11 @@ EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_word(void) { return opening_nec_hou_sprite_debug_word(); }
 #ifndef __EMSCRIPTEN__
 int zeliard_test_town_dialog_active(void) { return g_town_runtime.dialog.active; }
+int zeliard_test_fight_returns_to_town(int operation, int selector,
+                                       int dispatch) {
+    return fight_boundary_returns_to_town(
+        (u8)operation, (u8)selector, (u16)dispatch);
+}
 #endif
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_slots(void) { return opening_nec_hou_sprite_debug_slots(); }
 EXPORT int              zeliard_room_kind(void) { return (int)g_town_runtime.room.kind; }

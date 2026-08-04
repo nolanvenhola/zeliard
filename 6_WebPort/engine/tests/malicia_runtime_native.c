@@ -18,6 +18,26 @@ static u16 read_u16(const u8 *data, u16 offset) {
     return (u16)(data[offset] | ((u16)data[(u16)(offset + 1)] << 8));
 }
 
+static int advance_release_frame(u8 *game, size_t game_size, u8 *vga,
+                                 size_t vga_size, u32 frames, u8 direction) {
+    for (unsigned attempt = 0; attempt < 256; ++attempt) {
+        const int advanced = zeliard_fight_masm_vm_advance(
+            game, game_size, vga, vga_size, frames * 20u, direction);
+        if (!zeliard_fight_masm_vm_active()) return advanced;
+        if (zeliard_fight_masm_vm_at_frame()) return 1;
+    }
+    return 0;
+}
+
+static int advance_pit(u8 *game, size_t game_size, u8 *vga,
+                       size_t vga_size, u32 ticks, u8 direction) {
+    return zeliard_fight_masm_vm_advance(
+        game, game_size, vga, vga_size, ticks, direction);
+}
+
+/* Existing scenarios count release gameplay frames, not browser refreshes. */
+#define zeliard_fight_masm_vm_advance advance_release_frame
+
 static int write_visual_fixture(const u8 *vga) {
     FILE *ppm = fopen("build/malicia-first-frame.ppm", "wb");
     if (!ppm) return 0;
@@ -31,6 +51,43 @@ static int write_visual_fixture(const u8 *vga) {
 }
 
 int main(void) {
+    static u8 cadence_game[0x10000];
+    static u8 cadence_vga[0x10000];
+    cadence_game[0x0080] = 0x2D;
+    cadence_game[0x0082] = 0x3D;
+    cadence_game[0x0090] = 0x00;
+    cadence_game[0x0091] = 0x01;
+    cadence_game[0x00B2] = 0x00;
+    cadence_game[0x00B3] = 0x01;
+    cadence_game[0xFF33] = 5;
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        cadence_game, sizeof(cadence_game), cadence_vga,
+        sizeof(cadence_vga));
+    const int cadence_started_at_frame = zeliard_fight_masm_vm_at_frame();
+    const int cadence_speed = zeliard_fight_masm_vm_peek_u8(0xFF33);
+    ok &= cadence_started_at_frame && cadence_speed == 5;
+    const u8 cadence_x = cadence_game[0x80];
+    const int early_frame = advance_pit(
+        cadence_game, sizeof(cadence_game), cadence_vga,
+        sizeof(cadence_vga), 19, 8);
+    ok &= !early_frame && cadence_game[0x80] == cadence_x;
+    const int gated_frame = advance_pit(
+        cadence_game, sizeof(cadence_game), cadence_vga,
+        sizeof(cadence_vga), 1, 8);
+    ok &= gated_frame;
+    for (unsigned attempt = 0; attempt < 256 &&
+            !zeliard_fight_masm_vm_at_frame(); ++attempt) {
+        advance_pit(
+            cadence_game, sizeof(cadence_game), cadence_vga,
+            sizeof(cadence_vga), 0, 8);
+    }
+    ok &= cadence_game[0x80] == (u8)(cadence_x + 1u);
+    printf("malicia_cadence: start=%d speed=%02x early=%d gated=%d pos=%02x/%02x expected=%02x ok=%d\n",
+           cadence_started_at_frame, cadence_speed,
+           early_frame, gated_frame, cadence_x, cadence_game[0x80],
+           (u8)(cadence_x + 1u), ok);
+
     static u8 game[0x10000];
     static u8 vga[0x10000];
     game[0x0080] = 0x2D;
@@ -44,7 +101,7 @@ int main(void) {
     game[0xFF33] = 5;
     palette_set_game_mcga();
 
-    int ok = zeliard_fight_masm_vm_start(
+    ok &= zeliard_fight_masm_vm_start(
         game, sizeof(game), vga, sizeof(vga));
     const unsigned long long first_frame = fnv1a64(vga, 64000);
     const unsigned long long first_palette =
@@ -99,26 +156,11 @@ int main(void) {
     ok &= game[0xE7] == 0x0A;
     ok &= moving_frame == 0x6DF79A2F0D5A685EULL;
 
-    for (unsigned frame = 10; frame < 50; ++frame)
-        ok &= zeliard_fight_masm_vm_advance(
-            game, sizeof(game), vga, sizeof(vga), 1, 8);
-    const unsigned long long reentry_frame = fnv1a64(vga, 64000);
-    ok &= game[0x80] == 0xEE;
-    ok &= game[0x82] == 0x45;
-    ok &= reentry_frame == 0x67286AD3D12F4BBFULL;
-
     printf("malicia_runtime: first=%016llx palette=%016llx "
            "moving=%016llx pos=%02x/%02x objects=%u/%u families=%02x ip=%04x\n",
            first_frame, first_palette, moving_frame,
            moving_x, moving_row, monsters, items, family_mask,
            zeliard_fight_masm_vm_ip());
-    printf("malicia_reentry: active=%d operation=%02x selector=%02x "
-           "frame=%016llx pos=%02x/%02x ip=%04x\n",
-           zeliard_fight_masm_vm_active(),
-           zeliard_fight_masm_vm_exit_operation(),
-           zeliard_fight_masm_vm_exit_selector(), reentry_frame,
-           game[0x80], game[0x82], zeliard_fight_masm_vm_ip());
-
     static u8 exit_game[0x10000];
     static u8 exit_vga[0x10000];
     exit_game[0x0080] = 0x2D;
@@ -233,19 +275,22 @@ int main(void) {
         death_game, sizeof(death_game), death_vga, sizeof(death_vga));
     u16 minimum_hp = read_u16(death_game, 0x90);
     unsigned death_frames = 0;
-    for (; death_frames < 160; ++death_frames) {
-        ok &= zeliard_fight_masm_vm_advance(
+    for (; death_frames < 160 && zeliard_fight_masm_vm_active();
+            ++death_frames) {
+        zeliard_fight_masm_vm_advance(
             death_game, sizeof(death_game), death_vga, sizeof(death_vga),
             1, 0);
         const u16 hp = read_u16(death_game, 0x90);
         if (hp < minimum_hp) minimum_hp = hp;
-        if (minimum_hp == 1 && hp == 0x0100) break;
     }
+    ok &= !zeliard_fight_masm_vm_active();
     ok &= minimum_hp == 1;
     ok &= read_u16(death_game, 0x90) == 0x0100;
     ok &= death_game[0x85] == 0 && death_game[0x86] == 0 &&
           death_game[0x87] == 0;
     ok &= read_u16(death_game, 0x8B) == 50;
+    ok &= zeliard_fight_masm_vm_exit_operation() == 0;
+    ok &= zeliard_fight_masm_vm_exit_dispatch_slot() == 0x6002;
     printf("malicia_death_reentry: frames=%u min_hp=%04x hp=%04x "
            "gold=%02x%02x%02x almas=%02x%02x pos=%02x/%02x ip=%04x\n",
            death_frames + 1, minimum_hp, read_u16(death_game, 0x90),

@@ -10,6 +10,8 @@ void zeliard_key_down(int keycode);
 void zeliard_key_up(int keycode);
 int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
+int zeliard_test_fight_returns_to_town(int operation, int selector,
+                                       int dispatch);
 int zeliard_inventory_active(void);
 int zeliard_test_enter_room(int kind);
 int zeliard_room_kind(void);
@@ -39,6 +41,12 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
 
 int main(void) {
     int ok = 1;
+
+    ok &= zeliard_test_fight_returns_to_town(0, 0, 0x6002);
+    ok &= zeliard_test_fight_returns_to_town(0, 0, 0x601C);
+    ok &= !zeliard_test_fight_returns_to_town(0, 0, 0x6000);
+    ok &= zeliard_test_fight_returns_to_town(1, 0x81, 0);
+    ok &= !zeliard_test_fight_returns_to_town(1, 0x80, 0);
 
     zeliard_init();
     zeliard_opening_set_phase_for_test(3);

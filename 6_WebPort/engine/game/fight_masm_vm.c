@@ -39,8 +39,10 @@ typedef struct {
     u8 exit_operation;
     u8 exit_selector;
     u8 music_chunk;
+    u8 bootstrap_clock;
     u16 exit_dispatch_slot;
     u32 instructions;
+    u32 frame_pit_ticks;
     u16 trace[32];
     u8 trace_at;
 } fight_vm_state_t;
@@ -157,7 +159,9 @@ static int fight_step(void *context, u16 cs, u16 ip) {
     u16 *registers = zel_fight86_registers();
     if (cs == FIGHT_SEG) {
         state->trace[state->trace_at++ & 31u] = ip;
-        if ((++state->instructions & 0x7FFu) == 0) {
+        ++state->instructions;
+        if (state->bootstrap_clock &&
+            (state->instructions & 0x7FFu) == 0) {
             ++memory[linear(FIGHT_SEG, 0xFF1A)];
             write_u16(memory, linear(FIGHT_SEG, 0xFF1B),
                       (u16)(memory[linear(FIGHT_SEG, 0xFF1B)] |
@@ -190,18 +194,20 @@ static int fight_step(void *context, u16 cs, u16 ip) {
                 memory, linear(FIGHT_SEG, dispatch_slot));
             platform_log("200FIGHT dispatch: BX=%04X target=%04X",
                          dispatch_slot, target);
-            if ((dispatch_slot != 0x6000 && dispatch_slot != 0x6002) ||
-                target < FIGHT_LOAD_BASE) {
-                state->exit_operation = operation;
-                state->exit_selector = selector;
-                state->exit_dispatch_slot = dispatch_slot;
-                state->active = 0;
+            /* BX=6002 is the death return through the swapped town overlay.
+             * BX=6000 is fight.bin's internal level-start continuation and
+             * remains resident in this private VM. */
+            if (dispatch_slot == 0x6000 && target >= FIGHT_LOAD_BASE) {
+                registers[ZEL_TINY86_CS] = FIGHT_SEG;
+                registers[ZEL_TINY86_DS] = FIGHT_SEG;
+                registers[ZEL_TINY86_ES] = FIGHT_SEG;
+                zel_fight86_set_ip(target);
                 return 1;
             }
-            registers[ZEL_TINY86_CS] = FIGHT_SEG;
-            registers[ZEL_TINY86_DS] = FIGHT_SEG;
-            registers[ZEL_TINY86_ES] = FIGHT_SEG;
-            zel_fight86_set_ip(target);
+            state->exit_operation = operation;
+            state->exit_selector = selector;
+            state->exit_dispatch_slot = dispatch_slot;
+            state->active = 0;
             return 1;
         } else if (operation == 1 && !asset) {
             state->exit_operation = operation;
@@ -314,6 +320,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
     zel_fight86_set_out_callback(fight_out, &g_fight_vm);
     g_fight_vm.active = 1;
     g_fight_vm.allow_frame_once = 1;
+    g_fight_vm.bootstrap_clock = 1;
 
     for (unsigned pass = 0; pass < 400 && g_fight_vm.active &&
             !g_fight_vm.at_frame; ++pass) {
@@ -325,6 +332,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
     }
     memcpy(game_seg, memory + fight, 0x10000);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
+    g_fight_vm.bootstrap_clock = 0;
     if (!g_fight_vm.at_frame) {
         platform_log("200FIGHT VM start stopped at %04X after %u instructions; trace:",
                      zel_fight86_ip(), (unsigned)g_fight_vm.instructions);
@@ -348,15 +356,36 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
                                   u8 *vga, size_t vga_size,
                                   u32 pit_ticks, u8 direction) {
     if (!g_fight_vm.active || !game_seg || game_size < 0x10000 ||
-        !vga || vga_size < 0x10000 || !pit_ticks) return 0;
+        !vga || vga_size < 0x10000) return 0;
     u8 *memory = zel_fight86_memory();
     const size_t fight = linear(FIGHT_SEG, 0);
     memcpy(memory + fight, game_seg, 0x100);
     memcpy(memory + fight + 0xFF16, game_seg + 0xFF16, 0x14);
     g_fight_vm.direction = direction;
+
+    g_fight_vm.frame_pit_ticks += pit_ticks;
+
+    /* stick.asm's timer ISR advances these counters at 1.193182 MHz / 13B1h
+     * (~236.7 Hz).  fight.bin gates a normal frame at four ticks times the
+     * configured speed (20 ticks for the default value 5).  Keep the CPU at
+     * the frame boundary until real host PIT ticks satisfy that gate. */
+    memory[fight + 0xFF1A] =
+        (u8)(memory[fight + 0xFF1A] + (u8)pit_ticks);
+    write_u16(memory, fight + 0xFF1B,
+              (u16)(read_u16(memory, fight + 0xFF1B) + (u16)pit_ticks));
+    if (g_fight_vm.at_frame) {
+        const u8 speed = memory[fight + 0xFF33];
+        const u8 threshold = (u8)(4u * (speed ? speed : 1u));
+        if (g_fight_vm.frame_pit_ticks < threshold) {
+            sync_host_state(game_seg, vga);
+            return 0;
+        }
+        g_fight_vm.frame_pit_ticks -= threshold;
+    }
+    const u8 resume_from_frame = g_fight_vm.at_frame;
     g_fight_vm.at_frame = 0;
-    g_fight_vm.allow_frame_once = 1;
-    for (unsigned pass = 0; pass < 400 && g_fight_vm.active &&
+    g_fight_vm.allow_frame_once = resume_from_frame;
+    for (unsigned pass = 0; pass < 1 && g_fight_vm.active &&
             !g_fight_vm.at_frame; ++pass) {
         if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED) {
             g_fight_vm.active = 0;
@@ -364,7 +393,10 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
         }
     }
     sync_host_state(game_seg, vga);
-    return g_fight_vm.at_frame ? 1 : 0;
+    /* Long transitions and boss sequences can render between visits to the
+     * 629Ch gameplay boundary.  Tell the host to present that synchronized
+     * VGA work even while the VM is still inside such a sequence. */
+    return 1;
 }
 
 int zeliard_fight_masm_vm_active(void) { return g_fight_vm.active; }
