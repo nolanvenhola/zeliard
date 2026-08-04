@@ -33,9 +33,7 @@ static u32 g_pcm_subframe_accum;
 static int g_audio_rate = 48000;
 enum {
     PCM_RING_FRAMES = 65536,
-    /* Two 60 Hz producer intervals at 48 kHz, matching the shell's proven
-     * startup cushion without allowing latency to grow indefinitely. */
-    PCM_MAX_BUFFERED_FRAMES = 1536
+    PCM_MAX_BUFFERED_FRAMES = ZEL_AUDIO_PCM_CUSHION_FRAMES
 };
 static short g_pcm_ring[PCM_RING_FRAMES * 2];
 static size_t g_pcm_read;

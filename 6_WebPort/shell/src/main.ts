@@ -103,7 +103,12 @@ class OpeningMusic {
     };
 
     constructor(private readonly module: ZeliardModule) {
-        const frames = 512;
+        /* A 512-frame ScriptProcessor callback has only ~10.7 ms to run at
+         * 48 kHz, less than one animation frame. Town rendering and the MASM
+         * fight VM can keep the main thread busy past that deadline, so use a
+         * 2048-frame callback and retain another animation frame of PCM. */
+        const frames = 2048;
+        const primeFrames = 3072;
         this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
         this.cueSerial = this.module._zeliard_audio_cue_serial();
         this.pcmPointer = this.module._malloc(frames * 2 * Int16Array.BYTES_PER_ELEMENT);
@@ -118,7 +123,7 @@ class OpeningMusic {
                 this.stats.cueSerial = cueSerial;
                 this.stats.cueBypassCount++;
             }
-            if (!this.streamPrimed && buffered >= 1536)
+            if (!this.streamPrimed && buffered >= primeFrames)
                 this.streamPrimed = true;
             if (this.streamPrimed && buffered < output.length)
                 this.streamPrimed = false;

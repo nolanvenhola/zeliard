@@ -21,6 +21,10 @@ typedef zel_music_track_t zel_opening_music_track_t;
 #define ZEL_OPENING_MUSIC_ZOPN ZEL_MUSIC_ZOPN
 #define ZEL_OPENING_MUSIC_ZEND ZEL_MUSIC_ZEND
 
+/* Keep enough PCM ahead for one browser audio callback plus a delayed
+ * animation frame. This remains bounded so gameplay cues stay responsive. */
+#define ZEL_AUDIO_PCM_CUSHION_FRAMES 3072
+
 void zel_opening_audio_init(void);
 void zel_opening_audio_sync_phase(int phase);
 int zel_audio_play_music(zel_music_track_t track);
