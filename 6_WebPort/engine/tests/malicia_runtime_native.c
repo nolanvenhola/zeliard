@@ -38,8 +38,8 @@ static int advance_pit(u8 *game, size_t game_size, u8 *vga,
 /* Existing scenarios count release gameplay frames, not browser refreshes. */
 #define zeliard_fight_masm_vm_advance advance_release_frame
 
-static int write_visual_fixture(const u8 *vga) {
-    FILE *ppm = fopen("build/malicia-first-frame.ppm", "wb");
+static int write_visual_fixture(const char *path, const u8 *vga) {
+    FILE *ppm = fopen(path, "wb");
     if (!ppm) return 0;
     fputs("P6\n320 200\n255\n", ppm);
     for (unsigned i = 0; i < 64000; ++i) {
@@ -111,7 +111,7 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_ip() == 0x629C;
     ok &= first_frame == 0x8500AA3694C8DDEBULL;
     ok &= first_palette == 0xF0597D78ABA0CC75ULL;
-    ok &= write_visual_fixture(vga);
+    ok &= write_visual_fixture("build/malicia-first-frame.ppm", vga);
 
     const u16 object_list = read_u16(game, 0xC010);
     unsigned monsters = 0;
@@ -300,8 +300,8 @@ int main(void) {
 
     static u8 combat_game[0x10000];
     static u8 combat_vga[0x10000];
-    combat_game[0x0080] = 22 - 16;
-    combat_game[0x0082] = (60 - 9) & 0x3F;
+    combat_game[0x0080] = 18 - 16;
+    combat_game[0x0082] = (58 - 9) & 0x3F;
     combat_game[0x0090] = 0x00;
     combat_game[0x0091] = 0x01;
     combat_game[0x0092] = 1;
@@ -314,13 +314,26 @@ int main(void) {
     palette_set_game_mcga();
     ok &= zeliard_fight_masm_vm_start(
         combat_game, sizeof(combat_game), combat_vga, sizeof(combat_vga));
+    int enemy_hit_observed = 0;
+    u8 enemy_hp_min = 0xFF;
     for (unsigned frame = 0; frame < 8; ++frame) {
         combat_game[0xFF16] = 1;
         ok &= zeliard_fight_masm_vm_advance(
             combat_game, sizeof(combat_game), combat_vga,
             sizeof(combat_vga), 1, 0);
+        ok &= combat_game[0xFF45] == 2;
+        for (unsigned enemy = 0; enemy < 54; ++enemy) {
+            const u16 record = (u16)(0xD62Eu + enemy * 16u);
+            const u8 flags = (u8)zeliard_fight_masm_vm_peek_u8(
+                (u16)(record + 5u));
+            const u8 hp = (u8)zeliard_fight_masm_vm_peek_u8(
+                (u16)(record + 8u));
+            enemy_hit_observed |= (flags & 0x41u) == 0x41u;
+            if (hp && hp < enemy_hp_min) enemy_hp_min = hp;
+        }
     }
     const unsigned long long attack_frame = fnv1a64(combat_vga, 64000);
+    ok &= write_visual_fixture("build/malicia-attack-frame.ppm", combat_vga);
     const u8 attack_pose = combat_game[0xE7];
     for (unsigned frame = 0; frame < 4; ++frame) {
         combat_game[0xFF16] = 2;
@@ -329,17 +342,20 @@ int main(void) {
             sizeof(combat_vga), 1, 0);
     }
     const unsigned long long shield_frame = fnv1a64(combat_vga, 64000);
-    ok &= attack_frame == 0x616AA1AEDFF9ADD9ULL;
+    ok &= attack_frame == 0x795D3A1A920A1D50ULL;
     ok &= attack_pose == 0x80;
-    ok &= shield_frame == 0x307D1D72CABAAAC9ULL;
-    ok &= read_u16(combat_game, 0x94) == 0x0064;
-    ok &= read_u16(combat_game, 0x90) == 0x0088;
-    ok &= combat_game[0xFF75] == 0x09;
+    ok &= enemy_hit_observed;
+    ok &= shield_frame == 0x6C8F661A223741E7ULL;
+    ok &= read_u16(combat_game, 0x94) == 0x0061;
+    ok &= read_u16(combat_game, 0x90) == 0x00FD;
+    ok &= combat_game[0xFF75] == 0x07;
     printf("malicia_combat: attack=%016llx pose=%02x "
-           "shield=%016llx shield_hp=%04x hp=%04x cue=%02x ip=%04x\n",
+           "shield=%016llx shield_hp=%04x hp=%04x cue=%02x hit=%d "
+           "enemy_hp=%02x ip=%04x\n",
            attack_frame, attack_pose, shield_frame,
            read_u16(combat_game, 0x94), read_u16(combat_game, 0x90),
-           combat_game[0xFF75], zeliard_fight_masm_vm_ip());
+           combat_game[0xFF75], enemy_hit_observed, enemy_hp_min,
+           zeliard_fight_masm_vm_ip());
 
     static u8 boss_route_game[0x10000];
     static u8 boss_route_vga[0x10000];

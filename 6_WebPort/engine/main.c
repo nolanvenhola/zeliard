@@ -367,7 +367,15 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                     g_cavern_transition.complete = 0;
                     g_fight_started = 0;
                     if (town_warp)
-                        g_game_segments[0][0x00C4] = selector & 0x7Fu;
+                        g_game_segments[0][0x00C4] = selector;
+                    if (g_game_segments[0][0x00C4] != 0x80 &&
+                        g_game_segments[0][0x00C4] != 0x81) {
+                        const u8 saved_area = g_game_segments[0][0x00C5];
+                        g_game_segments[0][0x00C4] =
+                            saved_area == 0x80 || saved_area == 0x81
+                                ? saved_area
+                                : (u8)(0x80u + (u8)g_town_runtime.area);
+                    }
                     zel_opening_audio_stop();
                     g_fight_music_chunk = 0xFF;
                     if (zeliard_town_enter_first_frame(
@@ -534,6 +542,47 @@ int zeliard_test_fight_returns_to_town(int operation, int selector,
                                        int dispatch) {
     return fight_boundary_returns_to_town(
         (u8)operation, (u8)selector, (u16)dispatch);
+}
+static int test_begin_malicia(u16 hp) {
+    if (g_scene != SCENE_GAME) return 0;
+    u8 *cs = g_game_segments[0];
+    zeliard_room_masm_vm_stop();
+    zeliard_inventory_masm_vm_stop();
+    zeliard_fight_masm_vm_stop();
+    cs[0x0080] = 26 - 16;
+    cs[0x0082] = (23 - 9) & 0x3F;
+    cs[0x0085] = 0;
+    cs[0x0086] = 0x64;
+    cs[0x0087] = 0;
+    cs[0x008B] = 0x64;
+    cs[0x008C] = 0;
+    cs[0x0090] = (u8)hp;
+    cs[0x0091] = (u8)(hp >> 8);
+    cs[0x00B2] = 0;
+    cs[0x00B3] = 1;
+    cs[0x00C4] = 0;
+    cs[0x00C5] = 0x81;
+    cs[0xFF33] = 5;
+    memset(&g_cavern_transition, 0, sizeof(g_cavern_transition));
+    g_cavern_transition.complete = 1;
+    g_fight_started = 1;
+    return zeliard_fight_masm_vm_start(
+        cs, sizeof(g_game_segments[0]), g_game_vga, sizeof(g_game_vga));
+}
+int zeliard_test_begin_malicia_combat(void) {
+    return test_begin_malicia(0x0100);
+}
+int zeliard_test_begin_malicia_death(void) {
+    return test_begin_malicia(0x0010);
+}
+int zeliard_test_redraw_town(void) {
+    if (g_scene != SCENE_GAME ||
+        zeliard_town_enter_first_frame(&g_town_runtime, &g_game_exec,
+                                       g_game_vga,
+                                       sizeof(g_game_vga)) != 0)
+        return 0;
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    return 1;
 }
 #endif
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_slots(void) { return opening_nec_hou_sprite_debug_slots(); }

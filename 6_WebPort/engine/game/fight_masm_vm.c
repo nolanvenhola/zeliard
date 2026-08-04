@@ -21,7 +21,8 @@ void zel_fight86_set_flags(unsigned short value);
 
 enum {
     FIGHT_SEG = 0x1000,
-    DATA_SEG = 0x3000,
+    GAME_SEG = 0x2000,
+    ASSET_SEG = 0x3000,
     VGA_SEG = 0xA000,
     SAR_STUB = 0x0500,
     FIGHT_LOAD_BASE = 0x6000,
@@ -68,6 +69,23 @@ static void relocate_words(u8 *memory, size_t address, unsigned count,
         const size_t at = address + i * 2u;
         write_u16(memory, at, (u16)(read_u16(memory, at) + addend));
     }
+}
+
+static int prepare_sword_graphics(u8 *memory, u8 sword) {
+    static const u16 source_slots[] = {
+        0x1800, 0x1800, 0x1800, 0x1800, 0x1802, 0x1802, 0x1804,
+    };
+    if (sword >= sizeof(source_slots) / sizeof(source_slots[0])) return 0;
+
+    /* stick.asm:fn4_load_sword_graphics selects one of sword.grp's three
+     * banks, copies 0x1000 words from CS+2000h into game_seg:B000h, then
+     * relocates the fifteen reachability-table pointers at B002h. */
+    const size_t slot = linear(ASSET_SEG, source_slots[sword]);
+    const u16 source = read_u16(memory, slot);
+    const size_t destination = linear(GAME_SEG, 0xB000);
+    memcpy(memory + destination, memory + linear(ASSET_SEG, source), 0x2000);
+    relocate_words(memory, destination, 15, 0xB000);
+    return 1;
 }
 
 static int load_payload_to(u8 *memory, size_t destination,
@@ -185,7 +203,7 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         const u8 archive = memory[ref];
         const u8 chunk = memory[ref + 1];
         const char *asset = operation == 1 ? map_for_selector(selector)
-                          : operation == 4 ? "sword.grp"
+                          : operation == 4 ? "sword.grp:selected-bank"
                                            : asset_for_ref(archive, chunk);
         int loaded = 0;
         if (operation == 0) {
@@ -215,10 +233,7 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             state->active = 0;
             return 1;
         } else if (operation == 4) {
-            /* game.asm has already loaded and relocated sword.grp at
-             * game_seg+2000:1800. Function 4 selects the equipped tier;
-             * the MCGA fight driver reads that resident bank directly. */
-            loaded = 1;
+            loaded = prepare_sword_graphics(memory, selector);
         } else if (asset) {
             const size_t destination = operation == 1
                 ? linear(FIGHT_SEG, 0xC000)
@@ -242,8 +257,22 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             return 1;
         }
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
-            registers[ZEL_TINY86_AX] = (u16)(state->direction |
-                ((u16)memory[linear(FIGHT_SEG, 0xFF16)] << 8));
+            const u8 buttons = memory[linear(FIGHT_SEG, 0xFF16)];
+            /* The web input layer stores Space only in FF16/AH. 200FIGHT's
+             * attack FSM also tests AL bit 1 before entering the sword state,
+             * so synthesize that action qualifier while preserving direction. */
+            const u8 input = (u8)(state->direction |
+                ((buttons & 1u) ? 2u : 0u));
+            /* The browser has no joystick transition to arm the DOS combat
+             * byte. Keep it armed while a valid Space attack is held; the
+             * original handler still applies the sword/climb/debug gates. */
+            if ((buttons & 1u) &&
+                memory[linear(FIGHT_SEG, 0x0092)] != 0 &&
+                memory[linear(FIGHT_SEG, 0xFF39)] == 0 &&
+                memory[linear(FIGHT_SEG, 0xFF3B)] == 0)
+                memory[linear(FIGHT_SEG, 0xFF3D)] = 0xFF;
+            registers[ZEL_TINY86_AX] =
+                (u16)(input | ((u16)buttons << 8));
             zel_fight86_set_ip((u16)(ip + 2u));
             return 1;
         }
@@ -297,15 +326,20 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
         !load_payload_to(memory, fight + 0x3000, "gfmcga.bin") ||
         !load_payload_to(memory, fight + FIGHT_LOAD_BASE, "fight.bin") ||
         !load_payload_to(memory, fight + 0xC000, initial_map) ||
-        !load_fill_to(memory, linear(DATA_SEG, 0x0000), "magic.grp") ||
-        !load_fill_to(memory, linear(DATA_SEG, 0x1800), "sword.grp")) {
+        !load_fill_to(memory, linear(ASSET_SEG, 0x0000), "magic.grp") ||
+        !load_fill_to(memory, linear(ASSET_SEG, 0x1800), "sword.grp")) {
         platform_log("200FIGHT VM base asset load failed");
         return 0;
     }
-    relocate_words(memory, linear(DATA_SEG, 0x1800), 3, 0x1800);
+    relocate_words(memory, linear(ASSET_SEG, 0x1800), 3, 0x1800);
+    if (!prepare_sword_graphics(memory, game_seg[0x0092])) {
+        platform_log("200FIGHT VM unsupported sword selector %02X",
+                     game_seg[0x0092]);
+        return 0;
+    }
     write_u16(memory, fight + 0x010C, SAR_STUB);
     memory[fight + SAR_STUB] = 0xC3;
-    write_u16(memory, fight + 0xFF2C, DATA_SEG);
+    write_u16(memory, fight + 0xFF2C, GAME_SEG);
 
     u16 *registers = zel_fight86_registers();
     registers[ZEL_TINY86_AX] = 0;

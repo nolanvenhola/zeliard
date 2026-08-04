@@ -12,6 +12,10 @@ int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
 int zeliard_test_fight_returns_to_town(int operation, int selector,
                                        int dispatch);
+int zeliard_test_begin_malicia_death(void);
+int zeliard_test_begin_malicia_combat(void);
+int zeliard_test_redraw_town(void);
+int zeliard_fight_active(void);
 int zeliard_inventory_active(void);
 int zeliard_test_enter_room(int kind);
 int zeliard_room_kind(void);
@@ -261,6 +265,46 @@ int main(void) {
            invalid_rejected,
            zeliard_test_game_u8(0x8D), zeliard_test_game_u8(0x9D),
            zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame, ok);
+
+    ok &= zeliard_test_begin_malicia_combat();
+    for (unsigned settle = 0; settle < 5; ++settle)
+        zeliard_tick(16);
+    zeliard_key_down(32);
+    int attack_started = 0;
+    int equip_armed = 0;
+    for (unsigned attack_tick = 0; attack_tick < 40; ++attack_tick) {
+        zeliard_tick(16);
+        attack_started |= zeliard_test_game_u8(0xFF45) == 2;
+        equip_armed |= zeliard_test_game_u8(0xFF3D) != 0;
+    }
+    zeliard_key_up(32);
+    ok &= attack_started;
+    printf("main_controls:malicia_space_attack: %s armed=%d state=%02X equip=%02X climb=%02X debug=%02X sword=%02X buttons=%02X\n",
+           attack_started ? "PASS" : "FAIL",
+           equip_armed,
+           zeliard_test_game_u8(0xFF45), zeliard_test_game_u8(0xFF3D),
+           zeliard_test_game_u8(0xFF39), zeliard_test_game_u8(0xFF3B),
+           zeliard_test_game_u8(0x92), zeliard_test_game_u8(0xFF16));
+
+    record[0xC4] = 0x81;
+    ok &= zeliard_load_record(record, sizeof(record));
+    ok &= zeliard_test_begin_malicia_death();
+    unsigned death_ticks = 0;
+    while (zeliard_fight_active() && death_ticks++ < 5000)
+        zeliard_tick(16);
+    u8 death_return_frame[ZELIARD_FB_SIZE];
+    memcpy(death_return_frame, g_framebuf, sizeof(death_return_frame));
+    const int reference_redrawn = zeliard_test_redraw_town();
+    unsigned town_redraw_differences = 0;
+    for (size_t i = 0; i < sizeof(death_return_frame); ++i)
+        town_redraw_differences += death_return_frame[i] != g_framebuf[i];
+    const int death_return_redrawn = !zeliard_fight_active() &&
+        zeliard_town_area() == 1 && reference_redrawn &&
+        town_redraw_differences == 0;
+    ok &= death_return_redrawn;
+    printf("main_controls:malicia_death_town_redraw: %s ticks=%u diff=%u area=%d\n",
+           death_return_redrawn ? "PASS" : "FAIL", death_ticks,
+           town_redraw_differences, zeliard_town_area());
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
