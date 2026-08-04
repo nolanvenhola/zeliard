@@ -7,6 +7,16 @@ const audioResponses = [];
 const consoleMessages = [];
 const pageErrors = [];
 
+const pressSampledKey = (key) => page.evaluate((sampledKey) => {
+  const module = window.__zeliard;
+  /* Give stick.asm's released-key latch an idle sample before the make edge,
+   * matching the compatibility pulse and real held-key path. */
+  module._zeliard_tick(50);
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: sampledKey }));
+  module._zeliard_tick(25);
+  window.dispatchEvent(new KeyboardEvent('keyup', { key: sampledKey }));
+}, key);
+
 page.on('response', (response) => {
   if (response.url().includes('/audio/'))
     audioResponses.push({ status: response.status(), url: response.url() });
@@ -69,6 +79,8 @@ try {
       window.__zeliard._zeliard_framebuf() + 33 * 320 + 130],
     oplWrites: window.__zeliard._zeliard_audio_opl_write_count(),
   }));
+  await page.evaluate(() =>
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })));
   await page.waitForTimeout(250);
   const pauseEnd = await page.evaluate(() => ({
     paused: window.__zeliard._zeliard_paused(),
@@ -84,17 +96,31 @@ try {
     throw new Error(`ESC pause did not execute SNDADLIB cue 02h: ${JSON.stringify({ pauseProbeBefore, pauseStart })}`);
 
   const phaseBeforeUnpause = await page.evaluate(() => window.__zeliard._zeliard_phase());
-  await page.keyboard.press('Space');
-  const pauseRegionAfter = await page.evaluate(() => {
+  const pauseRestore = await page.evaluate(() => {
     const module = window.__zeliard;
+    /* Drive the real shell key handlers, then consume the key and capture the
+     * restored region in the same browser task.  A normal Playwright press can
+     * be observed before the five-PIT-tick input sampler runs, or after the
+     * next animated opening frame has legitimately changed these pixels. */
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    module._zeliard_tick(25);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
     const ptr = module._zeliard_framebuf();
     const bytes = [];
     for (let y = 30; y < 46; y++)
       for (let x = 128; x < 192; x++)
         bytes.push(module.HEAPU8[ptr + y * 320 + x]);
-    return bytes;
+    return {
+      bytes,
+      paused: module._zeliard_paused(),
+      phase: module._zeliard_phase(),
+      elapsed: module._zeliard_phase_elapsed(),
+    };
   });
-  if (pauseRegionAfter.some((value, index) => value !== pauseRegionBefore[index]))
+  if (pauseRestore.paused !== 0 || pauseRestore.phase !== phaseBeforeUnpause ||
+      pauseRestore.elapsed !== pauseEnd.elapsed)
+    throw new Error(`Space did not restore at the paused tick: ${JSON.stringify(pauseRestore)}`);
+  if (pauseRestore.bytes.some((value, index) => value !== pauseRegionBefore[index]))
     throw new Error('MASM PAUSE box did not restore its saved framebuffer region');
   await page.waitForTimeout(150);
   const afterUnpause = await page.evaluate(() => ({
@@ -105,16 +131,16 @@ try {
   if (afterUnpause.paused !== 0 || afterUnpause.phase !== phaseBeforeUnpause ||
       afterUnpause.elapsed <= pauseEnd.elapsed)
     throw new Error(`Space did not exclusively unpause: ${JSON.stringify(afterUnpause)}`);
-  await page.keyboard.press('F1');
+  await pressSampledKey('F1');
   const musicOff = await page.evaluate(() => window.__zeliard._zeliard_music_enabled());
-  await page.keyboard.press('F1');
+  await pressSampledKey('F1');
   const musicOn = await page.evaluate(() => window.__zeliard._zeliard_music_enabled());
   if (musicOff !== 0 || musicOn !== 1)
     throw new Error(`F1 music toggle mismatch: ${musicOff}->${musicOn}`);
 
-  await page.keyboard.press('F2');
+  await pressSampledKey('F2');
   const soundOff = await page.evaluate(() => window.__zeliard._zeliard_sound_enabled());
-  await page.keyboard.press('F2');
+  await pressSampledKey('F2');
   const soundOn = await page.evaluate(() => window.__zeliard._zeliard_sound_enabled());
   if (soundOff !== 0 || soundOn !== 1)
     throw new Error(`F2 sound toggle mismatch: ${soundOff}->${soundOn}`);
