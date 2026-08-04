@@ -83,11 +83,10 @@ const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
 class OpeningMusic {
-    private readonly context = new AudioContext();
-    private readonly node: ScriptProcessorNode;
+    private readonly node: AudioWorkletNode;
     private readonly pcmPointer: number;
+    private readonly pumpFrames = 3072;
     private activeTrack = -1;
-    private streamPrimed = false;
     private cueSerial = 0;
     readonly stats = {
         callbacks: 0,
@@ -99,56 +98,24 @@ class OpeningMusic {
         cueSerial: 0,
         cueBypassCount: 0,
         bufferedFrames: 0,
-        contextState: this.context.state,
+        contextState: 'suspended' as AudioContextState,
     };
 
-    constructor(private readonly module: ZeliardModule) {
-        /* A 512-frame ScriptProcessor callback has only ~10.7 ms to run at
-         * 48 kHz, less than one animation frame. Town rendering and the MASM
-         * fight VM can keep the main thread busy past that deadline, so use a
-         * 2048-frame callback and retain another animation frame of PCM. */
-        const frames = 2048;
-        const primeFrames = 3072;
+    private constructor(private readonly module: ZeliardModule,
+                        private readonly context: AudioContext) {
         this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
         this.cueSerial = this.module._zeliard_audio_cue_serial();
-        this.pcmPointer = this.module._malloc(frames * 2 * Int16Array.BYTES_PER_ELEMENT);
-        this.node = this.context.createScriptProcessor(frames, 0, 2);
-        this.node.onaudioprocess = (event) => {
-            const output = event.outputBuffer;
-            const buffered = this.module._zeliard_audio_pcm_available();
-            const cueSerial = this.module._zeliard_audio_cue_serial();
-            this.stats.bufferedFrames = buffered;
-            if (cueSerial !== this.cueSerial) {
-                this.cueSerial = cueSerial;
-                this.stats.cueSerial = cueSerial;
-                this.stats.cueBypassCount++;
-            }
-            if (!this.streamPrimed && buffered >= primeFrames)
-                this.streamPrimed = true;
-            if (this.streamPrimed && buffered < output.length)
-                this.streamPrimed = false;
-            const available = this.streamPrimed
-                ? this.module._zeliard_audio_pcm(this.pcmPointer, output.length)
-                : 0;
-            const pcm = new Int16Array(this.module.HEAPU8.buffer,
-                this.pcmPointer, available * 2);
-            const left = output.getChannelData(0);
-            const right = output.getChannelData(1);
-            this.stats.callbacks++;
-            this.stats.requestedFrames += output.length;
-            this.stats.deliveredFrames += available;
-            this.stats.underrunFrames += output.length - available;
+        this.pcmPointer = this.module._malloc(
+            this.pumpFrames * 2 * Int16Array.BYTES_PER_ELEMENT);
+        this.node = new AudioWorkletNode(this.context, 'zeliard-pcm', {
+            numberOfInputs: 0,
+            numberOfOutputs: 1,
+            outputChannelCount: [2],
+        });
+        this.node.port.onmessage = (event: MessageEvent) => {
+            if (event.data?.type !== 'stats') return;
+            Object.assign(this.stats, event.data.stats);
             this.stats.contextState = this.context.state;
-            left.fill(0);
-            right.fill(0);
-            for (let i = 0; i < available; ++i) {
-                left[i] = pcm[i * 2] / 32768;
-                right[i] = pcm[i * 2 + 1] / 32768;
-                this.stats.deliveredPeak = Math.max(this.stats.deliveredPeak,
-                    Math.abs(pcm[i * 2]), Math.abs(pcm[i * 2 + 1]));
-                this.stats.deliveredNonzero +=
-                    pcm[i * 2] !== 0 || pcm[i * 2 + 1] !== 0 ? 1 : 0;
-            }
         };
         this.node.connect(this.context.destination);
     }
@@ -156,17 +123,42 @@ class OpeningMusic {
     static async load(module: ZeliardModule): Promise<OpeningMusic> {
         if (!module._zeliard_exact_music_driver())
             throw new Error('original MSCADLIB runtime unavailable');
-        return new OpeningMusic(module);
+        const context = new AudioContext();
+        await context.audioWorklet.addModule(
+            new URL('audio-worklet.js', appBaseUrl).href);
+        return new OpeningMusic(module, context);
     }
 
     async unlock(): Promise<void> {
         await this.context.resume();
+        this.stats.contextState = this.context.state;
+    }
+
+    pump(): void {
+        const cueSerial = this.module._zeliard_audio_cue_serial();
+        if (cueSerial !== this.cueSerial) {
+            this.cueSerial = cueSerial;
+            this.stats.cueSerial = cueSerial;
+            this.stats.cueBypassCount++;
+        }
+        let buffered = this.module._zeliard_audio_pcm_available();
+        while (buffered > 0) {
+            const requested = Math.min(buffered, this.pumpFrames);
+            const delivered = this.module._zeliard_audio_pcm(
+                this.pcmPointer, requested);
+            if (delivered <= 0) break;
+            const source = new Int16Array(this.module.HEAPU8.buffer,
+                this.pcmPointer, delivered * 2);
+            const pcm = new Int16Array(source);
+            this.node.port.postMessage({ type: 'pcm', pcm }, [pcm.buffer]);
+            buffered -= delivered;
+        }
     }
 
     sync(track: number, enabled: boolean, paused: boolean, attenuation: number): void {
         if (track !== this.activeTrack) {
             this.activeTrack = track;
-            this.streamPrimed = false;
+            this.node.port.postMessage({ type: 'reset' });
             this.stats.callbacks = 0;
             this.stats.requestedFrames = 0;
             this.stats.deliveredFrames = 0;
@@ -550,6 +542,7 @@ async function boot() {
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
             Module._zeliard_music_attenuation());
+        music?.pump();
         paintFrame();
         requestAnimationFrame(frame);
     }
