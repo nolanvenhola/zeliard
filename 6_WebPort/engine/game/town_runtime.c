@@ -380,6 +380,14 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         zeliard_gmmcga_draw_equipped_sword(vga, vga_size, cs_1000, 0x10000,
                                             sword, 0x18AB))
         return -5;
+    /* game.asm follows the sword call with GMMCGA:28DF using AL=shield and
+     * BX=3EA4h. Replaying it here is required after loading a .usr record;
+     * otherwise the saved shield value is restored but its HUD icon is not. */
+    const u8 shield = zeliard_player_read_u8(&player, ZEL_PLAYER_SHIELD);
+    if (shield != 0 &&
+        zeliard_gmmcga_draw_equipped_shield(vga, vga_size, cs_1000, 0x10000,
+                                             shield, 0x3EA4))
+        return -5;
     if (zeliard_gmmcga_clear_playfield(vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_CLEAR_PLAYFIELD, "106TOWN:gfx_clear_fn", NULL,

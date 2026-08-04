@@ -43,6 +43,18 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
     return hash;
 }
 
+static unsigned long long frame_rect_hash(int x, int y, int width, int height) {
+    unsigned long long hash = 0xCBF29CE484222325ULL;
+    for (int row = 0; row < height; ++row) {
+        const u8 *pixels = &g_framebuf[(y + row) * ZELIARD_WIDTH + x];
+        for (int column = 0; column < width; ++column) {
+            hash ^= pixels[column];
+            hash *= 0x100000001B3ULL;
+        }
+    }
+    return hash;
+}
+
 int main(void) {
     int ok = 1;
 
@@ -255,16 +267,23 @@ int main(void) {
          zeliard_test_game_u8(0xE5) == 0xE0;
     const unsigned long long restored_frame = fnv1a64(
         g_framebuf, ZELIARD_FB_SIZE);
+    const unsigned long long restored_shield =
+        frame_rect_hash(250, 164, 16, 16);
     const int restored_muralla_frame =
-        restored_frame == 0xCB57D41686D4A49DULL;
-    ok &= restored_muralla_frame;
+        restored_frame == 0xD5767357F0EE6DEAULL;
+    const int restored_shield_icon =
+        restored_shield == 0x18FDBA10EBC3FCC6ULL;
+    ok &= restored_muralla_frame && restored_shield_icon;
     ok &= restored;
     printf("main_controls:save_restore_bootstrap: %s invalid=%d level=%d "
-           "spell=%d sages=%02x area=%d frame=%016llx cumulative=%d\n",
-           restored && restored_muralla_frame ? "PASS" : "FAIL",
+           "spell=%d sages=%02x area=%d frame=%016llx shield=%016llx "
+           "cumulative=%d\n",
+           restored && restored_muralla_frame && restored_shield_icon ?
+               "PASS" : "FAIL",
            invalid_rejected,
            zeliard_test_game_u8(0x8D), zeliard_test_game_u8(0x9D),
-           zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame, ok);
+           zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame,
+           restored_shield, ok);
 
     ok &= zeliard_test_begin_malicia_combat();
     for (unsigned settle = 0; settle < 5; ++settle)
