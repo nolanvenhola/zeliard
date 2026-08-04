@@ -331,6 +331,9 @@ int main(void) {
     const int return_start = zeliard_test_game_u8(0x80);
     const int return_scroll = zeliard_test_game_u8(0x82);
     const int return_column = zeliard_test_game_u8(0x83);
+    u8 reverse_reference_frame[ZELIARD_FB_SIZE];
+    memcpy(reverse_reference_frame, g_framebuf,
+           sizeof(reverse_reference_frame));
     ok &= zeliard_test_begin_malicia_exit();
     zeliard_key_down(38);
     unsigned return_ticks = 0;
@@ -349,20 +352,26 @@ int main(void) {
     }
     if (!return_key_released) zeliard_key_up(38);
     zeliard_tick(16);
+    unsigned reverse_restore_differences = 0;
+    for (size_t i = 0; i < sizeof(reverse_reference_frame); ++i)
+        reverse_restore_differences +=
+            reverse_reference_frame[i] != g_framebuf[i];
+    zeliard_tick(16);
     const int reverse_returned = reverse_transition_seen &&
         !zeliard_fight_active() && !zeliard_cavern_transition_active() &&
         zeliard_town_area() == 1 && zeliard_test_game_u8(0xC4) == 0x81 &&
         zeliard_test_game_u8(0x80) == return_start &&
         zeliard_test_game_u8(0x82) == return_scroll &&
         zeliard_test_game_u8(0x83) == return_column &&
+        reverse_restore_differences == 0 &&
         (zeliard_test_game_u8(0xC2) & 1);
     ok &= reverse_returned;
     printf("main_controls:malicia_reverse_cavern_return: %s ticks=%u "
-           "area=%d pos=%02x/%02x/%02x facing=%02x\n",
+           "area=%d pos=%02x/%02x/%02x facing=%02x diff=%u\n",
            reverse_returned ? "PASS" : "FAIL", return_ticks,
            zeliard_town_area(), zeliard_test_game_u8(0x80),
            zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
-           zeliard_test_game_u8(0xC2));
+           zeliard_test_game_u8(0xC2), reverse_restore_differences);
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

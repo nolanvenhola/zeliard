@@ -43,6 +43,9 @@ static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_cavern_town_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                                 [ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_cavern_town_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
 static zeliard_cavern_transition_t g_cavern_transition;
@@ -86,6 +89,19 @@ static void sync_fight_music(void) {
 
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
+    u8 cavern_progress[0x3D];
+    memcpy(cavern_progress, cs + ZEL_PLAYER_GOLD, sizeof(cavern_progress));
+    if (g_cavern_town_origin.valid) {
+        /* FIGHT replaces most of the shared game segment with its own code,
+         * maps, and scratch buffers. Restore the suspended town overlay, but
+         * retain the persistent gold-through-spell state changed in combat.
+         * Copying the whole low page would also import FIGHT's render scratch
+         * bytes and corrupt the first town frame. */
+        memcpy(g_game_segments, g_cavern_town_segments,
+               sizeof(g_cavern_town_segments));
+        memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress,
+               sizeof(cavern_progress));
+    }
     const u8 selector = g_cavern_town_origin.valid
         ? g_cavern_town_origin.area_id
         : g_cavern_transition.return_selector;
@@ -104,15 +120,18 @@ static void finish_cavern_return_to_town(void) {
     cs[ZEL_PLAYER_FACING_DIRECTION] |= 1;
     cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
     cs[ZEL_PLAYER_POSE] = 0;
+    /* The suspended image was captured while Up was held at the cavern
+     * entrance. Reset its saved input masks so the town cannot immediately
+     * enter the cavern again after the host key has been released. */
+    zel_input_init(&g_input, cs);
     g_cavern_transition.complete = 0;
     g_cavern_transition.return_to_town = 0;
     g_cavern_town_origin.valid = 0;
-    if (zeliard_town_enter_first_frame(
-            &g_town_runtime, &g_game_exec, g_game_vga,
-            sizeof(g_game_vga)) != 0) {
-        platform_log("200FIGHT: reverse cavern town frame failed");
-        return;
-    }
+    g_town_runtime.cavern_exit_requested = 0;
+    g_town_runtime.facing_door_type = 0xFF;
+    g_town_runtime.facing_item_position = 0xFFFF;
+    g_town_runtime.facing_npc_position = 0xFFFF;
+    memcpy(g_game_vga, g_cavern_town_vga, sizeof(g_game_vga));
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
     zel_audio_play_music(ZEL_MUSIC_MGT1);
 }
@@ -197,6 +216,8 @@ static bool game_load_direct(const char *name, u16 destination) {
 static void game_memory_init(void) {
     memset(g_game_segments, 0, sizeof(g_game_segments));
     memset(g_game_vga, 0, sizeof(g_game_vga));
+    memset(g_cavern_town_segments, 0, sizeof(g_cavern_town_segments));
+    memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
     memset(&g_game_exec, 0, sizeof(g_game_exec));
     memset(&g_cavern_transition, 0, sizeof(g_cavern_transition));
     memset(&g_cavern_town_origin, 0, sizeof(g_cavern_town_origin));
@@ -491,6 +512,14 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             .screen_position =
                 g_game_segments[0][ZEL_PLAYER_SCREEN_POSITION],
         };
+        const int cavern_snapshot_ready =
+            (g_game_segments[0][0xFF17] & 1u) != 0;
+        if (cavern_snapshot_ready) {
+            memcpy(g_cavern_town_segments, g_game_segments,
+                   sizeof(g_cavern_town_segments));
+            memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
+            memcpy(g_cavern_town_vga, g_framebuf, ZELIARD_FB_SIZE);
+        }
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
             input_ticks, g_game_segments[0][0xFF17]);
@@ -508,6 +537,12 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 town_origin.area_id =
                     (u8)(0x80u + (u8)g_town_runtime.area);
             g_cavern_town_origin = town_origin;
+            if (!cavern_snapshot_ready) {
+                memcpy(g_cavern_town_segments, g_game_segments,
+                       sizeof(g_cavern_town_segments));
+                memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
+                memcpy(g_cavern_town_vga, g_framebuf, ZELIARD_FB_SIZE);
+            }
             zel_opening_audio_stop();
             if (zeliard_cavern_transition_begin(
                     &g_cavern_transition, g_game_segments[0],
@@ -679,6 +714,10 @@ int zeliard_test_begin_malicia_combat(void) {
 int zeliard_test_begin_malicia_exit(void) {
     if (g_scene != SCENE_GAME) return 0;
     u8 *cs = g_game_segments[0];
+    memcpy(g_cavern_town_segments, g_game_segments,
+           sizeof(g_cavern_town_segments));
+    memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
+    memcpy(g_cavern_town_vga, g_framebuf, ZELIARD_FB_SIZE);
     g_cavern_town_origin = (cavern_town_origin_t){
         .valid = 1,
         .area_id = 0x81,
