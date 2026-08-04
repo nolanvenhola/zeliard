@@ -1,0 +1,22 @@
+#ifndef ZELIARD_FIGHT_MASM_VM_H
+#define ZELIARD_FIGHT_MASM_VM_H
+
+#include "../core/types.h"
+
+int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
+                                u8 *vga, size_t vga_size);
+int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
+                                  u8 *vga, size_t vga_size,
+                                  u32 pit_ticks, u8 direction);
+int zeliard_fight_masm_vm_active(void);
+int zeliard_fight_masm_vm_at_frame(void);
+u16 zeliard_fight_masm_vm_ip(void);
+u8 zeliard_fight_masm_vm_exit_operation(void);
+u8 zeliard_fight_masm_vm_exit_selector(void);
+u16 zeliard_fight_masm_vm_exit_dispatch_slot(void);
+u8 zeliard_fight_masm_vm_music_chunk(void);
+int zeliard_fight_masm_vm_peek_u8(u16 offset);
+int zeliard_fight_masm_vm_peek_u16(u16 offset);
+void zeliard_fight_masm_vm_stop(void);
+
+#endif

@@ -37,6 +37,8 @@ ENGINE_SRC := \
 	third_party/8086tiny/room_8086tiny.c \
 	game/inventory_masm_vm.c \
 	third_party/8086tiny/inventory_8086tiny.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
 	game/cavern_transition.c \
 	game/gameplay_state.c
@@ -71,6 +73,8 @@ TEST_OPENING_SRC := \
 	third_party/8086tiny/room_8086tiny.c \
 	game/inventory_masm_vm.c \
 	third_party/8086tiny/inventory_8086tiny.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
@@ -105,6 +109,8 @@ TEST_OPENING_TRACE_SRC := \
 	third_party/8086tiny/room_8086tiny.c \
 	game/inventory_masm_vm.c \
 	third_party/8086tiny/inventory_8086tiny.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
@@ -125,6 +131,14 @@ TEST_OPENING_LIVE_TRACE_SRC := \
 	game/opening_script.c \
 	game/opening_trace.c \
 	game/opening.c \
+	platform/platform_sdl.c
+
+TEST_MALICIA_RUNTIME_SRC := \
+	tests/malicia_runtime_native.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
+	load/fill_buffer.c \
+	render/palette.c \
 	platform/platform_sdl.c
 TEST_OPENING_FRAME_DUMP_SRC := \
 	tests/opening_frame_dump_native.c \
@@ -182,6 +196,8 @@ TEST_MAIN_CONTROLS_SRC := \
 	third_party/8086tiny/room_8086tiny.c \
 	game/inventory_masm_vm.c \
 	third_party/8086tiny/inventory_8086tiny.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
@@ -321,7 +337,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_test_enter_room","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_fight_active","_zeliard_fight_ip","_zeliard_fight_boundary","_zeliard_test_enter_room","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -493,6 +509,10 @@ build/inventory-masm-vm-native: $(TEST_INVENTORY_MASM_VM_SRC) Makefile
 build/cavern-transition-native: $(TEST_CAVERN_TRANSITION_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_CAVERN_TRANSITION_SRC)
+
+build/malicia-runtime-native: $(TEST_MALICIA_RUNTIME_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_MALICIA_RUNTIME_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build

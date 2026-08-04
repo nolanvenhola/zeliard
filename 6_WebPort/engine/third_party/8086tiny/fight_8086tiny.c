@@ -1,0 +1,24 @@
+/* Private 8086tiny instance for the release 200FIGHT/206GFMCA runtime. */
+#define zel_tiny86_reset zel_fight86_reset
+#define zel_tiny86_set_out_callback zel_fight86_set_out_callback
+#define zel_tiny86_set_step_callback zel_fight86_set_step_callback
+#define zel_tiny86_run zel_fight86_run
+#define zel_tiny86_memory zel_fight86_memory
+#define zel_tiny86_memory_size zel_fight86_memory_size
+#define zel_tiny86_registers zel_fight86_registers
+#define zel_tiny86_byte_registers zel_fight86_byte_registers
+#define zel_tiny86_ip zel_fight86_ip
+#define zel_tiny86_set_ip zel_fight86_set_ip
+#define zel_tiny86_set_flags zel_fight86_set_flags
+#define set_CF zel_fight86_set_CF
+#define set_AF zel_fight86_set_AF
+#define set_OF zel_fight86_set_OF
+#define set_AF_OF_arith zel_fight86_set_AF_OF_arith
+#define make_flags zel_fight86_make_flags
+#define set_flags zel_fight86_set_flags_internal
+#define set_opcode zel_fight86_set_opcode
+#define pc_interrupt zel_fight86_pc_interrupt
+#define AAA_AAS zel_fight86_AAA_AAS
+#define audio_callback zel_fight86_audio_callback
+
+#include "8086tiny.c"

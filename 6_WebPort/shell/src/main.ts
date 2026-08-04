@@ -46,6 +46,9 @@ type EngineExports = {
     _zeliard_cavern_transition_active(): number;
     _zeliard_cavern_transition_complete(): number;
     _zeliard_cavern_transition_step(): number;
+    _zeliard_fight_active(): number;
+    _zeliard_fight_ip(): number;
+    _zeliard_fight_boundary(): number;
     _zeliard_test_enter_room(kind: number): number;
     _zeliard_save_serial(): number;
     _zeliard_save_name(): number;
