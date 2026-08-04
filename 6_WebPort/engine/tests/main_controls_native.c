@@ -271,20 +271,18 @@ int main(void) {
         zeliard_tick(16);
     zeliard_key_down(32);
     int attack_started = 0;
-    int equip_armed = 0;
     for (unsigned attack_tick = 0; attack_tick < 40; ++attack_tick) {
         zeliard_tick(16);
-        attack_started |= zeliard_test_game_u8(0xFF45) == 2;
-        equip_armed |= zeliard_test_game_u8(0xFF3D) != 0;
+        attack_started |= zeliard_test_game_u8(0xFF45) == 1 &&
+            zeliard_test_game_u8(0xFF46) == 0;
     }
     zeliard_key_up(32);
     ok &= attack_started;
-    printf("main_controls:malicia_space_attack: %s armed=%d state=%02X equip=%02X climb=%02X debug=%02X sword=%02X buttons=%02X\n",
+    printf("main_controls:malicia_space_attack: %s state=%02X/%02X "
+           "facing=%02X sword=%02X\n",
            attack_started ? "PASS" : "FAIL",
-           equip_armed,
-           zeliard_test_game_u8(0xFF45), zeliard_test_game_u8(0xFF3D),
-           zeliard_test_game_u8(0xFF39), zeliard_test_game_u8(0xFF3B),
-           zeliard_test_game_u8(0x92), zeliard_test_game_u8(0xFF16));
+           zeliard_test_game_u8(0xFF45), zeliard_test_game_u8(0xFF46),
+           zeliard_test_game_u8(0xC2), zeliard_test_game_u8(0x92));
 
     record[0xC4] = 0x81;
     ok &= zeliard_load_record(record, sizeof(record));

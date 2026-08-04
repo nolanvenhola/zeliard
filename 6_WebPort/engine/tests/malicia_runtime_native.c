@@ -315,13 +315,17 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_start(
         combat_game, sizeof(combat_game), combat_vga, sizeof(combat_vga));
     int enemy_hit_observed = 0;
+    unsigned swing_state_mask = 0;
+    unsigned swing_subindex_mask = 0;
     u8 enemy_hp_min = 0xFF;
+    combat_game[0xFF1D] = 0xFF;
     for (unsigned frame = 0; frame < 8; ++frame) {
         combat_game[0xFF16] = 1;
         ok &= zeliard_fight_masm_vm_advance(
             combat_game, sizeof(combat_game), combat_vga,
             sizeof(combat_vga), 1, 0);
-        ok &= combat_game[0xFF45] == 2;
+        swing_state_mask |= 1u << (combat_game[0xFF45] & 7u);
+        swing_subindex_mask |= 1u << (combat_game[0xFF46] & 7u);
         for (unsigned enemy = 0; enemy < 54; ++enemy) {
             const u16 record = (u16)(0xD62Eu + enemy * 16u);
             const u8 flags = (u8)zeliard_fight_masm_vm_peek_u8(
@@ -342,19 +346,24 @@ int main(void) {
             sizeof(combat_vga), 1, 0);
     }
     const unsigned long long shield_frame = fnv1a64(combat_vga, 64000);
-    ok &= attack_frame == 0x795D3A1A920A1D50ULL;
+    ok &= attack_frame == 0x05BCA66A3DF48083ULL;
     ok &= attack_pose == 0x80;
+    /* With no direction held, the original FSM cycles the four even
+     * reachability-table subindices while checking nearby enemies. */
+    ok &= swing_state_mask == 0x01;
+    ok &= swing_subindex_mask == 0x55;
     ok &= enemy_hit_observed;
-    ok &= shield_frame == 0x6C8F661A223741E7ULL;
+    ok &= shield_frame == 0x0B6419D7CCFE686BULL;
     ok &= read_u16(combat_game, 0x94) == 0x0061;
     ok &= read_u16(combat_game, 0x90) == 0x00FD;
     ok &= combat_game[0xFF75] == 0x07;
     printf("malicia_combat: attack=%016llx pose=%02x "
            "shield=%016llx shield_hp=%04x hp=%04x cue=%02x hit=%d "
-           "enemy_hp=%02x ip=%04x\n",
+           "enemy_hp=%02x states=%02x/%02x ip=%04x\n",
            attack_frame, attack_pose, shield_frame,
            read_u16(combat_game, 0x94), read_u16(combat_game, 0x90),
            combat_game[0xFF75], enemy_hit_observed, enemy_hp_min,
+           swing_state_mask, swing_subindex_mask,
            zeliard_fight_masm_vm_ip());
 
     static u8 boss_route_game[0x10000];

@@ -258,21 +258,12 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         }
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x61) {
             const u8 buttons = memory[linear(FIGHT_SEG, 0xFF16)];
-            /* The web input layer stores Space only in FF16/AH. 200FIGHT's
-             * attack FSM also tests AL bit 1 before entering the sword state,
-             * so synthesize that action qualifier while preserving direction. */
-            const u8 input = (u8)(state->direction |
-                ((buttons & 1u) ? 2u : 0u));
-            /* The browser has no joystick transition to arm the DOS combat
-             * byte. Keep it armed while a valid Space attack is held; the
-             * original handler still applies the sword/climb/debug gates. */
-            if ((buttons & 1u) &&
-                memory[linear(FIGHT_SEG, 0x0092)] != 0 &&
-                memory[linear(FIGHT_SEG, 0xFF39)] == 0 &&
-                memory[linear(FIGHT_SEG, 0xFF3B)] == 0)
-                memory[linear(FIGHT_SEG, 0xFF3D)] = 0xFF;
+            /* Match stick.asm's INT 61h contract exactly: AL is the physical
+             * direction mask and AH is Alt/Space. 200FIGHT combines those
+             * inputs with player state and nearby-object scans to choose the
+             * appropriate sword reachability table and animation. */
             registers[ZEL_TINY86_AX] =
-                (u16)(input | ((u16)buttons << 8));
+                (u16)(state->direction | ((u16)buttons << 8));
             zel_fight86_set_ip((u16)(ip + 2u));
             return 1;
         }
