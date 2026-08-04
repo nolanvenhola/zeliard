@@ -70,6 +70,9 @@ static int fight_boundary_returns_to_town(u8 operation, u8 selector,
                                           u16 dispatch) {
     const int town_dispatch = operation == 0 &&
         (dispatch == 0x6002 || dispatch == 0x601C);
+    /* Release-byte contract: test_fight_level_handoff_oracle.py proves that
+     * 200FIGHT calls the loader with AL=1 and sets bit 7 on door targets;
+     * 0x80 is the death handoff while 0x81 returns from Malicia to Muralla. */
     const int town_warp = operation == 1 &&
         (selector & 0x80u) && selector != 0x80u;
     return town_dispatch || town_warp;
