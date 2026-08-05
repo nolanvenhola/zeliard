@@ -13,6 +13,9 @@ enum {
 int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
                                const u8 *game_seg, size_t game_size,
                                const u8 *vga, size_t vga_size);
+int zeliard_room_masm_vm_start_death_sage(
+    const u8 *game_seg, size_t game_size,
+    const u8 *vga, size_t vga_size);
 int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                                  u8 *vga, size_t vga_size,
                                  u32 pit_ticks, u8 direction,

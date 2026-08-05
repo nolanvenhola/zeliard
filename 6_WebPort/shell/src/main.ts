@@ -124,8 +124,9 @@ class OpeningMusic {
         if (!module._zeliard_exact_music_driver())
             throw new Error('original MSCADLIB runtime unavailable');
         const context = new AudioContext();
-        await context.audioWorklet.addModule(
-            new URL('audio-worklet.js', appBaseUrl).href);
+        const workletUrl = new URL('audio-worklet.js', appBaseUrl);
+        workletUrl.searchParams.set('v', Date.now().toString(36));
+        await context.audioWorklet.addModule(workletUrl.href);
         return new OpeningMusic(module, context);
     }
 

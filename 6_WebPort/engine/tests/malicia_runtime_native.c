@@ -298,6 +298,41 @@ int main(void) {
            death_game[0x8C], death_game[0x8B], death_game[0x80],
            death_game[0x82], zeliard_fight_masm_vm_ip());
 
+    static u8 hazard_game[0x10000];
+    static u8 hazard_vga[0x10000];
+    /* MP10 tile 28/0 repeatedly executes the environment-damage path while
+     * the player remains on it. Each HP-changing scan must have one cue. */
+    unsigned hazard_damage_frames = 0, hazard_damage_sounds = 0;
+    const u8 hazard_x = 28, hazard_y = 0;
+    hazard_game[0x0080] = (u8)(hazard_x - 16);
+    hazard_game[0x0082] = (u8)((hazard_y - 9) & 0x3F);
+    hazard_game[0x0090] = 0x00;
+    hazard_game[0x0091] = 0x04;
+    hazard_game[0x00B2] = 0x00;
+    hazard_game[0x00B3] = 0x04;
+    hazard_game[0xFF33] = 5;
+    ok &= zeliard_fight_masm_vm_start(
+        hazard_game, sizeof(hazard_game), hazard_vga, sizeof(hazard_vga));
+    while (zeliard_fight_masm_vm_take_sound_cue()) {}
+    for (unsigned frame = 0; frame < 16; ++frame) {
+        const u16 hp_before = read_u16(hazard_game, 0x90);
+        ok &= zeliard_fight_masm_vm_advance(
+            hazard_game, sizeof(hazard_game), hazard_vga,
+            sizeof(hazard_vga), 1, 0);
+        hazard_damage_frames += read_u16(hazard_game, 0x90) != hp_before;
+        for (u8 cue;
+             (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
+            hazard_damage_sounds += cue == 0x08 || cue == 0x09;
+    }
+    const int hazard_sound_events = hazard_damage_frames > 1 &&
+        hazard_damage_sounds == hazard_damage_frames;
+    ok &= hazard_sound_events;
+    printf("malicia_hazard_damage_sound: %s tile=%u/%u "
+           "frames=%u sounds=%u hp=%04x\n",
+           hazard_sound_events ? "PASS" : "FAIL",
+           hazard_x, hazard_y, hazard_damage_frames, hazard_damage_sounds,
+           read_u16(hazard_game, 0x90));
+
     static u8 combat_game[0x10000];
     static u8 combat_vga[0x10000];
     combat_game[0x0080] = 18 - 16;
@@ -315,6 +350,7 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_start(
         combat_game, sizeof(combat_game), combat_vga, sizeof(combat_vga));
     int enemy_hit_observed = 0;
+    unsigned damage_sound_events = 0;
     unsigned swing_state_mask = 0;
     unsigned swing_subindex_mask = 0;
     u8 enemy_hp_min = 0xFF;
@@ -324,6 +360,8 @@ int main(void) {
         ok &= zeliard_fight_masm_vm_advance(
             combat_game, sizeof(combat_game), combat_vga,
             sizeof(combat_vga), 1, 0);
+        for (u8 cue; (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
+            damage_sound_events += cue == 0x08 || cue == 0x09;
         swing_state_mask |= 1u << (combat_game[0xFF45] & 7u);
         swing_subindex_mask |= 1u << (combat_game[0xFF46] & 7u);
         for (unsigned enemy = 0; enemy < 54; ++enemy) {
@@ -344,6 +382,8 @@ int main(void) {
         ok &= zeliard_fight_masm_vm_advance(
             combat_game, sizeof(combat_game), combat_vga,
             sizeof(combat_vga), 1, 0);
+        for (u8 cue; (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
+            damage_sound_events += cue == 0x08 || cue == 0x09;
     }
     const unsigned long long shield_frame = fnv1a64(combat_vga, 64000);
     ok &= attack_frame == 0x05BCA66A3DF48083ULL;
@@ -356,14 +396,18 @@ int main(void) {
     ok &= shield_frame == 0x0B6419D7CCFE686BULL;
     ok &= read_u16(combat_game, 0x94) == 0x0061;
     ok &= read_u16(combat_game, 0x90) == 0x00FD;
+    /* Twelve host advances contain one actual MASM shield-damage write (the
+     * event deals three points). FF75 remains nonzero afterward, but that
+     * held mailbox value must not manufacture eleven additional sounds. */
+    ok &= damage_sound_events == 1;
     ok &= combat_game[0xFF75] == 0x07;
     printf("malicia_combat: attack=%016llx pose=%02x "
            "shield=%016llx shield_hp=%04x hp=%04x cue=%02x hit=%d "
-           "enemy_hp=%02x states=%02x/%02x ip=%04x\n",
+           "enemy_hp=%02x states=%02x/%02x damage_sounds=%u ip=%04x\n",
            attack_frame, attack_pose, shield_frame,
            read_u16(combat_game, 0x94), read_u16(combat_game, 0x90),
            combat_game[0xFF75], enemy_hit_observed, enemy_hp_min,
-           swing_state_mask, swing_subindex_mask,
+           swing_state_mask, swing_subindex_mask, damage_sound_events,
            zeliard_fight_masm_vm_ip());
 
     static u8 boss_route_game[0x10000];

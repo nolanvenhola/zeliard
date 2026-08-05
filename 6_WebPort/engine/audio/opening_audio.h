@@ -32,6 +32,8 @@ void zel_opening_audio_stop(void);
 int zel_opening_audio_music_track(void);
 void zel_opening_audio_music_complete(int track);
 void zel_opening_audio_begin_transition_fade(void);
+void zel_opening_audio_begin_gameplay_transition_fade(void);
+void zel_opening_audio_begin_gameplay_death_fade(void);
 void zel_opening_audio_tick(u32 dt_ms);
 int zel_opening_audio_attenuation(void);
 int zel_opening_audio_ready_for_transition(void);

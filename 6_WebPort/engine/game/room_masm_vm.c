@@ -367,9 +367,10 @@ static int room_step(void *context, u16 cs, u16 ip) {
     return 0;
 }
 
-int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
-                               const u8 *game_seg, size_t game_size,
-                               const u8 *vga, size_t vga_size) {
+static int room_masm_vm_start_impl(zeliard_room_kind_t kind,
+                                   const u8 *game_seg, size_t game_size,
+                                   const u8 *vga, size_t vga_size,
+                                   int death_sage) {
     const char *program = kind == ZEL_ROOM_ARMORY ? "armrpro.bin" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drugpro.bin" :
                           kind == ZEL_ROOM_CHURCH ? "churpro.bin" :
@@ -441,11 +442,26 @@ int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
     registers[ZEL_TINY86_SP] = 0xFFF8;
     write_u16(memory, linear(STACK_SEG, 0xFFF8), 0);
     write_u16(memory, linear(STACK_SEG, 0xFFFA), 0);
-    zel_room86_set_ip(kind == ZEL_ROOM_SAGE ? 0xA027 : 0xA000);
+    zel_room86_set_ip(kind == ZEL_ROOM_SAGE
+        ? (death_sage ? 0xA006 : 0xA027) : 0xA000);
     zel_room86_set_flags(0x0202);
     zel_room86_set_step_callback(room_step, &g_room_vm);
     g_room_vm.active = 1;
     return 1;
+}
+
+int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
+                               const u8 *game_seg, size_t game_size,
+                               const u8 *vga, size_t vga_size) {
+    return room_masm_vm_start_impl(
+        kind, game_seg, game_size, vga, vga_size, 0);
+}
+
+int zeliard_room_masm_vm_start_death_sage(
+        const u8 *game_seg, size_t game_size,
+        const u8 *vga, size_t vga_size) {
+    return room_masm_vm_start_impl(
+        ZEL_ROOM_SAGE, game_seg, game_size, vga, vga_size, 1);
 }
 
 int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,

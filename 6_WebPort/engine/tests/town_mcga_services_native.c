@@ -214,7 +214,14 @@ int main(void) {
         vga[i] = (u8)(i * 13 + 5);
     ok &= zeliard_gmmcga_draw_first_frame_hud(vga, 0x10000, life_seg,
                                                sizeof(life_seg), 0x9800) == 0;
-    ok &= fnv1a64(vga, 0x10000) == 0xA4388787A04C4E76ULL;
+    ok &= fnv1a64(vga, 0x10000) == 0x760C14598E9E15D6ULL;
+    /* 106TOWN BX=C61C/CH=17 shield-strength bevel. */
+    for (size_t x = 246; x < 270; ++x)
+        ok &= vga[186 * 320 + x] == 0x00;
+    for (size_t y = 186; y < 196; ++y)
+        ok &= vga[y * 320 + 246] == 0x00;
+    for (size_t x = 247; x < 270; ++x)
+        ok &= vga[195 * 320 + x] == 0x2D;
     u8 combined_state[9];
     memcpy(combined_state, life_seg + 0x2433, 7);
     memcpy(combined_state + 7, life_seg + 0x2CBD, 2);

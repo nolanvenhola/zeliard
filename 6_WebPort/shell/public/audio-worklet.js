@@ -57,7 +57,10 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
         const right = outputs[0][1];
         left.fill(0);
         right.fill(0);
-        if (!this.primed && this.bufferedFrames >= 2048) this.primed = true;
+        /* The fight VM can occupy the browser main thread for longer than a
+         * town frame.  Keep ~85 ms at 48 kHz queued on the audio thread so
+         * combat SFX do not underrun and repeatedly hard-restart as fuzz. */
+        if (!this.primed && this.bufferedFrames >= 4096) this.primed = true;
         if (this.primed && this.bufferedFrames < left.length) this.primed = false;
 
         let delivered = 0;

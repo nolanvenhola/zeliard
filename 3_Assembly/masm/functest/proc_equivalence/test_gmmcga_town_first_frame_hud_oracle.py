@@ -20,7 +20,7 @@ from fixtures import MASM_ROOT  # noqa: E402
 BIN = MASM_ROOT / "working" / "drivers" / "gmmcga.bin"
 CODE_SEG, STACK_SEG, VGA_SEG = 0x1000, 0x8000, 0xA000
 RET_SENTINEL = 0x0080
-EXPECTED_VGA_FNV = 0xA4388787A04C4E76
+EXPECTED_VGA_FNV = 0x760C14598E9E15D6
 EXPECTED_STATE_FNV = 0x36F73C3154C60582
 
 
@@ -90,8 +90,17 @@ def main() -> int:
     for address, _record in records[:4]:
         mu.reg_write(UC_X86_REG_SI, address)
         call(mu, 0x22BF)
-    for entry in (0x2227, 0x2256, 0x238F, 0x23AC, 0x23CC, 0x23F5):
+    for entry in (0x2227, 0x2256, 0x238F, 0x23AC, 0x23CC):
         call(mu, entry)
+    # 106TOWN draws the beveled shield-strength field before dispatching
+    # GMMCGA:23F5.  BX=C61C/CH=17 produces the black top/left edges, blue
+    # interior, and light-blue bottom edge visible in the released game.
+    if mu.mem_read((CODE_SEG << 4) + 0x0093, 1)[0] != 0:
+        mu.reg_write(UC_X86_REG_AX, 0)
+        mu.reg_write(UC_X86_REG_BX, 0xC61C)
+        mu.reg_write(UC_X86_REG_CX, 0x1700)
+        call(mu, 0x2195)
+        call(mu, 0x23F5)
     mu.reg_write(UC_X86_REG_SI, 0x9800)
     call(mu, 0x22CD)
 

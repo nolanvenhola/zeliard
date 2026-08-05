@@ -267,6 +267,40 @@ static int load_fill_chunk(const char *asset, u8 *destination,
     return 1;
 }
 
+int zeliard_town_prepare_level_start(u8 *cs, size_t game_size, u8 area_id) {
+    if (!cs || game_size < 0x10000) return -1;
+    const town_area_asset_t *assets = town_assets_for_area_id(area_id);
+    if (!assets || !load_raw_chunk(assets->map_asset,
+                                    cs + TOWN_DESCRIPTOR,
+                                    game_size - TOWN_DESCRIPTOR, NULL))
+        return -2;
+
+    /* Exact 200FIGHT:level_start/compute_scroll_offset_b arithmetic.  Loader
+     * mode 1 has installed the selected town MDT before target_id (C013h)
+     * becomes scroll_count (9F1Ah).  AX and BL then become player offsets
+     * 80h and 83h; 82h is deliberately retained from the fight state. */
+    const u16 width = read_u16(cs, 0xC002);
+    const u16 target = read_u16(cs, 0xC013);
+    u16 ax = target;
+    u8 bl = 0x0D;
+    const u16 remaining = (u16)(width - 0x0D);
+    if (remaining < target) {
+        ax = (u16)(width - 0x24);
+        const u16 carry = width >= 0x24;
+        const u16 cx = (u16)(target - ax - carry);
+        bl = (u8)((u8)cx - 3u);
+    } else {
+        ax = (u16)(ax - 0x11);
+        if (ax & 0xFF00u) {
+            ax = 0;
+            bl = (u8)((u8)target - 4u);
+        }
+    }
+    write_u16(cs, TOWN_START_POSITION, ax);
+    cs[TOWN_PLAYER_COLUMN] = bl;
+    return 0;
+}
+
 static int decode_town_header(u8 *cs, zeliard_town_runtime_t *town) {
     u16 si = read_u16(cs, TOWN_DESCRIPTOR);
     ++si;

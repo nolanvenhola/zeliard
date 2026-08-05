@@ -46,6 +46,8 @@ static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_cavern_town_segments[ZELIARD_GAME_SEGMENT_COUNT]
                                  [ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_cavern_town_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_death_sage_chrome_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_death_sage_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static zeliard_game_exec_state_t g_game_exec;
 static zeliard_town_runtime_t g_town_runtime;
 static zeliard_cavern_transition_t g_cavern_transition;
@@ -55,6 +57,31 @@ static u8 g_fight_music_chunk = 0xFF;
 static u8 g_fight_boundary_selector = 0xFF;
 static u8 g_fight_started;
 static u8 g_fight_death_pending;
+static u8 g_fight_death_return_pending;
+static u8 g_fight_death_audio_fade_started;
+static u8 g_death_sage_chrome_active;
+
+static void begin_fight_death(void) {
+    if (g_fight_death_pending) return;
+    g_fight_death_pending = 1;
+}
+
+static void restore_death_sage_chrome(void) {
+    if (!g_death_sage_chrome_active) return;
+    /* 217KENJP's death script owns only the central room canvas. Preserve
+     * the clean room-enter stone frame and HUD around it; the exact VM may
+     * update the portrait and text window inside x=32..271/y=14..159. */
+    for (int y = 0; y < ZELIARD_HEIGHT; ++y) {
+        u8 *dst = g_game_vga + y * ZELIARD_WIDTH;
+        const u8 *src = g_death_sage_chrome_vga + y * ZELIARD_WIDTH;
+        if (y < 14 || y >= 160) {
+            memcpy(dst, src, ZELIARD_WIDTH);
+        } else {
+            memcpy(dst, src, 32);
+            memcpy(dst + 272, src + 272, ZELIARD_WIDTH - 272);
+        }
+    }
+}
 
 typedef struct {
     u8 valid;
@@ -92,8 +119,12 @@ static void sync_fight_music(void) {
 
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
-    u8 cavern_progress[0x3D];
-    memcpy(cavern_progress, cs + ZEL_PLAYER_GOLD, sizeof(cavern_progress));
+    u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
+    u8 cavern_progress_b[ZEL_PLAYER_FACING_DIRECTION - ZEL_PLAYER_TEARS];
+    memcpy(cavern_progress_a, cs + ZEL_PLAYER_GOLD,
+           sizeof(cavern_progress_a));
+    memcpy(cavern_progress_b, cs + ZEL_PLAYER_TEARS,
+           sizeof(cavern_progress_b));
     if (g_cavern_town_origin.valid) {
         /* FIGHT replaces most of the shared game segment with its own code,
          * maps, and scratch buffers. Restore the suspended town overlay, but
@@ -102,8 +133,10 @@ static void finish_cavern_return_to_town(void) {
          * bytes and corrupt the first town frame. */
         memcpy(g_game_segments, g_cavern_town_segments,
                sizeof(g_cavern_town_segments));
-        memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress,
-               sizeof(cavern_progress));
+        memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress_a,
+               sizeof(cavern_progress_a));
+        memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
+               sizeof(cavern_progress_b));
     }
     const u8 selector = g_cavern_town_origin.valid
         ? g_cavern_town_origin.area_id
@@ -139,6 +172,112 @@ static void finish_cavern_return_to_town(void) {
     zel_audio_play_music(ZEL_MUSIC_MGT1);
 }
 
+static int finish_cavern_death_to_sage(void) {
+    u8 *cs = g_game_segments[0];
+    const u8 death_map_scroll_row = cs[ZEL_PLAYER_MAP_SCROLL_ROW];
+    u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
+    u8 cavern_progress_b[ZEL_PLAYER_FACING_DIRECTION - ZEL_PLAYER_TEARS];
+    const u8 last_sage = cs[ZEL_PLAYER_LAST_SAGE];
+    memcpy(cavern_progress_a, cs + ZEL_PLAYER_GOLD,
+           sizeof(cavern_progress_a));
+    memcpy(cavern_progress_b, cs + ZEL_PLAYER_TEARS,
+           sizeof(cavern_progress_b));
+
+    /* 200FIGHT's game-over path restores HP, applies the gold/almas loss,
+     * copies stat_XC5 (last sage) to current_area_id, and invokes loader 1.
+     * FIGHT has replaced the town overlays by then, so recover the suspended
+     * town image/code first and import only the persistent combat fields. */
+    if (g_cavern_town_origin.valid) {
+        memcpy(g_game_segments, g_cavern_town_segments,
+               sizeof(g_cavern_town_segments));
+        memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress_a,
+               sizeof(cavern_progress_a));
+        memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
+               sizeof(cavern_progress_b));
+    }
+    cs[ZEL_PLAYER_LAST_SAGE] = last_sage;
+    cs[ZEL_PLAYER_SAVE_SAGE] = last_sage;
+    cs[ZEL_PLAYER_MAP_SCROLL_ROW] = death_map_scroll_row;
+    /* The exact fight VM yields at loader mode 1 because the town overlay
+     * replaces it. Complete release 200FIGHT:level_start here using the
+     * selected town MDT, rather than retaining residual cavern coordinates. */
+    if (zeliard_town_prepare_level_start(
+            cs, sizeof(g_game_segments[0]), last_sage) != 0) {
+        platform_log("200FIGHT: death sage level-start position failed");
+        return 0;
+    }
+    cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
+    cs[ZEL_PLAYER_POSE] = 0;
+    zel_input_init(&g_input, cs);
+
+    g_cavern_transition.complete = 0;
+    g_cavern_transition.return_to_town = 0;
+    g_cavern_town_origin.valid = 0;
+    g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
+    g_town_runtime.cavern_exit_requested = 0;
+    zeliard_room_masm_vm_stop();
+    zel_opening_audio_stop();
+    g_fight_music_chunk = 0xFF;
+
+    /* Loader 1 returns to the suspended town graphics context before
+     * 106TOWN and 217KENJP draw.  The web fight VM owns a private VGA image,
+     * so restore the captured town frame explicitly; otherwise room_enter's
+     * central clear leaves FIGHT's faded/corrupted border and HUD in place. */
+    memcpy(g_game_vga, g_cavern_town_vga, sizeof(g_game_vga));
+    if (zeliard_town_enter_first_frame(
+            &g_town_runtime, &g_game_exec, g_game_vga,
+            sizeof(g_game_vga)) != 0) {
+        platform_log("200FIGHT: death sage town reload failed");
+        return 0;
+    }
+    /* Preserve town_enter's newly rendered scenery and actors at the sage
+     * coordinates, but place them into loader 1's clean suspended stone/HUD
+     * surface. Reusing the whole pre-cavern image would leave the old player
+     * and NPC pixels under the live actors when the sage room exits. */
+    memcpy(g_death_sage_return_vga, g_cavern_town_vga,
+           sizeof(g_death_sage_return_vga));
+    /* GTMCGA's town viewport ends at scanline 157.  Scanlines 158 and 159
+     * are the two solid frame separators (palette indices 09h and 08h),
+     * and loader 1 preserves them from the suspended town surface. */
+    for (int y = 14; y < 158; ++y)
+        memcpy(g_death_sage_return_vga + y * ZELIARD_WIDTH + 48,
+               g_game_vga + y * ZELIARD_WIDTH + 48, 224);
+    if (zeliard_gmmcga_draw_first_frame_hud(
+            g_death_sage_return_vga, sizeof(g_death_sage_return_vga), cs,
+            sizeof(g_game_segments[0]),
+            g_town_runtime.town_text_record) != 0) {
+        platform_log("200FIGHT: death sage HUD reconstruction failed");
+        return 0;
+    }
+    memcpy(g_game_vga, g_death_sage_return_vga, sizeof(g_game_vga));
+    if (zeliard_room_enter(&g_town_runtime.room, ZEL_ROOM_SAGE,
+                            cs, sizeof(g_game_segments[0]), g_game_vga,
+                            sizeof(g_game_vga)) != 0 ||
+        zeliard_gmmcga_clear_playfield(
+            g_game_vga, sizeof(g_game_vga)) != 0) {
+        platform_log("200FIGHT: death sage room preparation failed");
+        return 0;
+    }
+    /* Clear the normal A027 portrait prepared by room_enter. The death
+     * dispatch target A006 loads KENJA.GRP and selects centered origin 0E17h
+     * before drawing its own portrait. */
+    memcpy(g_death_sage_chrome_vga, g_game_vga,
+           sizeof(g_death_sage_chrome_vga));
+    if (!zeliard_room_masm_vm_start_death_sage(
+            cs, sizeof(g_game_segments[0]), g_game_vga,
+            sizeof(g_game_vga))) {
+        platform_log("200FIGHT: death sage room entry failed");
+        return 0;
+    }
+    g_town_runtime.room.exact_vm_active = 1;
+    g_death_sage_chrome_active = 1;
+    restore_death_sage_chrome();
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    return 1;
+}
+
 static void terminate_session(void) {
     zeliard_room_masm_vm_stop();
     zeliard_inventory_masm_vm_stop();
@@ -147,6 +286,9 @@ static void terminate_session(void) {
     g_fight_boundary_selector = 0xFF;
     g_fight_started = 0;
     g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
+    g_death_sage_chrome_active = 0;
     zel_opening_audio_stop();
     zel_input_release_all(&g_input, g_game_segments[0], 1);
     memset(g_game_vga, 0, sizeof(g_game_vga));
@@ -228,6 +370,9 @@ static void game_memory_init(void) {
     g_fight_boundary_selector = 0xFF;
     g_fight_started = 0;
     g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
+    g_death_sage_chrome_active = 0;
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
         g_game_exec.segment[i] = g_game_segments[i];
         g_game_exec.segment_size[i] = ZELIARD_GAME_SEGMENT_SIZE;
@@ -370,6 +515,16 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         return;
     }
     if (g_scene == SCENE_GAME) {
+        if (g_fight_death_return_pending) {
+            /* The VM has just completed fade_step_loop and
+             * drv_fade_to_black. Preserve that final cavern frame/palette
+             * across a host presentation boundary, and do not enter the sage
+             * room until the paired music fade has completed. */
+            if (zel_opening_audio_ready_for_transition())
+                finish_cavern_death_to_sage();
+            zel_opening_audio_tick(dt_ms);
+            return;
+        }
         if (g_cavern_transition.active) {
             const int frames = zeliard_cavern_transition_advance_pit(
                 &g_cavern_transition, g_game_segments[0],
@@ -395,6 +550,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             } else {
                 g_fight_started = 1;
                 g_fight_death_pending = 0;
+                g_fight_death_return_pending = 0;
+                g_fight_death_audio_fade_started = 0;
                 g_fight_boundary_selector = 0xFF;
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
                 sync_fight_music();
@@ -424,20 +581,29 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         if (zeliard_fight_masm_vm_active()) {
             const u16 hp_before = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
-            if (hp_before <= 1) g_fight_death_pending = 1;
+            if (hp_before <= 1) begin_fight_death();
             const int frames = zeliard_fight_masm_vm_advance(
                 g_game_segments[0], sizeof(g_game_segments[0]),
                 g_game_vga, sizeof(g_game_vga), input_ticks,
                 g_game_segments[0][0xFF17]);
             const u16 hp_after = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
-            if (hp_after <= 1) g_fight_death_pending = 1;
+            if (hp_after <= 1) begin_fight_death();
+            if (g_fight_death_pending &&
+                !g_fight_death_audio_fade_started &&
+                g_game_segments[0][0xFF24] == 8) {
+                /* Exact 200FIGHT:fade_out boundary. FF24=8 is both the
+                 * game-over wipe mode and MSCADLIB's fade interval. */
+                g_fight_death_audio_fade_started = 1;
+                zel_opening_audio_begin_gameplay_death_fade();
+            }
             if (frames > 0)
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
-            if (g_game_segments[0][0xFF75]) {
-                zel_opening_audio_write_cue(g_game_segments[0][0xFF75]);
-                g_game_segments[0][0xFF75] = 0;
-            }
+            u8 fight_cue;
+            while ((fight_cue =
+                    zeliard_fight_masm_vm_take_sound_cue()) != 0)
+                zel_opening_audio_write_cue(fight_cue);
+            g_game_segments[0][0xFF75] = 0;
             sync_fight_music();
             if (!zeliard_fight_masm_vm_active()) {
                 const u8 operation = zeliard_fight_masm_vm_exit_operation();
@@ -450,8 +616,17 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                         operation, selector, dispatch)) {
                     g_cavern_transition.complete = 0;
                     g_fight_started = 0;
+                    if (g_fight_death_pending) {
+                        /* Do not overwrite drv_fade_to_black's result with
+                         * the sage room in this same browser frame. */
+                        g_fight_death_return_pending = 1;
+                        zel_opening_audio_tick(dt_ms);
+                        return;
+                    }
                     if (town_warp && !g_fight_death_pending) {
-                        zel_opening_audio_stop();
+                        /* 200FIGHT:check_c3 keeps the cavern score running
+                         * throughout the reverse ROKA walk.  level_start is
+                         * the first subsequent INT 60h AX=1 boundary. */
                         g_fight_music_chunk = 0xFF;
                         if (zeliard_cavern_transition_begin_return(
                                 &g_cavern_transition, selector,
@@ -463,6 +638,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                             g_game_segments[0][0x00C4] = selector;
                             finish_cavern_return_to_town();
                         } else {
+                            zel_opening_audio_begin_gameplay_transition_fade();
                             memcpy(g_framebuf, g_game_vga,
                                    ZELIARD_FB_SIZE);
                         }
@@ -526,6 +702,12 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
             input_ticks, g_game_segments[0][0xFF17]);
+        if (g_death_sage_chrome_active) {
+            if (g_town_runtime.room.active)
+                restore_death_sage_chrome();
+            else
+                g_death_sage_chrome_active = 0;
+        }
         if (g_town_runtime.room.session_exit_requested) {
             terminate_session();
             return;
@@ -546,13 +728,16 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
                 memcpy(g_cavern_town_vga, g_framebuf, ZELIARD_FB_SIZE);
             }
-            zel_opening_audio_stop();
+            /* 106TOWN hands off to 200FIGHT without an audio-driver call.
+             * Keep MGT1 running through check_c3's 26-step ROKA walk; the
+             * destination level_start boundary switches to MUS1. */
             if (zeliard_cavern_transition_begin(
                     &g_cavern_transition, g_game_segments[0],
                     sizeof(g_game_segments[0]), g_game_vga,
                     sizeof(g_game_vga)) != 0) {
                 platform_log("200FIGHT: cavern transition start failed");
             } else {
+                zel_opening_audio_begin_gameplay_transition_fade();
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
             }
         }
@@ -705,6 +890,8 @@ static int test_begin_malicia_at(u16 hp, u16 start_position,
     g_cavern_transition.complete = 1;
     g_fight_started = 1;
     g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
     return zeliard_fight_masm_vm_start(
         cs, sizeof(g_game_segments[0]), g_game_vga, sizeof(g_game_vga));
 }
@@ -713,6 +900,16 @@ static int test_begin_malicia(u16 hp) {
 }
 int zeliard_test_begin_malicia_combat(void) {
     return test_begin_malicia(0x0100);
+}
+int zeliard_test_begin_malicia_transition(void) {
+    if (g_scene != SCENE_GAME) return 0;
+    g_fight_started = 0;
+    g_fight_music_chunk = 0xFF;
+    const int started = zeliard_cavern_transition_begin(
+        &g_cavern_transition, g_game_segments[0],
+        sizeof(g_game_segments[0]), g_game_vga, sizeof(g_game_vga)) == 0;
+    if (started) zel_opening_audio_begin_gameplay_transition_fade();
+    return started;
 }
 int zeliard_test_begin_malicia_exit(void) {
     if (g_scene != SCENE_GAME) return 0;
@@ -735,6 +932,19 @@ int zeliard_test_begin_malicia_exit(void) {
     return 1;
 }
 int zeliard_test_begin_malicia_death(void) {
+    u8 *cs = g_game_segments[0];
+    memcpy(g_cavern_town_segments, g_game_segments,
+           sizeof(g_cavern_town_segments));
+    memset(g_cavern_town_vga, 0, sizeof(g_cavern_town_vga));
+    memcpy(g_cavern_town_vga, g_framebuf, ZELIARD_FB_SIZE);
+    g_cavern_town_origin = (cavern_town_origin_t){
+        .valid = 1,
+        .area_id = cs[ZEL_PLAYER_SAVE_SAGE],
+        .start_position = (u16)(cs[ZEL_PLAYER_START_POSITION] |
+            ((u16)cs[ZEL_PLAYER_START_POSITION + 1] << 8)),
+        .map_scroll_row = cs[ZEL_PLAYER_MAP_SCROLL_ROW],
+        .screen_position = cs[ZEL_PLAYER_SCREEN_POSITION],
+    };
     return test_begin_malicia(0x0010);
 }
 int zeliard_test_redraw_town(void) {

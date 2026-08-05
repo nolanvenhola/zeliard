@@ -226,7 +226,10 @@ int main(void) {
     ok &= expect_gameplay_track_load("mgt2", ZEL_MUSIC_MGT2);
     ok &= expect_gameplay_track_load("ugm1", ZEL_MUSIC_UGM1);
     ok &= expect_gameplay_track_load("ugm2", ZEL_MUSIC_UGM2);
-    static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    static const u8 sfx_pcm_cues[] = {
+        0x02, 0x04, 0x07, 0x09, 0x16, 0x1E,
+        0x3D, 0x3E, 0x3F, 0x40, 0x41
+    };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
     ok &= expect_dialog_sfx_continuity();

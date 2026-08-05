@@ -237,6 +237,30 @@ void zel_opening_audio_begin_transition_fade(void) {
     }
 }
 
+void zel_opening_audio_begin_gameplay_transition_fade(void) {
+    /* Town scene transitions write 4 to shared byte FF24h.  MSCADLIB treats
+     * it as the fade reload interval, adding four to FF25h on each expiry.
+     * At the original PIT rate, 64 steps at interval four span the same
+     * roughly 2.1 seconds as check_c3's 26 x 20-tick ROKA walk. */
+    if (g_music_track != ZEL_MUSIC_NONE && !g_music_complete) {
+        g_transition_fade = 1;
+        g_fade_interval_counter = 1;
+        if (g_exact_driver)
+            zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 4);
+    }
+}
+
+void zel_opening_audio_begin_gameplay_death_fade(void) {
+    /* 200FIGHT:fade_out writes 8 to shared byte FF24h immediately before
+     * its thirty redraw-lock wipe passes and final MCGA fade-to-black. */
+    if (g_music_track != ZEL_MUSIC_NONE && !g_music_complete) {
+        g_transition_fade = 1;
+        g_fade_interval_counter = 1;
+        if (g_exact_driver)
+            zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 8);
+    }
+}
+
 void zel_opening_audio_tick(u32 dt_ms) {
     if (g_exact_driver) {
         for (u32 ms = 0; ms < dt_ms; ++ms) {

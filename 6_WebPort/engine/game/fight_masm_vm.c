@@ -46,9 +46,26 @@ typedef struct {
     u32 frame_pit_ticks;
     u16 trace[32];
     u8 trace_at;
+    u8 sound_cues[32];
+    u8 sound_cue_read;
+    u8 sound_cue_write;
+    u8 sound_cue_count;
 } fight_vm_state_t;
 
 static fight_vm_state_t g_fight_vm;
+
+static void post_sound_cue(fight_vm_state_t *state, u8 cue) {
+    if (!cue) return;
+    if (state->sound_cue_count == sizeof(state->sound_cues)) {
+        /* Preserve the newest executed event if an unusually long host slice
+         * outruns audio consumption. */
+        state->sound_cue_read = (u8)((state->sound_cue_read + 1u) & 31u);
+        --state->sound_cue_count;
+    }
+    state->sound_cues[state->sound_cue_write] = cue;
+    state->sound_cue_write = (u8)((state->sound_cue_write + 1u) & 31u);
+    ++state->sound_cue_count;
+}
 
 static size_t linear(u16 segment, u16 offset) {
     return (size_t)segment * 16u + offset;
@@ -178,6 +195,16 @@ static int fight_step(void *context, u16 cs, u16 ip) {
     if (cs == FIGHT_SEG) {
         state->trace[state->trace_at++ & 31u] = ip;
         ++state->instructions;
+        const size_t instruction = linear(cs, ip);
+        /* All 200FIGHT sound posts use `mov byte ptr [FF75h],imm8`.
+         * Observe execution of that instruction, not the duration for which
+         * the byte remains nonzero. A spike pit repeats because it executes
+         * the damage path repeatedly; a single hit executes it once. */
+        if (memory[instruction] == 0xC6 &&
+            memory[instruction + 1] == 0x06 &&
+            memory[instruction + 2] == 0x75 &&
+            memory[instruction + 3] == 0xFF)
+            post_sound_cue(state, memory[instruction + 4]);
         if (state->bootstrap_clock &&
             (state->instructions & 0x7FFu) == 0) {
             ++memory[linear(FIGHT_SEG, 0xFF1A)];
@@ -438,6 +465,13 @@ u16 zeliard_fight_masm_vm_exit_dispatch_slot(void) {
 }
 u8 zeliard_fight_masm_vm_music_chunk(void) {
     return g_fight_vm.music_chunk;
+}
+u8 zeliard_fight_masm_vm_take_sound_cue(void) {
+    if (!g_fight_vm.sound_cue_count) return 0;
+    const u8 cue = g_fight_vm.sound_cues[g_fight_vm.sound_cue_read];
+    g_fight_vm.sound_cue_read = (u8)((g_fight_vm.sound_cue_read + 1u) & 31u);
+    --g_fight_vm.sound_cue_count;
+    return cue;
 }
 int zeliard_fight_masm_vm_peek_u8(u16 offset) {
     return zel_fight86_memory()[linear(FIGHT_SEG, offset)];
