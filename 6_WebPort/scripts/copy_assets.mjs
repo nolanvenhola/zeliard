@@ -162,6 +162,18 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/222CHRCH.grp', '75d435e68e4a4c0030ed38f7d7ab5ccc8544a580441322d18bf903e155ffeea5'), 'church.grp'],
     [verifiedMasmOutput('zelres2/215DRUGP.bin', 'c4fe6430497686cc0a01919fca71a410ccd956f2675fc82b547f441211dbb6e5'), 'drugpro.bin'],
     [verifiedMasmOutput('zelres2/223DRUGG.grp', '2826d141c6a8eec7f4330e788e5dd0a533479b007638558c99eb9caef0d2db19'), 'drug.grp'],
+    /* First cavern: exact MP10 map, Area 1 AI/sprites, palette, boss, and score. */
+    [verifiedMasmOutput('zelres3/301EAI1.bin', 'fe2d16a57a9078091dd320b7050ee106a85a7ab53fb9148a78617de38063e543'), 'eai1.bin'],
+    [verifiedMasmOutput('zelres3/309CRAB.bin', 'ed879a6e33168b07be953cdb1a8ff114b2b384c9aafce9bd860fadf406597329'), 'crab.bin'],
+    [verifiedMasmOutput('zelres3/320MP10.mdt', '5f27a710ed0470de24d2aa5c3c8b13b9269dee47585fa2e4385961451d1ed66a'), 'mp10.mdt'],
+    [verifiedMasmOutput('zelres3/321MP1D.mdt', 'f58ed6112af3c9b79766f82342e5dc243200e405587cd94c156b64477e512848'), 'mp1d.mdt'],
+    [verifiedMasmOutput('zelres3/354DCHR.grp', 'c4e5068a0d02d45c05e070bd934cc58287a85baffc83c64075f6a536b81e121c'), 'dchr.grp'],
+    [verifiedMasmOutput('zelres3/355ENCNT.grp', 'fd9fd239d60cca4418d042a5785f2f8924685f4edd03ae4768209e4ae0be1e5b'), 'encnt.grp'],
+    [verifiedMasmOutput('zelres3/356ENP1.grp', '75c81a2047bb94293884c88e87858be1680af28fd44d2115c89daecbfb318b0f'), 'enp1.grp'],
+    [verifiedMasmOutput('zelres3/364CRAB.grp', '91a15f5e73be4f5b0247162ca6fe6c5ec6820600c71a0b9900d7069ad6235e95'), 'crab.grp'],
+    [verifiedMasmOutput('zelres3/374MPP1.grp', '4987c57069e1af6583cad22829049d9b6be98efa687fa092c63594153b7a868c'), 'mpp1.grp'],
+    [verifiedMasmOutput('zelres3/385MUS1.msd', 'bae9870479e27245be7c47d670141a832c57270de1ac94cf9c50ef18785af556'), 'mus1.msd'],
+    [verifiedMasmOutput('zelres3/393MBOS.msd', 'dd78504393a7ae762f8a60ecaccf182cb11cc31ea04b945bbeeee838b663d716'), 'mbos.msd'],
 ];
 
 const BINARY_SLICES = [

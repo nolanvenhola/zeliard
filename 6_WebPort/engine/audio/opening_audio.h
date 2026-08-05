@@ -11,13 +11,19 @@ typedef enum {
     ZEL_MUSIC_MGT1 = 3,
     ZEL_MUSIC_MGT2 = 4,
     ZEL_MUSIC_UGM1 = 5,
-    ZEL_MUSIC_UGM2 = 6
+    ZEL_MUSIC_UGM2 = 6,
+    ZEL_MUSIC_MUS1 = 7,
+    ZEL_MUSIC_MBOS = 8
 } zel_music_track_t;
 
 typedef zel_music_track_t zel_opening_music_track_t;
 #define ZEL_OPENING_MUSIC_NONE ZEL_MUSIC_NONE
 #define ZEL_OPENING_MUSIC_ZOPN ZEL_MUSIC_ZOPN
 #define ZEL_OPENING_MUSIC_ZEND ZEL_MUSIC_ZEND
+
+/* Keep enough PCM ahead for one browser audio callback plus a delayed
+ * animation frame. This remains bounded so gameplay cues stay responsive. */
+#define ZEL_AUDIO_PCM_CUSHION_FRAMES 3072
 
 void zel_opening_audio_init(void);
 void zel_opening_audio_sync_phase(int phase);
@@ -26,6 +32,8 @@ void zel_opening_audio_stop(void);
 int zel_opening_audio_music_track(void);
 void zel_opening_audio_music_complete(int track);
 void zel_opening_audio_begin_transition_fade(void);
+void zel_opening_audio_begin_gameplay_transition_fade(void);
+void zel_opening_audio_begin_gameplay_death_fade(void);
 void zel_opening_audio_tick(u32 dt_ms);
 int zel_opening_audio_attenuation(void);
 int zel_opening_audio_ready_for_transition(void);

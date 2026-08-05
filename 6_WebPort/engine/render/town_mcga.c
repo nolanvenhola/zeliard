@@ -750,7 +750,11 @@ int zeliard_gmmcga_draw_first_frame_hud(u8 *vga, size_t vga_size,
     if (zeliard_player_read_u8(&player, ZEL_PLAYER_SELECTED_SPELL) != 0 &&
         zeliard_gmmcga_draw_spell_charge(vga, vga_size, game_seg, game_size))
         return -1;
-    if (zeliard_gmmcga_draw_shield_hp(vga, vga_size, game_seg, game_size))
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_SHIELD) != 0 &&
+        (zeliard_gmmcga_draw_status_line(vga, vga_size, 0,
+                                         0xC61C, 0x1700) ||
+         zeliard_gmmcga_draw_shield_hp(vga, vga_size,
+                                       game_seg, game_size)))
         return -1;
     return zeliard_gmmcga_draw_town_text_record(vga, vga_size, game_seg,
                                                  game_size, town_text_si);

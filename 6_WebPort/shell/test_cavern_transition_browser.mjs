@@ -13,7 +13,7 @@ try {
     null, { timeout: 120000 });
   await page.waitForSelector('#start:not([hidden])', { timeout: 120000 });
   await page.click('#start');
-  const route = await page.evaluate(() => {
+  const townOrigin = await page.evaluate(() => {
     const m = window.__zeliard;
     m._zeliard_opening_set_phase_for_test(3);
     m._zeliard_key(13);
@@ -34,17 +34,41 @@ try {
     m._zeliard_test_game_set_u8(0x93, 1);
     m._zeliard_test_game_set_u8(0xFF2A, 0xDF);
     m._zeliard_test_game_set_u8(0xFF2B, 0xC5);
+    m._zeliard_tick(20);
+    return {
+      ticks,
+      startLo: m._zeliard_test_game_u8(0x80),
+      startHi: m._zeliard_test_game_u8(0x81),
+      scroll: m._zeliard_test_game_u8(0x82),
+      column: m._zeliard_test_game_u8(0x83),
+    };
+  });
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-town-before.png`,
+    });
+  }
+  const route = await page.evaluate(origin => {
+    const m = window.__zeliard;
+    /* Capture the exact frame that main.c suspends on this same turn. Keeping
+     * this adjacent to key-down avoids comparing against an intervening RAF
+     * town animation frame. */
+    window.__townPaletteBefore = Uint8Array.from(m.HEAPU8.subarray(
+      m._zeliard_palette(), m._zeliard_palette() + 768));
+    window.__townFrameBefore = Uint8Array.from(m.HEAPU8.subarray(
+      m._zeliard_framebuf(), m._zeliard_framebuf() + 64000));
     m._zeliard_key_down(38);
     let doorTicks = 0;
     while (!m._zeliard_cavern_transition_active() && doorTicks++ < 100)
       m._zeliard_tick(20);
     m._zeliard_key_up(38);
     return {
-      ticks, doorTicks,
+      ...origin, doorTicks,
       startedAt: m._zeliard_cavern_transition_step(),
       requested: m._zeliard_town_cavern_exit_requested(),
     };
-  });
+  }, townOrigin);
   if (capturePrefix) {
     await page.waitForTimeout(20);
     await page.locator('#screen').screenshot({
@@ -70,26 +94,88 @@ try {
     while (!m._zeliard_cavern_transition_complete() &&
            transitionTicks++ < 1000) m._zeliard_tick(20);
     m._zeliard_key_up(37);
-    return {
+    const entry = {
       ...routeState, transitionTicks,
       active: m._zeliard_cavern_transition_active(),
       complete: m._zeliard_cavern_transition_complete(),
       step: m._zeliard_cavern_transition_step(),
     };
+    m._zeliard_test_game_set_u8(0x80, 0x2D);
+    m._zeliard_test_game_set_u8(0x81, 0);
+    m._zeliard_test_game_set_u8(0x82, 0x3D);
+    m._zeliard_test_game_set_u8(0x83, 0);
+    m._zeliard_test_game_set_u8(0x85, 0);
+    m._zeliard_test_game_set_u8(0x86, 0x64);
+    m._zeliard_test_game_set_u8(0x87, 0);
+    m._zeliard_test_game_set_u8(0x8B, 0x64);
+    m._zeliard_test_game_set_u8(0x8C, 0);
+    m._zeliard_test_game_set_u8(0x90, 0);
+    m._zeliard_test_game_set_u8(0x91, 1);
+    m._zeliard_test_game_set_u8(0xB2, 0);
+    m._zeliard_test_game_set_u8(0xB3, 1);
+    m._zeliard_test_game_set_u8(0xC2, 0);
+    m._zeliard_test_game_set_u8(0xC3, 0);
+    m._zeliard_tick(20);
+    if (!m.ccall('zeliard_fight_active', 'number'))
+      return { ...entry, returned: { error: 'fight did not start' } };
+    m._zeliard_key_down(38);
+    let exitTicks = 0;
+    while (!m._zeliard_cavern_transition_active() && exitTicks++ < 100)
+      m._zeliard_tick(20);
+    m._zeliard_key_up(38);
+    let returnTicks = 0;
+    while (!m._zeliard_cavern_transition_complete() && returnTicks++ < 1000)
+      m._zeliard_tick(20);
+    m._zeliard_tick(20);
+    const finishFrame = m.HEAPU8.subarray(
+      m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
+    const finishDiff = finishFrame.reduce((count, value, index) =>
+      count + (value !== window.__townFrameBefore[index]), 0);
+    const finishTransition = m._zeliard_cavern_transition_active();
+    m._zeliard_tick(20);
+    const paletteNow = m.HEAPU8.subarray(
+      m._zeliard_palette(), m._zeliard_palette() + 768);
+    const frameNow = m.HEAPU8.subarray(
+      m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
+    return { ...entry, returned: {
+      exitTicks, returnTicks,
+      finishDiff, finishTransition,
+      area: m._zeliard_town_area(),
+      fight: m.ccall('zeliard_fight_active', 'number'),
+      transition: m._zeliard_cavern_transition_active(),
+      startLo: m._zeliard_test_game_u8(0x80),
+      startHi: m._zeliard_test_game_u8(0x81),
+      scroll: m._zeliard_test_game_u8(0x82),
+      column: m._zeliard_test_game_u8(0x83),
+      paletteDiff: paletteNow.reduce((count, value, index) =>
+        count + (value !== window.__townPaletteBefore[index]), 0),
+      frameDiff: frameNow.reduce((count, value, index) =>
+        count + (value !== window.__townFrameBefore[index]), 0),
+    } };
   }, route);
-  if (capturePrefix) {
-    await page.waitForTimeout(20);
-    await page.locator('#screen').screenshot({
-      path: `${capturePrefix}-complete.png`,
-    });
-  }
   if (!result.requested || result.startedAt < 1 || !result.complete ||
       result.active || result.step !== 26)
     throw new Error(`cavern transition failed: ${JSON.stringify(result)}`);
+  const returned = result.returned;
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-town-after.png`,
+    });
+  }
+  if (returned.error || returned.area !== 1 || returned.fight ||
+      returned.transition || returned.finishTransition ||
+      returned.finishDiff !== 0 || returned.startLo !== result.startLo ||
+      returned.startHi !== result.startHi ||
+      returned.scroll !== result.scroll ||
+      returned.column !== result.column)
+    throw new Error(`cavern return failed: ${JSON.stringify(returned)}`);
   if (errors.length) throw new Error(`browser errors: ${JSON.stringify(errors)}`);
   console.log(`cavern_transition_browser: PASS route=${result.ticks} ` +
-    `transition=${result.transitionTicks} steps=${result.step}`);
-  console.log('VERDICT: PASS: Muralla town -> forced cavern entry');
+    `entry=${result.transitionTicks} return=${returned.returnTicks} ` +
+    `steps=${result.step} paletteDiff=${returned.paletteDiff} ` +
+    `finishDiff=${returned.finishDiff} frameDiff=${returned.frameDiff}`);
+  console.log('VERDICT: PASS: Muralla -> cavern -> reverse transition -> Muralla');
 } finally {
   await browser.close();
 }

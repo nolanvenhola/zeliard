@@ -71,6 +71,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
                                    zeliard_game_exec_state_t *game,
                                    u8 *vga, size_t vga_size);
 
+/* 200FIGHT:next_level_start + level_start town-coordinate handoff. */
+int zeliard_town_prepare_level_start(u8 *game_seg, size_t game_size,
+                                     u8 area_id);
+
 int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
                                        zeliard_room_kind_t kind,
                                        u8 *vga, size_t vga_size);

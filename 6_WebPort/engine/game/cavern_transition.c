@@ -344,9 +344,10 @@ static void render_step(zeliard_cavern_transition_t *transition,
     transition->step++;
 }
 
-int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
-                                    u8 *game_seg, size_t game_size,
-                                    u8 *vga, size_t vga_size) {
+static int cavern_transition_begin_direction(
+    zeliard_cavern_transition_t *transition, u8 direction,
+    u8 return_to_town, u8 return_selector, u8 *game_seg, size_t game_size,
+    u8 *vga, size_t vga_size) {
     if (!transition || !game_seg || game_size < 0x10000 || !vga ||
         vga_size < 0x10000) return -1;
     memset(transition, 0, sizeof(*transition));
@@ -368,7 +369,9 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
     game_seg[PLAYER_POSE] = 0;
     game_seg[GVAR_FLAG_RIDING] = 0;
 
-    transition->direction = game_seg[PLAYER_BOSS_INTRO_FLAG] ? 1 : 0;
+    transition->direction = direction;
+    transition->return_to_town = return_to_town;
+    transition->return_selector = return_selector;
     /* 200FIGHT:check_c3 loads BX with 0A6Eh, not A66Eh. BH is the
      * packed horizontal component advanced by two before each blit. */
     transition->packed_x = transition->direction ? 0x40 : 0x0A;
@@ -380,6 +383,23 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
     transition->active = 1;
     render_step(transition, game_seg, vga);
     return 0;
+}
+
+int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
+                                    u8 *game_seg, size_t game_size,
+                                    u8 *vga, size_t vga_size) {
+    const u8 direction = game_seg && game_size > PLAYER_BOSS_INTRO_FLAG &&
+                         game_seg[PLAYER_BOSS_INTRO_FLAG] ? 1 : 0;
+    return cavern_transition_begin_direction(
+        transition, direction, 0, 0, game_seg, game_size, vga, vga_size);
+}
+
+int zeliard_cavern_transition_begin_return(
+    zeliard_cavern_transition_t *transition, u8 town_selector,
+    u8 *game_seg, size_t game_size, u8 *vga, size_t vga_size) {
+    return cavern_transition_begin_direction(
+        transition, 1, 1, town_selector,
+        game_seg, game_size, vga, vga_size);
 }
 
 int zeliard_cavern_transition_advance_pit(

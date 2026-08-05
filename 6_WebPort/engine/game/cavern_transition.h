@@ -10,6 +10,8 @@ enum {
 typedef struct {
     u8 active;
     u8 complete;
+    u8 return_to_town;
+    u8 return_selector;
     u8 direction;
     u8 step;
     u8 pose;
@@ -30,6 +32,11 @@ typedef struct {
 int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
                                     u8 *game_seg, size_t game_size,
                                     u8 *vga, size_t vga_size);
+
+/* Run the same ROKA room from the cavern side back toward its town door. */
+int zeliard_cavern_transition_begin_return(
+    zeliard_cavern_transition_t *transition, u8 town_selector,
+    u8 *game_seg, size_t game_size, u8 *vga, size_t vga_size);
 
 /* Advance by raw stick.asm timer ticks. Input is intentionally absent:
  * check_c3 polls only stick service handlers while Duke crosses the room. */

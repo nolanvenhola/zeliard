@@ -33,9 +33,7 @@ static u32 g_pcm_subframe_accum;
 static int g_audio_rate = 48000;
 enum {
     PCM_RING_FRAMES = 65536,
-    /* Two 60 Hz producer intervals at 48 kHz, matching the shell's proven
-     * startup cushion without allowing latency to grow indefinitely. */
-    PCM_MAX_BUFFERED_FRAMES = 1536
+    PCM_MAX_BUFFERED_FRAMES = ZEL_AUDIO_PCM_CUSHION_FRAMES
 };
 static short g_pcm_ring[PCM_RING_FRAMES * 2];
 static size_t g_pcm_read;
@@ -119,6 +117,8 @@ static const char *music_asset(zel_music_track_t track) {
     case ZEL_MUSIC_MGT2: return "mgt2.msd";
     case ZEL_MUSIC_UGM1: return "ugm1.msd";
     case ZEL_MUSIC_UGM2: return "ugm2.msd";
+    case ZEL_MUSIC_MUS1: return "mus1.msd";
+    case ZEL_MUSIC_MBOS: return "mbos.msd";
     default: return NULL;
     }
 }
@@ -232,6 +232,30 @@ void zel_opening_audio_begin_transition_fade(void) {
      * yielding 64 attenuation steps before the byte wraps and FF26h is set. */
     if (g_music_track == ZEL_OPENING_MUSIC_ZEND && !g_music_complete) {
         g_transition_fade = 1;
+        if (g_exact_driver)
+            zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 8);
+    }
+}
+
+void zel_opening_audio_begin_gameplay_transition_fade(void) {
+    /* Town scene transitions write 4 to shared byte FF24h.  MSCADLIB treats
+     * it as the fade reload interval, adding four to FF25h on each expiry.
+     * At the original PIT rate, 64 steps at interval four span the same
+     * roughly 2.1 seconds as check_c3's 26 x 20-tick ROKA walk. */
+    if (g_music_track != ZEL_MUSIC_NONE && !g_music_complete) {
+        g_transition_fade = 1;
+        g_fade_interval_counter = 1;
+        if (g_exact_driver)
+            zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 4);
+    }
+}
+
+void zel_opening_audio_begin_gameplay_death_fade(void) {
+    /* 200FIGHT:fade_out writes 8 to shared byte FF24h immediately before
+     * its thirty redraw-lock wipe passes and final MCGA fade-to-black. */
+    if (g_music_track != ZEL_MUSIC_NONE && !g_music_complete) {
+        g_transition_fade = 1;
+        g_fade_interval_counter = 1;
         if (g_exact_driver)
             zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 8);
     }

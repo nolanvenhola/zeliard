@@ -72,18 +72,19 @@ static int expect_sustained_track_pcm(const char *name,
 
 static int expect_gameplay_track_load(const char *name,
                                       zel_music_track_t track) {
-    short pcm[1536 * 2];
+    short pcm[ZEL_AUDIO_PCM_CUSHION_FRAMES * 2];
     zel_opening_audio_init();
     int ok = zel_audio_play_music(track);
     const u32 writes_before = zel_opening_audio_opl_write_count();
     zel_opening_audio_tick(250);
-    const size_t frames = zel_opening_audio_read_pcm(pcm, 1536);
+    const size_t frames = zel_opening_audio_read_pcm(
+        pcm, ZEL_AUDIO_PCM_CUSHION_FRAMES);
     size_t nonzero = 0;
     for (size_t i = 0; i < frames * 2; ++i)
         nonzero += pcm[i] != 0;
     ok &= zel_opening_audio_music_track() == (int)track;
     ok &= zel_opening_audio_opl_write_count() > writes_before;
-    ok &= frames == 1536 && nonzero > 100;
+    ok &= frames == ZEL_AUDIO_PCM_CUSHION_FRAMES && nonzero > 100;
     printf("opening_audio:%s_load: %s track=%d frames=%zu nonzero=%zu writes=%u\n",
            name, ok ? "PASS" : "FAIL", (int)track, frames, nonzero,
            zel_opening_audio_opl_write_count());
@@ -134,11 +135,11 @@ static int expect_dialog_sfx_continuity(void) {
     }
     const size_t buffered_frames = zel_opening_audio_pcm_available();
     const size_t delivered = zel_opening_audio_read_pcm(pcm, 512);
-    const int ok = stale_frames == 1536 &&
+    const int ok = stale_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES &&
         zel_opening_audio_cue_serial() == serial + 1 &&
         service_ms > 0 && service_ms <= 5 &&
         zel_opening_audio_opl_write_count() > writes &&
-        buffered_frames == 1536 && delivered == 512;
+        buffered_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES && delivered == 512;
     printf("opening_audio:dialog_sfx_continuity: %s before=%zu after=%zu "
            "service=%dms serial=%u\n", ok ? "PASS" : "FAIL",
            stale_frames, buffered_frames, service_ms,
@@ -211,8 +212,9 @@ int main(void) {
             pcm_peak = magnitude;
         pcm_abs_sum += magnitude;
     }
-    const int pcm_flowing = pcm_frames == 1536 && pcm_nonzero > 100 &&
-                            pcm_peak > 16 && pcm_abs_sum > pcm_frames * 2;
+    const int pcm_flowing = pcm_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES &&
+                            pcm_nonzero > 100 && pcm_peak > 16 &&
+                            pcm_abs_sum > pcm_frames * 2;
     printf("opening_audio:exact_mscadlib_pcm: %s frames=%zu nonzero=%zu peak=%u mean=%llu\n",
            pcm_flowing ? "PASS" : "FAIL",
            pcm_frames, pcm_nonzero, pcm_peak,
@@ -224,7 +226,10 @@ int main(void) {
     ok &= expect_gameplay_track_load("mgt2", ZEL_MUSIC_MGT2);
     ok &= expect_gameplay_track_load("ugm1", ZEL_MUSIC_UGM1);
     ok &= expect_gameplay_track_load("ugm2", ZEL_MUSIC_UGM2);
-    static const u8 sfx_pcm_cues[] = { 0x02, 0x04, 0x1E, 0x3D, 0x3E, 0x3F, 0x40, 0x41 };
+    static const u8 sfx_pcm_cues[] = {
+        0x02, 0x04, 0x07, 0x09, 0x16, 0x1E,
+        0x3D, 0x3E, 0x3F, 0x40, 0x41
+    };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
     ok &= expect_dialog_sfx_continuity();

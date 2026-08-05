@@ -27,6 +27,25 @@ EXPECTED_PLAYFIELD_FNV = 0x2DF9ABEBE695245F
 EXPECTED_MPAT_PIXEL_FNV = 0x057549E40BE35E14
 EXPECTED_MPAT_ALPHA_FNV = 0x68EDAA05B46B4C6E
 EXPECTED_CASTLE_RETURN_PLAYFIELD_FNV = 0x254DCDB105A9AE44
+EXPECTED_STONE_FRAME_FNV = 0x7FA1B196F7B40E63
+EXPECTED_SAGE_EXIT_PLAYFIELD_FNV = 0x03AEADB0E2FF861A
+
+
+def stone_frame_hash(frame: bytes) -> int:
+    stone = bytearray()
+    for y in range(160):
+        row = frame[y * 320:(y + 1) * 320]
+        stone.extend(row[:32])
+        stone.extend(row[272:])
+    return fnv1a64(bytes(stone))
+
+
+def rect_hash(frame: bytes, x: int, y: int,
+              width: int, height: int) -> int:
+    rectangle = bytearray()
+    for row in range(y, y + height):
+        rectangle.extend(frame[row * 320 + x:row * 320 + x + width])
+    return fnv1a64(bytes(rectangle))
 
 
 def relocate_three_words(mu: Uc, segment: int, offset: int) -> None:
@@ -134,6 +153,9 @@ def main() -> int:
     relocate_three_words(mu, 0x2000, 0x8000)
     call_near(mu, 0x3AF9)
 
+    muralla_setup_memory = bytes(mu.mem_read(game_base, 0x10000))
+    muralla_setup_vga = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+
     mu.mem_write(game_base + 0x00C4, b"\x81")
     mu.mem_write(game_base + 0x0080, b"\x00\x00")
     mu.mem_write(game_base + 0x0083, b"\x00")
@@ -162,6 +184,7 @@ def main() -> int:
     capture = bytes(mu.mem_read(game_base + 0xA000, 0x1500))
     state = selected_state(mu)
     frame_hash = fnv1a64(frame)
+    stone_hash = stone_frame_hash(frame)
     playfield_hash = fnv1a64(frame[:160 * 320])
     capture_hash = fnv1a64(capture)
     state_hash = fnv1a64(state)
@@ -173,6 +196,44 @@ def main() -> int:
     descriptor = bytes(mu.mem_read(game_base + 0xC000, 0x17))
     door_bytes = bytes(mu.mem_read(game_base + 0xC6EC, 0x14))
     npc_bytes = npc_state(mu)
+
+    # Re-run that same release first-frame sequence at 200FIGHT:level_start's
+    # Muralla sage coordinates. This is the outdoor frame the death room must
+    # restore on exit; it must not contain actors from the cavern-door frame.
+    muralla_post_memory = bytes(mu.mem_read(game_base, 0x10000))
+    mu.mem_write(game_base, muralla_setup_memory)
+    mu.mem_write(VGA_SEG << 4, muralla_setup_vga)
+    mu.mem_write(game_base + 0x00C4, b"\x81")
+    mu.mem_write(game_base + 0x0080, b"\x9b\x00")
+    mu.mem_write(game_base + 0x0082, b"\x0e")
+    mu.mem_write(game_base + 0x0083, b"\x0d")
+    mu.mem_write(game_base + 0x7C45, b"\x00\x01")
+    mu.mem_write(game_base + 0xFF1D, b"\x00\x00")
+    mu.mem_write(game_base + 0x00E4, b"\x00")
+    mu.mem_write(game_base + 0x009F, b"\x00")
+    write_u16(mu, GAME_SEG, 0xFF2A, (0xC017 + 0x9B * 8) & 0xFFFF)
+    for bx, ch in ((0x0204, 0x21), (0x021C, 0x42), (0x481C, 0x42)):
+        call_near(mu, 0x2195, bx=bx, cx=ch << 8)
+    call_near(mu, 0x2385)
+    for address in (0x6C93, 0x6C9B, 0x6CA4, 0x6CAC):
+        call_near(mu, 0x22BF, si=address)
+    for entry in (0x2227, 0x2256, 0x238F, 0x23AC, 0x23CC, 0x23F5):
+        call_near(mu, entry)
+    call_near(mu, 0x22CD, si=0xC6D8)
+    mu.mem_write(game_base + 0xE000, b"\xfe" * 0xE0)
+    call_near(mu, 0x6C2B)
+    call_near(mu, 0x6975)
+    call_near(mu, 0x6950)
+    call_near(mu, 0x3051)
+    sage_exit_frame = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+    sage_exit_playfield_hash = rect_hash(sage_exit_frame, 48, 14, 224, 146)
+    if os.environ.get("ZELIARD_DUMP"):
+        dump_dir = MASM_ROOT / "functest" / "build"
+        dump_dir.mkdir(exist_ok=True)
+        (dump_dir / "town-muralla-sage-exit-masm-frame.bin").write_bytes(
+            sage_exit_frame)
+    mu.mem_write(game_base, muralla_post_memory)
+    mu.mem_write(VGA_SEG << 4, frame)
 
     # Muralla's left-edge record returns to CMAP at width-24h, column 1Ah.
     # The old Muralla edge frame is committed before the descriptor swap.
@@ -229,6 +290,9 @@ def main() -> int:
             EXPECTED_FRAME_FNV, EXPECTED_CAPTURE_FNV,
             EXPECTED_STATE_FNV, EXPECTED_NPC_FNV)
         ok &= playfield_hash == EXPECTED_PLAYFIELD_FNV
+        ok &= stone_hash == EXPECTED_STONE_FRAME_FNV
+        if EXPECTED_SAGE_EXIT_PLAYFIELD_FNV:
+            ok &= sage_exit_playfield_hash == EXPECTED_SAGE_EXIT_PLAYFIELD_FNV
         if EXPECTED_MPAT_PIXEL_FNV:
             ok &= (mpat_pixel_hash, mpat_alpha_hash) == (
                 EXPECTED_MPAT_PIXEL_FNV, EXPECTED_MPAT_ALPHA_FNV)
@@ -238,10 +302,13 @@ def main() -> int:
 
     print("town_first_muralla_frame: " + ("PASS" if ok else "FAIL") +
           f" frame={frame_hash:016x} playfield={playfield_hash:016x} "
+          f"stone={stone_hash:016x} "
           f"capture={capture_hash:016x} "
           f"state={state.hex()}:{state_hash:016x} npc={npc_hash:016x}")
     print(f"town_mpat_banks: pixels={mpat_pixel_hash:016x} "
           f"alpha={mpat_alpha_hash:016x}")
+    print(f"town_muralla_sage_exit: playfield="
+          f"{sage_exit_playfield_hash:016x} position=009b/0e/0d")
     print(f"town_castle_return: playfield="
           f"{castle_return_playfield_hash:016x} cpat="
           f"{return_cpat_pixel_hash:016x}/{return_cpat_alpha_hash:016x}")
