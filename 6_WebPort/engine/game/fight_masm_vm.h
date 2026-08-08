@@ -19,6 +19,11 @@ u8 zeliard_fight_masm_vm_music_chunk(void);
 u8 zeliard_fight_masm_vm_take_sound_cue(void);
 int zeliard_fight_masm_vm_peek_u8(u16 offset);
 int zeliard_fight_masm_vm_peek_u16(u16 offset);
+int zeliard_fight_masm_vm_poke_u8(u16 offset, u8 value);
+int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value);
+int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
+                                             size_t game_size);
+int zeliard_fight_masm_vm_restore_vga(const u8 *vga, size_t vga_size);
 void zeliard_fight_masm_vm_stop(void);
 
 #endif

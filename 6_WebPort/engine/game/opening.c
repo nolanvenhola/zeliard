@@ -5609,17 +5609,15 @@ static void render_ame_story(u32 elapsed_ms) {
     opdmo_disp_set_mcga_ax(5);
 
     if (elapsed_ms < RAIN_PRINCESS_WAKU_BLIT_MS) {
-        cached_image_t frame;
-        memset(&frame, 0, sizeof(frame));
-        load_game_frame_overlay(&frame, &WAKU_FRAME);
         /* 100OPDMO: disp_game AL=00 BX=0000 CX=5088 DI=0000,
          * ES=game_seg+2000h. */
         zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_DISP_GAME, 0x0000,
                              0x0000, 0x5088, 0x0000, 0x2000, 0);
-        framebuf_clear(OPDMO_MCGA_BLACK_INDEX);
-        blit_cached_image_mcga_masked_write_passes(
-            &frame, mcga_pass_count_for_elapsed(elapsed_ms));
-        free(frame.pixels);
+        /* Both blocking MCGA blits finish before the script begins. Present
+         * the complete scene immediately instead of exposing lane passes as
+         * an invented fade into the first speech. */
+        render_waku_black_story_shell();
+        blit_ame_inner_scene_mcga_passes(MCGA_RENDER_PASS_COUNT);
         return;
     }
     elapsed_ms -= RAIN_PRINCESS_WAKU_BLIT_MS;
@@ -5629,7 +5627,7 @@ static void render_ame_story(u32 elapsed_ms) {
         zel_opdmo_trace_emit(ZEL_OPDMO_TRACE_DISP_GAME, 0x0000,
                              0x0410, 0x4868, 0x4000, 0x0000, 0);
         render_waku_black_story_shell();
-        blit_ame_inner_scene_mcga_passes(mcga_pass_count_for_elapsed(elapsed_ms));
+        blit_ame_inner_scene_mcga_passes(MCGA_RENDER_PASS_COUNT);
         return;
     }
     elapsed_ms -= RAIN_PRINCESS_AME_BLIT_MS;

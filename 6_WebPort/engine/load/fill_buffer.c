@@ -51,17 +51,21 @@ static u8* method0(const u8 *d, size_t n, size_t *out_size) {
 /* Table: [key, val] pairs where key & 0x0F == 0; terminator byte 0xFF.
  * Stream bytes: if hi-nibble matches a table key, expand count×val. */
 static u8* method1(const u8 *d, size_t n, size_t *out_size) {
-    /* Find 0xFF terminator — table entries lie before it, stream after. */
-    size_t tbl_end = 0;
-    while (tbl_end < n && d[tbl_end] != 0xFF) tbl_end++;
-    size_t si = (tbl_end < n) ? tbl_end + 1 : tbl_end;  /* stream start */
+    /* MASM records BP at the table start and scans SI past the first 0xFF,
+     * but the per-byte lookup is not bounded by that terminator.  It rescans
+     * from BP until a key with a nonzero low nibble is encountered.  The
+     * encoded stream can therefore overlap the lookup entries; ENCNT.GRP
+     * relies on this original behavior. */
+    size_t stream = 0;
+    while (stream < n && d[stream] != 0xFF) stream++;
+    size_t si = (stream < n) ? stream + 1 : stream;
 
     out_t o; if (out_init(&o, n * 3 + 64)) { *out_size = 0; return NULL; }
     while (si < n) {
         u8 al = d[si++];
         u8 ah = al & 0xF0;
         size_t cx = 1;
-        for (size_t tbp = 0; tbp + 1 < tbl_end; tbp += 2) {
+        for (size_t tbp = 0; tbp + 1 < n; tbp += 2) {
             u8 ek = d[tbp];
             if ((ek & 0x0F) != 0) break;  /* not a valid table entry */
             if (ah == ek) { cx = (al & 0x0F) + 2; al = d[tbp + 1]; break; }

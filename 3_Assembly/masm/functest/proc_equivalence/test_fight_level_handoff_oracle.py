@@ -38,13 +38,17 @@ ENTRY_HANDOFF = 0x7B5D
 LOADER_SLOT = 0x010C
 LOADER_STUB = 0x5000
 OBJECT_PTR = 0x4000
-PERSISTENT_START = 0x0085
+# STDPLY 00h..7Fh carries the authored cavern item/stash state masks; the
+# ordinary player stats follow at 85h.  Anchor the entire pre-selector record
+# so host handoffs cannot silently preserve stats while losing world state.
+PERSISTENT_START = 0x0000
 PERSISTENT_END = 0x00C2
 
 CASES = (
     ("town_return", 0x01, 0xFF, 0x81),
     ("death_return", 0x00, 0xFF, 0x80),
-    ("cavern_continue", 0x03, 0x00, 0x03),
+    ("malicia_to_connector", 0x03, 0x00, 0x03),
+    ("connector_to_peligro", 0x02, 0x00, 0x02),
 )
 
 

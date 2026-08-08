@@ -205,25 +205,27 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_start(
         outbound_game, sizeof(outbound_game), outbound_vga,
         sizeof(outbound_vga));
-    unsigned outbound_frames = 0;
-    while (zeliard_fight_masm_vm_active() && outbound_frames < 20) {
-        zeliard_fight_masm_vm_advance(
-            outbound_game, sizeof(outbound_game), outbound_vga,
-            sizeof(outbound_vga), 1, 1);
-        ++outbound_frames;
-    }
-    ok &= !zeliard_fight_masm_vm_active();
-    ok &= outbound_frames == 1;
-    ok &= zeliard_fight_masm_vm_exit_operation() == 1;
-    ok &= zeliard_fight_masm_vm_exit_selector() == 0x03;
-    printf("malicia_outbound: active=%d frames=%u operation=%02x "
-           "selector=%02x dispatch=%04x pos=%02x/%02x keys=%02x ip=%04x\n",
-           zeliard_fight_masm_vm_active(), outbound_frames,
+    const int outbound_advanced = zeliard_fight_masm_vm_advance(
+        outbound_game, sizeof(outbound_game), outbound_vga,
+        sizeof(outbound_vga), 1, 1);
+    const unsigned long long connector_frame =
+        fnv1a64(outbound_vga, 64000);
+    ok &= outbound_advanced;
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_at_frame();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 96;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 87;
+    printf("malicia_to_peligro_connector: active=%d operation=%02x "
+           "selector=%02x dispatch=%04x width=%u music=%02x "
+           "pos=%02x/%02x/%02x keys=%02x frame=%016llx ip=%04x\n",
+           zeliard_fight_masm_vm_active(),
            zeliard_fight_masm_vm_exit_operation(),
            zeliard_fight_masm_vm_exit_selector(),
-           zeliard_fight_masm_vm_exit_dispatch_slot(), outbound_game[0x80],
-           outbound_game[0x82], outbound_game[0x99],
-           zeliard_fight_masm_vm_ip());
+           zeliard_fight_masm_vm_exit_dispatch_slot(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(), outbound_game[0x80],
+           outbound_game[0x82], outbound_game[0x83], outbound_game[0x99],
+           connector_frame, zeliard_fight_masm_vm_ip());
 
     static u8 pickup_game[0x10000];
     static u8 pickup_vga[0x10000];

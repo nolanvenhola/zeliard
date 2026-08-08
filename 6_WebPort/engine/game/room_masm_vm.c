@@ -55,6 +55,8 @@ typedef struct {
     u8 session_exit_requested;
     u8 dos_handle_open;
     u8 dos_write_ok;
+    u8 drug_description_backdrop_active;
+    u8 drug_description_backdrop[112u * 45u];
     char save_name[13];
     u8 save_record[0x100];
     u8 *graphic;
@@ -450,6 +452,20 @@ static int room_masm_vm_start_impl(zeliard_room_kind_t kind,
     return 1;
 }
 
+static void copy_frame_rect(u8 *destination, const u8 *source,
+                            u16 x, u16 y, u16 width, u16 height) {
+    for (u16 row = 0; row < height; ++row)
+        memcpy(destination + (size_t)row * width,
+               source + (size_t)(y + row) * 320u + x, width);
+}
+
+static void restore_frame_rect(u8 *destination, const u8 *source,
+                               u16 x, u16 y, u16 width, u16 height) {
+    for (u16 row = 0; row < height; ++row)
+        memcpy(destination + (size_t)(y + row) * 320u + x,
+               source + (size_t)row * width, width);
+}
+
 int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
                                const u8 *game_seg, size_t game_size,
                                const u8 *vga, size_t vga_size) {
@@ -545,6 +561,26 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
         }
         if (!g_room_vm.active) break;
         if (g_room_vm.at_input_poll) break;
+    }
+    if (g_room_vm.kind == ZEL_ROOM_DRUGSTORE) {
+        u8 *frame = memory + linear(VGA_SEG, 0);
+        const u16 script_ip = read_u16(memory, base + 0xFF4C);
+        /* 215DRUGP's description loop leaves the top-level shop menu as the
+         * visual backdrop while AB0F asks whether another item is wanted.
+         * Preserve that authored rectangle across the subsequent AACA item
+         * selector and description.  The inner-box clear at loc_23 otherwise
+         * becomes visible in the linear host framebuffer, although DOS keeps
+         * the already-presented menu until the loop returns to A88C. */
+        if (g_room_vm.at_input_poll && script_ip == 0xAB0F) {
+            copy_frame_rect(g_room_vm.drug_description_backdrop, frame,
+                            156, 34, 112, 45);
+            g_room_vm.drug_description_backdrop_active = 1;
+        } else if (g_room_vm.at_input_poll && script_ip == 0xA88C) {
+            g_room_vm.drug_description_backdrop_active = 0;
+        }
+        if (g_room_vm.drug_description_backdrop_active)
+            restore_frame_rect(frame, g_room_vm.drug_description_backdrop,
+                               156, 34, 112, 45);
     }
     memcpy(game_seg, memory + base, 0x10000);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);

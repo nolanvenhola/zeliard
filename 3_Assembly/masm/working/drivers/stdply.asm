@@ -18,7 +18,7 @@ PAGE  59,132
 ;  See evidence_check.py and EVIDENCE_REPORT.md for the per-byte verdict.
 ;
 ;  Memory layout (all addresses are CS-relative):
-;    0x0000-0x007F  key_map_table (128 bytes, 64 word entries)
+;    0x0000-0x007F  Persistent world/scene flags (cavern objects, town state)
 ;    0x0080-0x0084  Player config (walk_speed, accel — purpose inconclusive)
 ;    0x0085-0x009D  Player stat record (gold, HP, equipped weapon/magic, XP, stats)
 ;    0x009E-0x00AA  Reserved
@@ -55,13 +55,16 @@ run_stdply_main		proc	far
 start:
 
 ;--------------------------------------------------------------------------
-;  Key Mapping Table  [CS:0x0000 - CS:0x007F]
-;  64 word entries; each word = action ID for that scancode index.
-;  All zero at default: key assignments are written at runtime by the
-;  key-config screen, or restored from a save file on startup.
+;  Persistent Cavern Object State  [CS:0x0000 - CS:0x007F]
+;  Saved bitfields for collected map items and opened hidden stashes/doors.
+;  Authored 200FIGHT entity records carry a destination pointer at +0Bh and
+;  a mask at +0Dh; entity_deactivate ORs that mask here.  On every cavern
+;  load, process_map_seg_updates reads these bytes and reapplies the linked
+;  object/tile mutations, so consumed objects do not respawn.
 ;--------------------------------------------------------------------------
 
-key_map_table	dw	64 dup (0)
+cavern_object_state	label	byte
+key_map_table	dw	64 dup (0)	; legacy alias; bytes are shared persistent flags
 
 ;--------------------------------------------------------------------------
 ;  Player Stat Record  [CS:0x0085 - CS:0x009D]

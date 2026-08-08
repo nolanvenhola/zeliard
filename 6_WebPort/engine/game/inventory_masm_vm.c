@@ -38,9 +38,24 @@ typedef struct {
     u8 direction;
     u16 trace[16];
     u8 trace_at;
+    u8 sound_cues[16];
+    u8 sound_cue_read;
+    u8 sound_cue_write;
+    u8 sound_cue_count;
 } inventory_vm_state_t;
 
 static inventory_vm_state_t g_inventory_vm;
+
+static void post_sound_cue(inventory_vm_state_t *state, u8 cue) {
+    if (!cue) return;
+    if (state->sound_cue_count == sizeof(state->sound_cues)) {
+        state->sound_cue_read = (u8)((state->sound_cue_read + 1u) & 15u);
+        --state->sound_cue_count;
+    }
+    state->sound_cues[state->sound_cue_write] = cue;
+    state->sound_cue_write = (u8)((state->sound_cue_write + 1u) & 15u);
+    ++state->sound_cue_count;
+}
 
 static size_t linear(u16 segment, u16 offset) {
     return (size_t)segment * 16u + offset;
@@ -107,6 +122,14 @@ static int inventory_step(void *context, u16 cs, u16 ip) {
     u8 *memory = zel_inventory86_memory();
     if (cs == GAME_SEG) {
         state->trace[state->trace_at++ & 15u] = ip;
+        const size_t instruction = linear(cs, ip);
+        /* 201SELCT posts each UI/item effect as one immediate FF75h write.
+         * Capture execution edges so a retained byte cannot repeat a cue. */
+        if (memory[instruction] == 0xC6 &&
+            memory[instruction + 1] == 0x06 &&
+            memory[instruction + 2] == 0x75 &&
+            memory[instruction + 3] == 0xFF)
+            post_sound_cue(state, memory[instruction + 4]);
     }
     if (cs == GAME_SEG && ip == 0) {
         state->active = 0;
@@ -259,6 +282,16 @@ u8 zeliard_inventory_masm_vm_peek(u16 offset) {
 }
 u16 zeliard_inventory_masm_vm_itemp_word(u16 offset) {
     return read_u16(zel_inventory86_memory(), linear(ITEMP_SEG, offset));
+}
+u8 zeliard_inventory_masm_vm_take_sound_cue(void) {
+    if (!g_inventory_vm.sound_cue_count) return 0;
+    const u8 cue = g_inventory_vm.sound_cues[g_inventory_vm.sound_cue_read];
+    g_inventory_vm.sound_cue_read =
+        (u8)((g_inventory_vm.sound_cue_read + 1u) & 15u);
+    --g_inventory_vm.sound_cue_count;
+    if (!g_inventory_vm.sound_cue_count)
+        zel_inventory86_memory()[linear(GAME_SEG, 0xFF75)] = 0;
+    return cue;
 }
 void zeliard_inventory_masm_vm_stop(void) {
     g_inventory_vm.active = 0;

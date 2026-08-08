@@ -24,8 +24,11 @@ BIN = MASM_ROOT / "working" / "drivers" / "gmmcga.bin"
 ITEMP = MASM_ROOT.parents[1] / "6_WebPort" / "engine" / "assets" / "itemp.grp"
 CODE_SEG, STACK_SEG, VGA_SEG = 0x1000, 0x8000, 0xA000
 ENTRY, RET_SENTINEL = 0x254C, 0x0080
-EXPECTED_FRAME = 0x546C2273D2514FFA
-EXPECTED_RECT = 0xACE1EEC895369B0A
+EXPECTED_RECTS = (
+    0xACE1EEC895369B0A, 0x077A65ACB967926D,
+    0xA8A66214ADC1AFD1, 0xD8DEE0CB628E0F10,
+    0xD6DAEEAFE2A0B1FA, 0xDA10261D04E42AC4,
+)
 
 
 def fnv1a64(data: bytes) -> int:
@@ -36,7 +39,7 @@ def fnv1a64(data: bytes) -> int:
     return value
 
 
-def main() -> int:
+def render_sword(sword: int) -> tuple[int, int, bool]:
     mu = Uc(UC_ARCH_X86, UC_MODE_16)
     mu.mem_map(0, 0x100000, UC_PROT_ALL)
     mu.mem_write((CODE_SEG << 4) + 0x2000, BIN.read_bytes())
@@ -55,7 +58,7 @@ def main() -> int:
     for reg, value in ((UC_X86_REG_CS, CODE_SEG), (UC_X86_REG_DS, CODE_SEG),
                        (UC_X86_REG_ES, CODE_SEG), (UC_X86_REG_SS, STACK_SEG)):
         mu.reg_write(reg, value)
-    mu.reg_write(UC_X86_REG_AX, 1)
+    mu.reg_write(UC_X86_REG_AX, sword)
     mu.reg_write(UC_X86_REG_BX, 0x18AB)
     mu.reg_write(UC_X86_REG_SP, 0xFFFC)
     mu.mem_write((STACK_SEG << 4) + 0xFFFC,
@@ -71,10 +74,16 @@ def main() -> int:
     rect = b"".join(frame[(171 + row) * 320 + 192:
                           (171 + row) * 320 + 212] for row in range(18))
     frame_hash, rect_hash = fnv1a64(frame), fnv1a64(rect)
-    ok = (mu.reg_read(UC_X86_REG_IP) == RET_SENTINEL and
-          frame_hash == EXPECTED_FRAME and rect_hash == EXPECTED_RECT)
+    return frame_hash, rect_hash, mu.reg_read(UC_X86_REG_IP) == RET_SENTINEL
+
+
+def main() -> int:
+    results = [render_sword(sword) for sword in range(1, 7)]
+    ok = all(returned and rect == EXPECTED_RECTS[index]
+             for index, (_frame, rect, returned) in enumerate(results))
     print("gmmcga_equipped_sword: " + ("PASS" if ok else "FAIL") +
-          f" frame={frame_hash:016x} rect={rect_hash:016x}")
+          " rects=" + ",".join(f"{rect:016x}"
+                                 for _frame, rect, _returned in results))
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM GMMCGA equipped-sword renderer")
     return 0 if ok else 1

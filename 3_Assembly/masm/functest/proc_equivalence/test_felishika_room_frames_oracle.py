@@ -257,6 +257,28 @@ def sage_state_oracles(program: Path, graphic: Path) -> bool:
 
 
 def main() -> int:
+    town = payload(MASM_ROOT / "bin" / "zelres1" / "106TOWN.bin")
+    # 106TOWN:door_type_shop after the room's INT 60h return: select A000,
+    # clear only the playfield, clear town_scene_flag, then redraw the player.
+    # The room's HUD writes are deliberately not replaced by a saved frame.
+    room_return_bytes = bytes.fromhex(
+        "b80100cd60c606427cff2eff1600a02eff160220c606427c002eff161220")
+    room_return_contract = town[0x0EA0:0x0EA0 + len(room_return_bytes)] == \
+        room_return_bytes
+    print("felishika_room_return_hud: " +
+          ("PASS" if room_return_contract else "FAIL") +
+          f" bytes={town[0x0EA0:0x0EA0 + len(room_return_bytes)].hex()}")
+    # After the rebuilt town/player frame has been committed, release
+    # 106TOWN resets gvar_pose_idx (00E7h) to the normal standing pose. This
+    # prevents the next actor pass from treating room-owned state as a player
+    # sprite-table index.
+    room_return_pose_bytes = bytes.fromhex("c606e70001")
+    room_return_pose_contract = town[0x0EF3:0x0EF8] == \
+        room_return_pose_bytes
+    print("felishika_room_return_pose: " +
+          ("PASS" if room_return_pose_contract else "FAIL") +
+          f" bytes={town[0x0EF3:0x0EF8].hex()}")
+
     king_program = MASM_ROOT / "bin" / "zelres2" / "210KINGP.bin"
     king_graphic = MASM_ROOT / "bin" / "zelres2" / "218KINGG.grp"
     if not king_program.exists() or not king_graphic.exists():
@@ -311,7 +333,8 @@ def main() -> int:
     king_dialog_lines = king_dialog_remaining_line_oracles(
         king_program, king_graphic)
     sage_state_ok = sage_state_oracles(sage_program, sage_graphic)
-    ok = fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
+    ok = room_return_contract and room_return_pose_contract and \
+        fnv1a64(king_frame) == EXPECTED_KING_FRAME and \
         fnv1a64(king_state) == EXPECTED_KING_STATE and \
         king_interaction and king_dialog_lines and \
         fnv1a64(omoya_frame) == EXPECTED_OMOYA_FRAME and \

@@ -164,6 +164,10 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/223DRUGG.grp', '2826d141c6a8eec7f4330e788e5dd0a533479b007638558c99eb9caef0d2db19'), 'drug.grp'],
     /* First cavern: exact MP10 map, Area 1 AI/sprites, palette, boss, and score. */
     [verifiedMasmOutput('zelres3/301EAI1.bin', 'fe2d16a57a9078091dd320b7050ee106a85a7ab53fb9148a78617de38063e543'), 'eai1.bin'],
+    /* Boss-victory ROKADEMO overlay: raised sword, crystal ascent, HUD award. */
+    [verifiedMasmOutput('zelres3/300ROKAD.bin', '07236ac426e926d2bf73eccf750101614fb1f04fdc80745dc1a2982cc05ca500'), 'rokad.bin'],
+    [verifiedMasmOutput('zelres3/353DMAN.grp', '687faa9cc9ee9dc7217caf9709c343f28453e4bcbe602418b581b5f8698e8a9e'), 'dman.grp'],
+    [verifiedMasmOutput('zelres3/394MFAN.msd', '87b5ec7f3ee8ea5f4086a3198076fc06e1de28d05811159eb8e9f5a829a80dff'), 'mfan.msd'],
     [verifiedMasmOutput('zelres3/309CRAB.bin', 'ed879a6e33168b07be953cdb1a8ff114b2b384c9aafce9bd860fadf406597329'), 'crab.bin'],
     [verifiedMasmOutput('zelres3/320MP10.mdt', '5f27a710ed0470de24d2aa5c3c8b13b9269dee47585fa2e4385961451d1ed66a'), 'mp10.mdt'],
     [verifiedMasmOutput('zelres3/321MP1D.mdt', 'f58ed6112af3c9b79766f82342e5dc243200e405587cd94c156b64477e512848'), 'mp1d.mdt'],
@@ -173,6 +177,16 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/364CRAB.grp', '91a15f5e73be4f5b0247162ca6fe6c5ec6820600c71a0b9900d7069ad6235e95'), 'crab.grp'],
     [verifiedMasmOutput('zelres3/374MPP1.grp', '4987c57069e1af6583cad22829049d9b6be98efa687fa092c63594153b7a868c'), 'mpp1.grp'],
     [verifiedMasmOutput('zelres3/385MUS1.msd', 'bae9870479e27245be7c47d670141a832c57270de1ac94cf9c50ef18785af556'), 'mus1.msd'],
+    /* Second cavern and the MP21 connector between Malicia and Peligro. */
+    [verifiedMasmOutput('zelres3/302EAI2.bin', 'c56d8a00d1373649cc01d6bebf86865760562c69b9a355bce0a3a98935943782'), 'eai2.bin'],
+    [verifiedMasmOutput('zelres3/310TAKO.bin', '0488d3f38fab427d2df2e6f4a5b177fa5624175b0d51cabde93888a4435b1adf'), 'tako.bin'],
+    [verifiedMasmOutput('zelres3/322MP20.mdt', '60de08ec157a335362b85017d38e8b3de31643ec32cff2ff80076731a615f5c2'), 'mp20.mdt'],
+    [verifiedMasmOutput('zelres3/323MP21.mdt', '0151fac5e295f9ed3d59c59aabe804c5db8a6dc6e209199296c1347c176f0868'), 'mp21.mdt'],
+    [verifiedMasmOutput('zelres3/324MP2D.mdt', 'f541aa1655be55aa5b5c38fdff380e1ebb920d71871b06d5bacf5825b7e8650f'), 'mp2d.mdt'],
+    [verifiedMasmOutput('zelres3/357ENP2.grp', 'd0bdc05fc75ee4012d44da9e146f0c1ead0265e508b9b9107040ff2bc2e3f612'), 'enp2.grp'],
+    [verifiedMasmOutput('zelres3/365TAKO.grp', '9e8743c74982e2d61a01cb987f717a658d5799eec262a8f7cb7f32926b4dcc60'), 'tako.grp'],
+    [verifiedMasmOutput('zelres3/375MPP2.grp', '8636da08949f84401780fa6ea1a187a7585b1e31336bcde161cdf9540fcdd219'), 'mpp2.grp'],
+    [verifiedMasmOutput('zelres3/386MUS2.msd', 'ce68a441eda87754f2fe6f31102f0d8e3fee366cf102adde2bf2c3cb11b63179'), 'mus2.msd'],
     [verifiedMasmOutput('zelres3/393MBOS.msd', 'dd78504393a7ae762f8a60ecaccf182cb11cc31ea04b945bbeeee838b663d716'), 'mbos.msd'],
 ];
 
