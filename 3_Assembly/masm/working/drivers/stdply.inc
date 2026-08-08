@@ -113,9 +113,9 @@ sword         equ     92h     ; currently equipped weapon idx (1-based; init 1 =
 ; cleared (= "shield broken") and the remainder is dealt to player_HP with
 ; sound cue 8; otherwise sound cue 9.
 ;
-; 201SELCT.asm `use_magia_stone` (line 775+) reads [93h] as a 1-based
+; 201SELCT.asm `use_holy_water` reads [93h] as a 1-based
 ; index into item_effect_tbl, ADDS the looked-up effect to word [94h],
-; and clamps to word [96h].  Consistent with the magia stone being a
+; and clamps to word [96h]. Consistent with Holy Water being a
 ; shield-repair item: repair amount depends on shield tier, capped at
 ; shield_max_HP.
 ;
@@ -130,7 +130,7 @@ shield_HP_hi            equ     95h     ; current shield HP, high byte
 ; 0x96..0x9A: character-stat block named by 201SELCT (character-select
 ; chunk).  All stat names below match its read patterns; placeholders
 ; aliased.  static analyzer matches: 0x96 word, 0x98..0x9A all byte/test.
-shield_max_HP             equ     96h     ; shield max HP cap (16-bit, 96h..97h; used by 201SELCT use_magia_stone clamp)
+shield_max_HP             equ     96h     ; shield max HP cap (16-bit, 96h..97h; used by 201SELCT use_holy_water clamp)
 stat_X96                equ     96h     ; alias — earlier name
 ; 0x98 = NORMAL KEY count (TCRF authoritative).  >9 carryable but only
 ; 1 digit shown in HUD.
@@ -436,9 +436,12 @@ weapon_shop_shields_esco           equ     0E3h
 ; HP-trickle restoration animation when player consumes healing.
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter (canonical, 16-bit; +8 HP/tick)
 stat_XC6                equ     0C6h    ; alias — earlier name
-; 0xE4 is the player's KEY COUNT — 201SELCT names it `key_count` (3 sites:
-; inc + test + read).  Matches static analyzer's byte-only access pattern.
-key_count               equ     0E4h    ; player's collected-key count (canonical, from 201SELCT)
+; 0xE4 is the temporary SABRE OIL POWER stack. 201SELCT item ID 7 increments
+; it; 200FIGHT's sword-action calculation multiplies offensive power by
+; (E4h + 1); and 106TOWN clears it when town play resumes. Normal and Lion's
+; Head keys are the distinct fields at 98h and 99h.
+sabre_oil_power         equ     0E4h    ; temporary Sabre Oil sword-power stack
+key_count               equ     0E4h    ; compatibility alias — earlier wrong name
 stat_XE4                equ     0E4h    ; alias — earlier name
 ; 0xE5 = SAGES SPOKEN BITMAP (TCRF authoritative).  Bitfield of which sages
 ; have spoken with the player (+128=Muralla +64=Satono +32=Bosque +16=Helada

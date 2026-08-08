@@ -136,6 +136,66 @@ int main(void) {
         zeliard_inventory_masm_vm_take_sound_cue() == 0;
     zeliard_inventory_masm_vm_stop();
 
+    /* Release 201SELCT item ID 5 (Magia Stone) seeds 200FIGHT's four
+     * seven-byte orbiting-sprite records at EB60h. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    memset(game + 0xEB60, 0xFF, 4u * 7u);
+    game[0xA6] = 5;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    static const u8 magia_orbit[4u * 7u] = {
+        0x00, 0x01, 0x50, 0x00, 0x00, 0x00, 0x00,
+        0x04, 0xFF, 0x50, 0x00, 0x00, 0x00, 0x00,
+        0x08, 0xFF, 0x50, 0x00, 0x00, 0x00, 0x00,
+        0x0C, 0x01, 0x50, 0x00, 0x00, 0x00, 0x00
+    };
+    const int magia_matches =
+        memcmp(game + 0xEB60, magia_orbit, sizeof(magia_orbit)) == 0;
+    printf("inventory_masm_magia: item=%02x result=%02x orbit=%d "
+           "heads=%02x/%02x/%02x/%02x\n", game[0xA6], game[0xFF4B],
+           magia_matches, game[0xEB60], game[0xEB67], game[0xEB6E],
+           game[0xEB75]);
+    ok &= game[0xA6] == 0 && game[0xFF4B] == 5 && magia_matches;
+    zeliard_inventory_masm_vm_stop();
+
+    /* Release item ID 7 (Sabre Oil) increments E4h. 200FIGHT consumes that
+     * byte in compute_action_anim_idx as the sword attack multiplier. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 7;
+    game[0xE4] = 0;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    printf("inventory_masm_sabre_oil: item=%02x result=%02x power=%u\n",
+           game[0xA6], game[0xFF4B], game[0xE4]);
+    ok &= game[0xA6] == 0 && game[0xFF4B] == 7 && game[0xE4] == 1;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);

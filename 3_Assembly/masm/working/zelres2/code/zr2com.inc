@@ -60,7 +60,8 @@ current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=
 player_level            equ     0C4h    ; alias — earlier name (was misnomer; not character level)
 stat_XC5                equ     0C5h    ; placeholder — byte field used by 200FIGHT (set 0x80, read as ah)
 player_tileset          equ     0C8h    ; legacy alias; use current_level_idx
-key_count               equ     0E4h    ; player's collected-key count (canonical in stdply.inc)
+sabre_oil_power         equ     0E4h    ; temporary Sabre Oil sword-power stack
+key_count               equ     0E4h    ; compatibility alias — earlier wrong name
 
 ; ----------------------------------------------------------------------
 ; stick.bin dispatch slots installed at game_seg:0x010C-0x0120

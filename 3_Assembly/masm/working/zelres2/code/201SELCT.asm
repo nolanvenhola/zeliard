@@ -129,12 +129,12 @@ magic_flags		equ	0A1h			; alias — earlier (wrong) name
 item_flags		equ	0A6h			; alias — generic-enough that this name still works
 weapon_flags		equ	0BBh			; alias — earlier (wrong) name
 sword		equ	092h			;* byte: currently equipped weapon index (1-based, 0=none)
-				; * shield tier (1-based, 0=no shield).  Used by use_magia_stone as item_effect_tbl index for shield repair amount
+				; * shield tier (1-based, 0=no shield). Used by use_holy_water as item_effect_tbl index for shield repair amount
 shield		equ	093h
 player_HP			equ	090h			;* word: current character HP
 player_hp_max		equ	0B2h			;* word: maximum character HP
-shield_HP		equ	094h			;* current shield HP (16-bit); use_magia_stone adds repair amount, capped at shield_max_HP
-shield_max_HP		equ	096h			;* shield max HP cap (16-bit); use_magia_stone clamps shield_HP to this
+shield_HP		equ	094h			;* current shield HP (16-bit); use_holy_water adds repair amount, capped at shield_max_HP
+shield_max_HP		equ	096h			;* shield max HP cap (16-bit); use_holy_water clamps shield_HP to this
 keys_normal		equ	098h			; normal key count (TCRF authoritative; was misnamed "player_speed" / "char_speed")
 player_speed		equ	098h			; alias — earlier (wrong) name
 player_power		equ	099h			;* byte: character power/attack stat
@@ -147,7 +147,7 @@ spell_charge		equ	0ABh			; base of 7-byte spell-charge array (current)
 spell_charge_max	equ	0B4h			; base of 7-byte spell-charge-max array
 weap_dur_cur		equ	0ABh			; alias — earlier (wrong) name
 weap_dur_max		equ	0B4h			; alias — earlier (wrong) name
-key_count		equ	0E4h			;* byte: number of keys held
+sabre_oil_power	equ	0E4h			;* byte: temporary Sabre Oil attack-power stack
 ; 0x9D in this chunk is the SELECTED SPELL (TCRF: selected_spell).  Earlier
 ; "cur_weapon_idx" name was a misread — 0x9D drives spell-cast dispatch
 ; (entity_fn_tbl_d) + indexes spell_charge_* array; it has nothing to do
@@ -729,9 +729,9 @@ item_use_dispatch_tbl_lbl:
 		dw	0A483h		; item 1 (Juu-en Fruit)     -> use_hp_full
 		dw	0A496h		; item 2 (Elixir of Kashi)  -> use_weapon_restore
 		dw	0A4BEh		; item 3 (Chikara Powder)   -> use_all_weapons_restore
-		dw	0A52Ch		; item 4 (Sabre Oil)        -> use_sabre_oil
-		dw	0A4EAh		; item 5 (Magia Stone)      -> use_magia_stone
-		dw	0A4DBh		; item 6 (Holy Water)       -> use_holy_water
+		dw	0A52Ch		; item 4 (Magia Stone)      -> use_magia_stone
+		dw	0A4EAh		; item 5 (Holy Water)       -> use_holy_water
+		dw	0A4DBh		; item 6 (Sabre Oil)        -> use_sabre_oil
 		dw	0A58Bh		; item 7 (Kioku Feather)    -> use_kioku_feather
 
 use_hp_potion:				; item 0: restore 80 HP (caps at max)
@@ -782,19 +782,19 @@ use_all_weapons_restore:		; item 3: restore all 7 weapon durabilities
 		call	draw_spell_list
 		jmp	draw_item_detail_entry
 
-use_holy_water:				; item 6: add one key to key_count
+use_sabre_oil:				; item 6: add one Sabre Oil attack-power stack
 		mov	byte ptr ds:[gvar_volume_b],0Eh
-		inc	byte ptr ds:[key_count]
-		call	draw_key_count
+		inc	byte ptr ds:[sabre_oil_power]
+		call	draw_sabre_oil_power
 		jmp	draw_item_detail_entry
 
-use_magia_stone:			; item 5: grant experience based on equipped magic level
+use_holy_water:			; item 5: restore shield HP based on equipped shield tier
 		mov	byte ptr ds:[gvar_volume_b],0Eh
 		test	byte ptr ds:[shield],0FFh
-		jnz	apply_item_exp			; Jump if not zero
+		jnz	apply_shield_repair			; Jump if not zero
 		retn				; no magic equipped -> no-op
 
-apply_item_exp:
+apply_shield_repair:
 		mov	bl,byte ptr ds:[shield]
 		dec	bl
 		xor	bh,bh			; Zero register
@@ -803,19 +803,19 @@ apply_item_exp:
 		add	word ptr ds:[shield_HP],ax
 		mov	ax,word ptr ds:[shield_HP]
 		sub	ax,word ptr ds:[shield_max_HP]
-		jc	cap_exp			; Jump if carry Set
+		jc	cap_shield_repair			; Jump if carry Set
 		mov	ax,word ptr ds:[shield_max_HP]
 		mov	word ptr ds:[shield_HP],ax
 
-cap_exp:
+cap_shield_repair:
 		call	word ptr cs:[drv_fn_13]
 		jmp	draw_item_detail_entry
-; Word offset table between use_magia_stone and use_sabre_oil
+; Holy Water repair amount by equipped shield tier.
 ; (Sourcer mis-decoded the high byte of the second entry).
 item_effect_tbl_lbl:
 		db	50h, 00h, 5Ah, 00h, 64h, 00h, 6Eh, 00h, 73h, 00h, 78h, 00h	; word offset tbl: 50h, 5Ah, 64h, 6Eh, 73h, 78h
 
-use_sabre_oil:				; item 4: animate Sabre Oil effect (4 sprite passes)
+use_magia_stone:			; item 4: seed four orbiting protective stone sprites
 		push	cs
 		pop	es
 		mov	byte ptr ds:[gvar_volume_b],0Eh
@@ -1099,7 +1099,7 @@ draw_char_stats:
 		mov	bx,3456h
 		xor	cl,cl			; Zero register
 		call	word ptr cs:[drv_fn_28]
-		call	draw_key_count
+		call	draw_sabre_oil_power
 
 draw_stat_93h:
 		test	byte ptr ds:[shield],0FFh
@@ -1203,12 +1203,12 @@ draw_exp_bar		proc	near
 
 draw_exp_bar		endp
 
-draw_key_count		proc	near
-		test	byte ptr ds:[key_count],0FFh
-		jnz	draw_key_count_body			; Jump if not zero
+draw_sabre_oil_power	proc	near
+		test	byte ptr ds:[sabre_oil_power],0FFh
+		jnz	draw_sabre_oil_power_body		; Jump if not zero
 		retn
 
-draw_key_count_body:
+draw_sabre_oil_power_body:
 		mov	bx,3257h
 		mov	cx,408h
 		xor	al,al			; Zero register
@@ -1218,7 +1218,7 @@ draw_key_count_body:
 		mov	al,28h			; '('
 		mov	ah,1
 		call	word ptr cs:[drv_render_char]
-		mov	al,byte ptr ds:[key_count]
+		mov	al,byte ptr ds:[sabre_oil_power]
 		xor	ah,ah			; Zero register
 		mov	dx,3457h
 		mov	bl,1
@@ -1230,7 +1230,7 @@ draw_key_count_body:
 		mov	ah,1
 		jmp	word ptr cs:[drv_render_char]
 
-draw_key_count		endp
+draw_sabre_oil_power	endp
 
 draw_spell_panel		proc	near
 		test	byte ptr ds:[spell_count],0FFh

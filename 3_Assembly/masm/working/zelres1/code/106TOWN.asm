@@ -326,7 +326,7 @@ frame_update:
 		xor	al,al			; Zero register
 		mov	ds:[gvar_spacebar_state],al
 		mov	ds:[gvar_skip_flag2],al
-		mov	byte ptr ds:[key_count],al
+		mov	byte ptr ds:[sabre_oil_power],al	; Sabre Oil expires on returning to town
 		mov	byte ptr ds:[stat_X9F],al
 		mov	bx,204h
 		xor	al,al			; Zero register

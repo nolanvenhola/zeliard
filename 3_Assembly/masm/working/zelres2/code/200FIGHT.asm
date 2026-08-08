@@ -8257,7 +8257,7 @@ al_is_one:
 		shr	bl,1			; Shift w/zeros fill
 		add	al,bl
 		jc	ah_overflow			; Jump if carry Set
-		mov	cl,byte ptr ds:[key_count]
+		mov	cl,byte ptr ds:[sabre_oil_power]	; Sabre Oil multiplies sword offense by stack+1
 		inc	cl
 		mul	cl			; ax = reg * al
 		or	ah,ah			; Zero ?
