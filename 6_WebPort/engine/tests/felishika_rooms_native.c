@@ -617,6 +617,42 @@ static int satono_release_vm_inn_rest(void) {
     return ok;
 }
 
+static int tumba_release_vm_inn_rest(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 5;
+    cs[ZEL_PLAYER_HP] = 8;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 80;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    cs[0x85] = 0; cs[0x86] = 150; cs[0x87] = 0;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_INN, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const unsigned long long menu_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 16000) {
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll();
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0);
+    }
+    const u16 hp = (u16)(cs[ZEL_PLAYER_HP] |
+        ((u16)cs[ZEL_PLAYER_HP + 1] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("tumba_release_vm_inn: ticks=%u active=%d hp=%u gold=%u "
+           "menu=%016llx\n", ticks, zeliard_room_masm_vm_active(), hp,
+           gold, menu_frame);
+    ok &= menu_frame == 0x6C45F923639FA67FULL &&
+          !zeliard_room_masm_vm_active() && hp == 80 && gold == 50;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int vm_browser_space_pulse(zel_input_state_t *input,
                                   u8 *cs, u8 *vga, unsigned *ticks) {
     const u16 start_ip = zeliard_room_masm_vm_ip();
@@ -745,6 +781,39 @@ static int muralla_release_vm_armory_buy(void) {
      * sword array. The old tier is returned through script_give_item. */
     ok &= cs[0x92] == 1 && gold == 1350 && cs[0xD2] == 0xC0 &&
           sword_frame == 0xACE1EEC895369B0AULL;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int tumba_release_vm_knight_sword_trade(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 5;
+    cs[0x24] = 0x80;
+    cs[0x9B] = 0xFF;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 12000 &&
+           !(cs[ZEL_PLAYER_SWORD] == 4 && cs[0x9B] == 0 &&
+             (cs[0xD6] & 0x10) == 0 && (cs[0x24] & 2) != 0)) {
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll();
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0);
+    }
+    const unsigned long long sword_frame = frame_rect_hash(
+        vga, 192, 171, 20, 18);
+    const int traded = cs[ZEL_PLAYER_SWORD] == 4 && cs[0x9B] == 0 &&
+        (cs[0xD6] & 0x10) == 0 && (cs[0x24] & 2) != 0;
+    printf("tumba_release_vm_knight_trade: ticks=%u traded=%d sword=%u "
+           "crest=%02x inventory=%02x state=%02x frame=%016llx\n",
+           ticks, traded, cs[ZEL_PLAYER_SWORD], cs[0x9B], cs[0xD6],
+           cs[0x24], sword_frame);
+    ok &= traded && cs[0xD6] == 0x60 && cs[0x24] == 0x82 &&
+          sword_frame == 0xD8DEE0CB628E0F10ULL;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -888,6 +957,32 @@ static int muralla_release_vm_bank_exchange(void) {
            (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
            zeliard_room_masm_vm_input_kind());
     ok &= almas == 0 && gold == 60;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int tumba_release_vm_bank_exchange(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0x8B] = 10; cs[0x8C] = 0; cs[0xC006] = 5;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_BANK, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u16 almas = (u16)(cs[0x8B] | ((u16)cs[0x8C] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("tumba_release_vm_bank_exchange: ticks=%u almas=%u "
+           "gold=%06x script=%04x kind=%d\n", ticks, almas, gold,
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           zeliard_room_masm_vm_input_kind());
+    ok &= almas == 0 && gold == 20;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -1441,13 +1536,16 @@ int main(void) {
                    muralla_release_vm_drugstore_text_repress() &&
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
+                   tumba_release_vm_knight_sword_trade() &&
                    muralla_release_vm_armory_replace_shield() &&
                    muralla_release_vm_church_heal() &&
                    muralla_release_vm_drug_buy() &&
                    muralla_release_vm_bank_exchange() &&
+                   tumba_release_vm_bank_exchange() &&
                    muralla_release_vm_bank_amount_input(0) &&
                    muralla_release_vm_bank_amount_input(1) &&
                    satono_release_vm_inn_rest() &&
+                   tumba_release_vm_inn_rest() &&
                    king_first_visit_script() &&
                    king_followup_scripts() &&
                    sage_release_vm_menu() &&

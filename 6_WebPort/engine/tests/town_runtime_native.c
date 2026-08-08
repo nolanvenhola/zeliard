@@ -1172,6 +1172,182 @@ int main(void) {
            helada_left, helada_right, helada_inn_trigger, helada_inn_fade,
            ZEL_ROOM_INN);
     free(helada);
+
+    /* Ticket #82: Tumba's release TMMP descriptor selects MGT2, DPAT,
+     * CMAN, and the 200FIGHT handoff target 80h -> start 6Fh/column 0Dh. */
+    static u8 tumba_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                             [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 tumba_vga[0x10000];
+    zeliard_game_exec_state_t tumba_game = {0};
+    zeliard_town_runtime_t *tumba = calloc(1, sizeof(*tumba));
+    ok &= tumba != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        tumba_game.segment[i] = tumba_segments[i];
+        tumba_game.segment_size[i] = sizeof(tumba_segments[i]);
+    }
+    ok &= load_direct(tumba_segments[0], sizeof(tumba_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(tumba_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(tumba_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(tumba_segments[3], sizeof(tumba_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(tumba_segments[0]) && load_item_panel(tumba_segments[1]);
+    tumba_segments[0][0x00C4] = 0x85;
+    tumba_segments[0][0x00C5] = 0x85;
+    tumba_segments[0][0x0080] = 0x6F;
+    tumba_segments[0][0x0083] = 0x0D;
+    tumba_segments[0][ZEL_PLAYER_SWORD] = 1;
+    tumba_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    tumba_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    tumba_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int tumba_result = tumba ? zeliard_town_enter_first_frame(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga)) : -99;
+    const unsigned long long tumba_frame =
+        fnv1a64(tumba_vga, sizeof(tumba_vga));
+    const unsigned long long tumba_playfield =
+        fnv1a64(tumba_vga, 160u * 320u);
+    const unsigned long long tumba_capture =
+        fnv1a64(tumba_segments[0] + 0xA000, 0x1500);
+    const unsigned long long tumba_state =
+        selected_state_hash(tumba_segments[0]);
+    const unsigned long long tumba_npcs =
+        npc_state_hash(tumba_segments[0]);
+    const u8 tumba_story_before[3] = {
+        tumba_segments[0][0xCFD3], tumba_segments[0][0xCFDB],
+        tumba_segments[0][0xCFEB],
+    };
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-tumba-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(tumba_vga, 1, sizeof(tumba_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= tumba_result == 0 && tumba->area == ZEL_TOWN_AREA_TUMBA;
+    ok &= tumba->music_index == 3 && tumba->map_side == 1 &&
+          tumba->palette_index == 2 && tumba->town_text_record == 0xC890;
+    ok &= tumba_frame == 0x01C631FF49DA9F89ULL &&
+          tumba_playfield == 0x9ADCE418F222531CULL &&
+          tumba_capture == 0xF2C3F82A0F93D06DULL &&
+          tumba_state == 0xA4141DCC9A2E2CCAULL &&
+          tumba_npcs == 0x6D1F3277532AACCEULL;
+    ok &= tumba_story_before[0] == 2 && tumba_story_before[1] == 3 &&
+          tumba_story_before[2] == 7;
+
+    static u8 tumba_snapshot[sizeof(tumba_segments) + sizeof(tumba_vga)];
+    memcpy(tumba_snapshot, tumba_segments, sizeof(tumba_segments));
+    memcpy(tumba_snapshot + sizeof(tumba_segments), tumba_vga,
+           sizeof(tumba_vga));
+    const zeliard_town_runtime_t tumba_runtime_snapshot = *tumba;
+
+    tumba_segments[0][0x0083] = 0xFF;
+    const int tumba_left = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 20, 0);
+    ok &= tumba_left > 0 && tumba->cavern_exit_requested &&
+          tumba_segments[0][0x0080] == 0x4E &&
+          tumba_segments[0][0x0081] == 0 &&
+          tumba_segments[0][0x0082] == 1 &&
+          tumba_segments[0][0x00C3] == 0xFF &&
+          tumba_segments[0][0x00C4] == 0x0B;
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0083] = 0x1C;
+    const int tumba_right = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 20, 0);
+    ok &= tumba_right > 0 && tumba->cavern_exit_requested &&
+          tumba_segments[0][0x0080] == 0x73 &&
+          tumba_segments[0][0x0081] == 0 &&
+          tumba_segments[0][0x0082] == 0 &&
+          tumba_segments[0][0x00C3] == 0 &&
+          tumba_segments[0][0x00C4] == 0x0B;
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0080] = 27;
+    tumba_segments[0][0x0081] = 0;
+    tumba_segments[0][0x0083] = 13;
+    const u16 tumba_armory_tile = (u16)(0xC017 + 27 * 8);
+    tumba_segments[0][0xFF2A] = (u8)tumba_armory_tile;
+    tumba_segments[0][0xFF2B] = (u8)(tumba_armory_tile >> 8);
+    const int tumba_armory_trigger = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 20, 1);
+    const int tumba_armory_fade = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 88, 0);
+    ok &= tumba_armory_trigger > 0 && tumba_armory_fade > 0 &&
+          tumba->room.active && tumba->room.kind == ZEL_ROOM_ARMORY &&
+          tumba->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0080] = 76;
+    tumba_segments[0][0x0081] = 0;
+    tumba_segments[0][0x0083] = 13;
+    const u16 tumba_inn_tile = (u16)(0xC017 + 76 * 8);
+    tumba_segments[0][0xFF2A] = (u8)tumba_inn_tile;
+    tumba_segments[0][0xFF2B] = (u8)(tumba_inn_tile >> 8);
+    const int tumba_inn_trigger = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 20, 1);
+    const int tumba_inn_fade = zeliard_town_advance_pit(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga), 88, 0);
+    ok &= tumba_inn_trigger > 0 && tumba_inn_fade > 0 &&
+          tumba->room.active && tumba->room.kind == ZEL_ROOM_INN &&
+          tumba->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0022] |= 2;
+    const int tumba_pirika = zeliard_town_enter_first_frame(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga));
+    const u8 tumba_pirika_a = tumba_segments[0][0xCFD3];
+    const u8 tumba_pirika_b = tumba_segments[0][0xCFDB];
+    ok &= tumba_pirika == 0 && tumba_pirika_a == 8 && tumba_pirika_b == 9;
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0024] = 0x80;
+    const int tumba_glory = zeliard_town_enter_first_frame(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga));
+    const u8 tumba_glory_dialog = tumba_segments[0][0xCFEB];
+    ok &= tumba_glory == 0 && tumba_glory_dialog == 10;
+
+    memcpy(tumba_segments, tumba_snapshot, sizeof(tumba_segments));
+    memcpy(tumba_vga, tumba_snapshot + sizeof(tumba_segments),
+           sizeof(tumba_vga));
+    *tumba = tumba_runtime_snapshot;
+    tumba_segments[0][0x0024] = 2;
+    const int tumba_glory_traded = zeliard_town_enter_first_frame(
+        tumba, &tumba_game, tumba_vga, sizeof(tumba_vga));
+    const u8 tumba_traded_dialog = tumba_segments[0][0xCFEB];
+    ok &= tumba_glory_traded == 0 && tumba_traded_dialog == 11;
+    printf("town_tumba_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx music=%u "
+           "story=%02x/%02x/%02x>%02x/%02x/%02x/%02x\n",
+           tumba_result, tumba_frame, tumba_playfield, tumba_capture,
+           tumba_state, tumba_npcs, (unsigned)tumba->music_index,
+           tumba_story_before[0], tumba_story_before[1],
+           tumba_story_before[2], tumba_pirika_a, tumba_pirika_b,
+           tumba_glory_dialog, tumba_traded_dialog);
+    printf("town_tumba_routes: left=%d/004e/01/ff/0b "
+           "right=%d/0073/00/00/0b armory=%d/%d/%d inn=%d/%d/%d\n",
+           tumba_left, tumba_right, tumba_armory_trigger,
+           tumba_armory_fade, ZEL_ROOM_ARMORY, tumba_inn_trigger,
+           tumba_inn_fade, ZEL_ROOM_INN);
+    free(tumba);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,
