@@ -198,6 +198,11 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/358ENP3.grp', 'c09e98daa21c766f2d55e4b550bb7b8e15f4531ef7bc4bb089ad5c7a7029118d'), 'enp3.grp'],
     [verifiedMasmOutput('zelres3/376MPP3.grp', '1ed8823204df4b736c7e20bdd7fb337360b85208675c335cfaa24fb732dbe411'), 'mpp3.grp'],
     [verifiedMasmOutput('zelres3/387MUS3.msd', '9bba17b712e90f6acf6541f22b8a6dd708ba5f9f2d5040a62fd906694aedbbe9'), 'mus3.msd'],
+    /* Riza and its exact Pollo chamber handoff. */
+    [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
+    [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],
+    [verifiedMasmOutput('zelres3/327MP3D.mdt', 'b7a4df4e67ebff7ea3345701f5d1a25d2f0df645fa3b296a935ef9d4e99efd1e'), 'mp3d.mdt'],
+    [verifiedMasmOutput('zelres3/366TORI.grp', '8681fe7105dcf38795407b08fc6dc822b7d13ae8567b41337ed3c59a7456ae5b'), 'tori.grp'],
     [verifiedMasmOutput('zelres3/393MBOS.msd', 'dd78504393a7ae762f8a60ecaccf182cb11cc31ea04b945bbeeee838b663d716'), 'mbos.msd'],
 ];
 
