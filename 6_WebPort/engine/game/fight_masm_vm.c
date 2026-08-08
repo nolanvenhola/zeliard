@@ -149,6 +149,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 1, "rokad.bin"},
     {2, 2, "eai1.bin"},
     {2, 3, "eai2.bin"},
+    {2, 4, "eai3.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 21, "mp10.mdt"},
@@ -159,12 +160,15 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 56, "encnt.grp"},
     {2, 57, "enp1.grp"},
     {2, 58, "enp2.grp"},
+    {2, 59, "enp3.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
+    {2, 77, "mpp3.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
+    {2, 88, "mus3.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
 };
@@ -189,6 +193,8 @@ static const char *map_for_selector(u8 selector) {
         case 0x21: return "mp21.mdt";
         case 0x04:
         case 0x22: return "mp2d.mdt";
+        case 0x05:
+        case 0x23: return "mp30.mdt";
         default: return NULL;
     }
 }

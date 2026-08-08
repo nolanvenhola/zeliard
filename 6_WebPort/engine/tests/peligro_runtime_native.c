@@ -393,16 +393,22 @@ int main(void) {
         sizeof(outbound_vga));
     int outbound_advanced = advance_frame(outbound_game, outbound_vga, 1);
     outbound_advanced |= advance_frame(outbound_game, outbound_vga, 1);
-    printf("peligro_outbound_probe: advanced=%d active=%d operation=%02x "
-           "selector=%02x dispatch=%04x pos=%02x/%02x/%02x\n",
+    const unsigned long long madera_entry_frame =
+        fnv1a64(outbound_vga, 64000);
+    printf("peligro_outbound_probe: advanced=%d active=%d width=%u music=%02x "
+           "operation=%02x selector=%02x dispatch=%04x pos=%02x/%02x/%02x "
+           "frame=%016llx\n",
            outbound_advanced, zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(),
            zeliard_fight_masm_vm_exit_operation(),
            zeliard_fight_masm_vm_exit_selector(),
            zeliard_fight_masm_vm_exit_dispatch_slot(), outbound_game[0x80],
-           outbound_game[0x82], outbound_game[0x83]);
-    ok &= outbound_advanced && !zeliard_fight_masm_vm_active();
-    ok &= zeliard_fight_masm_vm_exit_operation() == 1;
-    ok &= zeliard_fight_masm_vm_exit_selector() == 5;
+           outbound_game[0x82], outbound_game[0x83], madera_entry_frame);
+    ok &= outbound_advanced && zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 204;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 88;
+    ok &= madera_entry_frame == 0x9C0E087885EB6BDDULL;
 
     /* MP2D: Peligro's Pulpo boundary and boss resource family. */
     prepare_player(game, 0x04, 0x08, 0x09, 0);

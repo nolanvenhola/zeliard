@@ -192,6 +192,12 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/365TAKO.grp', '9e8743c74982e2d61a01cb987f717a658d5799eec262a8f7cb7f32926b4dcc60'), 'tako.grp'],
     [verifiedMasmOutput('zelres3/375MPP2.grp', '8636da08949f84401780fa6ea1a187a7585b1e31336bcde161cdf9540fcdd219'), 'mpp2.grp'],
     [verifiedMasmOutput('zelres3/386MUS2.msd', 'ce68a441eda87754f2fe6f31102f0d8e3fee366cf102adde2bf2c3cb11b63179'), 'mus2.msd'],
+    /* Madera (area 3): exact release map and shared forest resource family. */
+    [verifiedMasmOutput('zelres3/303EAI3.bin', 'a3e0d505989486b8f5250d2d60f13e664fbea5d19317f29183f757d0be3ea89f'), 'eai3.bin'],
+    [verifiedMasmOutput('zelres3/325MP30.mdt', 'e8ac822b5c748a98eedcc691f24aa305c51595570eaeab127d8815fa56746feb'), 'mp30.mdt'],
+    [verifiedMasmOutput('zelres3/358ENP3.grp', 'c09e98daa21c766f2d55e4b550bb7b8e15f4531ef7bc4bb089ad5c7a7029118d'), 'enp3.grp'],
+    [verifiedMasmOutput('zelres3/376MPP3.grp', '1ed8823204df4b736c7e20bdd7fb337360b85208675c335cfaa24fb732dbe411'), 'mpp3.grp'],
+    [verifiedMasmOutput('zelres3/387MUS3.msd', '9bba17b712e90f6acf6541f22b8a6dd708ba5f9f2d5040a62fd906694aedbbe9'), 'mus3.msd'],
     [verifiedMasmOutput('zelres3/393MBOS.msd', 'dd78504393a7ae762f8a60ecaccf182cb11cc31ea04b945bbeeee838b663d716'), 'mbos.msd'],
 ];
 

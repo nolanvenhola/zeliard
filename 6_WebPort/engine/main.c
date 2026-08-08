@@ -167,6 +167,7 @@ static void sync_fight_music(void) {
     if (chunk == g_fight_music_chunk) return;
     const zel_music_track_t track = chunk == 86 ? ZEL_MUSIC_MUS1
                                   : chunk == 87 ? ZEL_MUSIC_MUS2
+                                  : chunk == 88 ? ZEL_MUSIC_MUS3
                                   : chunk == 94 ? ZEL_MUSIC_MBOS
                                   : chunk == 95 ? ZEL_MUSIC_MFAN
                                                 : ZEL_MUSIC_NONE;

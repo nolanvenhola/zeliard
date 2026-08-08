@@ -119,6 +119,7 @@ static const char *music_asset(zel_music_track_t track) {
     case ZEL_MUSIC_UGM2: return "ugm2.msd";
     case ZEL_MUSIC_MUS1: return "mus1.msd";
     case ZEL_MUSIC_MUS2: return "mus2.msd";
+    case ZEL_MUSIC_MUS3: return "mus3.msd";
     case ZEL_MUSIC_MBOS: return "mbos.msd";
     case ZEL_MUSIC_MFAN: return "mfan.msd";
     default: return NULL;
