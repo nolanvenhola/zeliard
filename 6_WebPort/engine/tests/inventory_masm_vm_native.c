@@ -73,6 +73,72 @@ int main(void) {
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 1; /* Kenshiko Potion */
+    game[0x90] = 10;
+    game[0x91] = 0;
+    game[0xB2] = 100;
+    game[0xB3] = 0;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 potion_hp = (u16)(game[0x90] | ((u16)game[0x91] << 8));
+    const u8 select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 potion_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 potion_cue_repeat = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_potion: hp=%u item=%02x result=%02x cue=%02x\n",
+           potion_hp, game[0xA6], game[0xFF4B], potion_cue);
+    ok &= potion_hp == 90 && game[0xA6] == 0 &&
+        game[0xFF4B] == 1 && select_cue == 0x0C &&
+        potion_cue == 0x0E && potion_cue_repeat == 0;
+    zeliard_inventory_masm_vm_stop();
+
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 1;
+    game[0x90] = 70;
+    game[0xB2] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 capped_potion_hp =
+        (u16)(game[0x90] | ((u16)game[0x91] << 8));
+    const u8 capped_select_cue =
+        zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 capped_potion_cue =
+        zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_potion_cap: hp=%u item=%02x result=%02x "
+           "cue=%02x\n", capped_potion_hp, game[0xA6], game[0xFF4B],
+           capped_potion_cue);
+    ok &= capped_potion_hp == 100 && game[0xA6] == 0 &&
+        game[0xFF4B] == 1 && capped_select_cue == 0x0C &&
+        capped_potion_cue == 0x0E &&
+        zeliard_inventory_masm_vm_take_sound_cue() == 0;
+    zeliard_inventory_masm_vm_stop();
+
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
     game[0x92] = 1;
     game[0x98] = 1;
     game[0xB2] = 100;

@@ -41,6 +41,7 @@ typedef struct {
     u8 exit_selector;
     u8 music_chunk;
     u8 bootstrap_clock;
+    u8 authored_wait_sequence;
     u16 exit_dispatch_slot;
     u32 instructions;
     u32 frame_pit_ticks;
@@ -142,18 +143,30 @@ typedef struct {
 
 static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {1, 30, "mman.grp"},
+    /* ROKADEMO.BIN: the release boss-victory overlay.  200FIGHT loads it
+     * after the boss death FSM completes; it renders the raised-sword pose
+     * and carries the recovered crystal into the HUD. */
+    {2, 1, "rokad.bin"},
     {2, 2, "eai1.bin"},
+    {2, 3, "eai2.bin"},
     {2, 10, "crab.bin"},
+    {2, 11, "tako.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
+    {2, 54, "dman.grp"},
     {2, 55, "dchr.grp"},
     {2, 56, "encnt.grp"},
     {2, 57, "enp1.grp"},
+    {2, 58, "enp2.grp"},
     {2, 65, "crab.grp"},
+    {2, 66, "tako.grp"},
     {2, 75, "mpp1.grp"},
+    {2, 76, "mpp2.grp"},
     {2, 86, "mus1.msd"},
+    {2, 87, "mus2.msd"},
     {2, 94, "mbos.msd"},
+    {2, 95, "mfan.msd"},
 };
 
 static const char *asset_for_ref(u8 archive, u8 chunk) {
@@ -170,6 +183,12 @@ static const char *map_for_selector(u8 selector) {
         case 0x1E: return "mp10.mdt";
         case 0x01:
         case 0x1F: return "mp1d.mdt";
+        case 0x02:
+        case 0x20: return "mp20.mdt";
+        case 0x03:
+        case 0x21: return "mp21.mdt";
+        case 0x04:
+        case 0x22: return "mp2d.mdt";
         default: return NULL;
     }
 }
@@ -214,6 +233,20 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         }
     }
     if (cs == FIGHT_SEG && ip == 0x629C) {
+        state->authored_wait_sequence = 0;
+        if (state->allow_frame_once) {
+            state->allow_frame_once = 0;
+            state->at_frame = 0;
+        } else {
+            state->at_frame = 1;
+            return 1;
+        }
+    }
+    /* 200FIGHT:7F82 wait_anim_cycle is the display boundary used by the
+     * 26-step boss-room entrance.  The DOS game completes the planar
+     * ENCOUNTER! blit before waiting here.  Yielding on an arbitrary CPU
+     * slice exposes a half-assembled graphic in the browser. */
+    if (cs == FIGHT_SEG && ip == 0x7F82 && state->authored_wait_sequence) {
         if (state->allow_frame_once) {
             state->allow_frame_once = 0;
             state->at_frame = 0;
@@ -268,6 +301,8 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             loaded = operation == 2
                 ? load_fill_to(memory, destination, asset)
                 : load_payload_to(memory, destination, asset);
+            if (loaded && operation == 2 && archive == 2 && chunk == 56)
+                state->authored_wait_sequence = 1;
             if (loaded && operation == 5)
                 state->music_chunk = chunk;
         }
@@ -437,12 +472,13 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
     const u8 resume_from_frame = g_fight_vm.at_frame;
     g_fight_vm.at_frame = 0;
     g_fight_vm.allow_frame_once = resume_from_frame;
-    for (unsigned pass = 0; pass < 1 && g_fight_vm.active &&
+    for (unsigned pass = 0; pass < 64 && g_fight_vm.active &&
             !g_fight_vm.at_frame; ++pass) {
         if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED) {
             g_fight_vm.active = 0;
             break;
         }
+        if (!g_fight_vm.authored_wait_sequence) break;
     }
     sync_host_state(game_seg, vga);
     /* Long transitions and boss sequences can render between visits to the
@@ -454,6 +490,23 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
 int zeliard_fight_masm_vm_active(void) { return g_fight_vm.active; }
 int zeliard_fight_masm_vm_at_frame(void) { return g_fight_vm.at_frame; }
 u16 zeliard_fight_masm_vm_ip(void) { return zel_fight86_ip(); }
+int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
+                                             size_t game_size) {
+    if (!g_fight_vm.active || !game_seg || game_size < 0x10000) return 0;
+    u8 *memory = zel_fight86_memory();
+    const size_t fight = linear(FIGHT_SEG, 0);
+    /* The DOS selector and 200FIGHT share DS.  Mirror every persistent
+     * selector result before resuming: player/equipment/item fields plus
+     * the complete shared gvar block (including FF4Bh item result). */
+    memcpy(memory + fight, game_seg, 0x100);
+    memcpy(memory + fight + 0xFF00, game_seg + 0xFF00, 0x80);
+    return 1;
+}
+int zeliard_fight_masm_vm_restore_vga(const u8 *vga, size_t vga_size) {
+    if (!g_fight_vm.active || !vga || vga_size < 0x10000) return 0;
+    memcpy(zel_fight86_memory() + linear(VGA_SEG, 0), vga, 0x10000);
+    return 1;
+}
 u8 zeliard_fight_masm_vm_exit_operation(void) {
     return g_fight_vm.exit_operation;
 }
@@ -478,5 +531,15 @@ int zeliard_fight_masm_vm_peek_u8(u16 offset) {
 }
 int zeliard_fight_masm_vm_peek_u16(u16 offset) {
     return read_u16(zel_fight86_memory(), linear(FIGHT_SEG, offset));
+}
+int zeliard_fight_masm_vm_poke_u8(u16 offset, u8 value) {
+    if (!g_fight_vm.active) return 0;
+    zel_fight86_memory()[linear(FIGHT_SEG, offset)] = value;
+    return 1;
+}
+int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value) {
+    if (!g_fight_vm.active || offset == 0xFFFFu) return 0;
+    write_u16(zel_fight86_memory(), linear(FIGHT_SEG, offset), value);
+    return 1;
 }
 void zeliard_fight_masm_vm_stop(void) { g_fight_vm.active = 0; }

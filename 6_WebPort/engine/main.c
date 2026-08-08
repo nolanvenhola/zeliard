@@ -43,6 +43,9 @@ static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_inventory_return_to_fight;
+static u8 g_inventory_player_before[ZEL_PLAYER_RECORD_SIZE];
+static u8 g_inventory_fight_hud_override;
 static u8 g_cavern_town_segments[ZELIARD_GAME_SEGMENT_COUNT]
                                  [ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_cavern_town_vga[ZELIARD_GAME_SEGMENT_SIZE];
@@ -54,12 +57,50 @@ static zeliard_cavern_transition_t g_cavern_transition;
 static zel_input_state_t g_input;
 static u32 g_input_subtick_accum;
 static u8 g_fight_music_chunk = 0xFF;
+static u8 g_fight_connector_music_fade;
 static u8 g_fight_boundary_selector = 0xFF;
 static u8 g_fight_started;
 static u8 g_fight_death_pending;
 static u8 g_fight_death_return_pending;
 static u8 g_fight_death_audio_fade_started;
 static u8 g_death_sage_chrome_active;
+static u32 g_fight_regen_pit_ticks;
+static u8 g_fight_regen_frames;
+
+static int advance_fight_passive_life_restoration(u32 pit_ticks,
+                                                  u16 hp_before,
+                                                  u16 hp_after) {
+    const u16 hp_max = (u16)(g_game_segments[0][ZEL_PLAYER_HP_MAX] |
+        ((u16)g_game_segments[0][ZEL_PLAYER_HP_MAX + 1] << 8));
+    const u8 direction = g_game_segments[0][0xFF17];
+    const u8 buttons = g_game_segments[0][0xFF16];
+    if (g_fight_death_pending || g_game_segments[0][ZEL_PLAYER_INIT_COMPLETE] ||
+        direction || buttons || hp_after == 0 || hp_after >= hp_max ||
+        hp_after != hp_before) {
+        g_fight_regen_pit_ticks = 0;
+        g_fight_regen_frames = 0;
+        return 0;
+    }
+
+    const u8 speed = g_game_segments[0][0xFF33];
+    const u8 frame_ticks = (u8)(4u * (speed ? speed : 1u));
+    g_fight_regen_pit_ticks += pit_ticks;
+    while (g_fight_regen_pit_ticks >= frame_ticks) {
+        g_fight_regen_pit_ticks -= frame_ticks;
+        if (++g_fight_regen_frames >= 16) {
+            const u16 restored = (u16)(hp_after + 2u);
+            g_game_segments[0][ZEL_PLAYER_HP] = (u8)restored;
+            g_game_segments[0][ZEL_PLAYER_HP + 1] = (u8)(restored >> 8);
+            zeliard_fight_masm_vm_poke_u16(ZEL_PLAYER_HP, restored);
+            /* Prevent the interpreter's delayed check_state18 pass from
+             * replaying the same host-timed restoration. */
+            zeliard_fight_masm_vm_poke_u8(0x9F18, 0);
+            g_fight_regen_frames = 0;
+            return 1;
+        }
+    }
+    return 0;
+}
 
 static void begin_fight_death(void) {
     if (g_fight_death_pending) return;
@@ -107,20 +148,63 @@ static int fight_boundary_returns_to_town(u8 operation, u8 selector,
 
 static void sync_fight_music(void) {
     const u8 chunk = zeliard_fight_masm_vm_music_chunk();
+    const u16 map_width = zeliard_fight_masm_vm_active()
+        ? zeliard_fight_masm_vm_peek_u16(0xC002) : 0;
+    /* MP21 is the authored transition cavern between Malicia and Peligro.
+     * 200FIGHT changes the level/music selector on entry, but the audible
+     * score fades across the connector and the destination score begins at
+     * the far door.  Keep the currently playing score while MP21 is live. */
+    if (map_width == 96u &&
+        g_fight_music_chunk != 0xFF)
+        return;
+    if (g_fight_connector_music_fade && map_width != 96u) {
+        /* The far MP21 door is 200FIGHT's destination score boundary. */
+        g_fight_connector_music_fade = 0;
+        g_fight_music_chunk = 0xFF;
+    }
     if (chunk == g_fight_music_chunk) return;
     const zel_music_track_t track = chunk == 86 ? ZEL_MUSIC_MUS1
+                                  : chunk == 87 ? ZEL_MUSIC_MUS2
                                   : chunk == 94 ? ZEL_MUSIC_MBOS
+                                  : chunk == 95 ? ZEL_MUSIC_MFAN
                                                 : ZEL_MUSIC_NONE;
+    if (track == ZEL_MUSIC_MFAN) {
+        /* MSCADLIB clears the caller's FF26h completion byte while the
+         * reward fanfare is active.  300ROKAD polls that same byte before
+         * beginning its reverse sword-pose wipe. */
+        g_game_segments[0][0xFF26] = 0;
+        zeliard_fight_masm_vm_poke_u8(0xFF26, 0);
+    }
     if (track != ZEL_MUSIC_NONE && !zel_audio_play_music(track))
         platform_log("200FIGHT: exact music chunk %u start failed",
                      (unsigned)chunk);
     g_fight_music_chunk = chunk;
 }
 
+static int redraw_cavern_return_hud(u8 *vga, size_t vga_size, u8 *cs) {
+    if (zeliard_gmmcga_draw_first_frame_hud(
+            vga, vga_size, cs, sizeof(g_game_segments[0]),
+            g_town_runtime.town_text_record) != 0)
+        return 0;
+    const u8 sword = cs[ZEL_PLAYER_SWORD];
+    if (sword && zeliard_gmmcga_draw_equipped_sword(
+            vga, vga_size, g_game_segments[1],
+            sizeof(g_game_segments[1]), sword, 0x18AB) != 0)
+        return 0;
+    const u8 shield = cs[ZEL_PLAYER_SHIELD];
+    if (shield && zeliard_gmmcga_draw_equipped_shield(
+            vga, vga_size, g_game_segments[1],
+            sizeof(g_game_segments[1]), shield, 0x3EA4) != 0)
+        return 0;
+    return 1;
+}
+
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
+    u8 cavern_object_state[ZEL_PLAYER_CAVERN_OBJECT_STATE_END];
     u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
     u8 cavern_progress_b[ZEL_PLAYER_FACING_DIRECTION - ZEL_PLAYER_TEARS];
+    memcpy(cavern_object_state, cs, sizeof(cavern_object_state));
     memcpy(cavern_progress_a, cs + ZEL_PLAYER_GOLD,
            sizeof(cavern_progress_a));
     memcpy(cavern_progress_b, cs + ZEL_PLAYER_TEARS,
@@ -133,6 +217,10 @@ static void finish_cavern_return_to_town(void) {
          * bytes and corrupt the first town frame. */
         memcpy(g_game_segments, g_cavern_town_segments,
                sizeof(g_cavern_town_segments));
+        /* STDPLY 00h..7Fh is also the per-cavern object-state bitmap.
+         * Item/stash records OR their authored masks into this block and
+         * process_map_seg_updates consumes it when the map is reloaded. */
+        memcpy(cs, cavern_object_state, sizeof(cavern_object_state));
         memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress_a,
                sizeof(cavern_progress_a));
         memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
@@ -154,7 +242,10 @@ static void finish_cavern_return_to_town(void) {
     }
     /* The reverse ROKA walk faces left, away from the cavern entrance. */
     cs[ZEL_PLAYER_FACING_DIRECTION] |= 1;
-    cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
+    /* Direct selector 04 is the deterministic post-entrance Pulpo fixture.
+       Authored MP20 door routes still begin with the flag clear and let
+       200FIGHT copy the door entity's direction bit into C3h. */
+    cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = selector == 4 ? 0xFF : 0;
     cs[ZEL_PLAYER_POSE] = 0;
     /* The suspended image was captured while Up was held at the cavern
      * entrance. Reset its saved input masks so the town cannot immediately
@@ -163,21 +254,30 @@ static void finish_cavern_return_to_town(void) {
     g_cavern_transition.complete = 0;
     g_cavern_transition.return_to_town = 0;
     g_cavern_town_origin.valid = 0;
+    g_fight_connector_music_fade = 0;
     g_town_runtime.cavern_exit_requested = 0;
     g_town_runtime.facing_door_type = 0xFF;
     g_town_runtime.facing_item_position = 0xFFFF;
     g_town_runtime.facing_npc_position = 0xFFFF;
     memcpy(g_game_vga, g_cavern_town_vga, sizeof(g_game_vga));
+    /* Loader mode 1 resumes 106TOWN with the combat-updated player record.
+     * Rebuild its HUD/equipment calls over the suspended scenery instead of
+     * exposing the pre-cavern HP pixels or cached icon-slot scratch. */
+    if (!redraw_cavern_return_hud(
+            g_game_vga, sizeof(g_game_vga), cs))
+        platform_log("200FIGHT: return-town HUD reconstruction failed");
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
     zel_audio_play_music(ZEL_MUSIC_MGT1);
 }
 
 static int finish_cavern_death_to_sage(void) {
     u8 *cs = g_game_segments[0];
+    u8 cavern_object_state[ZEL_PLAYER_CAVERN_OBJECT_STATE_END];
     const u8 death_map_scroll_row = cs[ZEL_PLAYER_MAP_SCROLL_ROW];
     u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
     u8 cavern_progress_b[ZEL_PLAYER_FACING_DIRECTION - ZEL_PLAYER_TEARS];
     const u8 last_sage = cs[ZEL_PLAYER_LAST_SAGE];
+    memcpy(cavern_object_state, cs, sizeof(cavern_object_state));
     memcpy(cavern_progress_a, cs + ZEL_PLAYER_GOLD,
            sizeof(cavern_progress_a));
     memcpy(cavern_progress_b, cs + ZEL_PLAYER_TEARS,
@@ -190,6 +290,7 @@ static int finish_cavern_death_to_sage(void) {
     if (g_cavern_town_origin.valid) {
         memcpy(g_game_segments, g_cavern_town_segments,
                sizeof(g_cavern_town_segments));
+        memcpy(cs, cavern_object_state, sizeof(cavern_object_state));
         memcpy(cs + ZEL_PLAYER_GOLD, cavern_progress_a,
                sizeof(cavern_progress_a));
         memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
@@ -213,6 +314,7 @@ static int finish_cavern_death_to_sage(void) {
     g_cavern_transition.complete = 0;
     g_cavern_transition.return_to_town = 0;
     g_cavern_town_origin.valid = 0;
+    g_fight_connector_music_fade = 0;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
@@ -220,6 +322,7 @@ static int finish_cavern_death_to_sage(void) {
     zeliard_room_masm_vm_stop();
     zel_opening_audio_stop();
     g_fight_music_chunk = 0xFF;
+    g_fight_connector_music_fade = 0;
 
     /* Loader 1 returns to the suspended town graphics context before
      * 106TOWN and 217KENJP draw.  The web fight VM owns a private VGA image,
@@ -289,6 +392,8 @@ static void terminate_session(void) {
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
     g_death_sage_chrome_active = 0;
+    g_inventory_return_to_fight = 0;
+    g_inventory_fight_hud_override = 0;
     zel_opening_audio_stop();
     zel_input_release_all(&g_input, g_game_segments[0], 1);
     memset(g_game_vga, 0, sizeof(g_game_vga));
@@ -309,7 +414,17 @@ static int inventory_can_open(void) {
 
 static void inventory_open(void) {
     if (!inventory_can_open()) return;
-    memcpy(g_inventory_return_vga, g_game_vga, sizeof(g_inventory_return_vga));
+    g_inventory_return_to_fight = zeliard_fight_masm_vm_active() != 0;
+    memcpy(g_inventory_player_before, g_game_segments[0],
+           sizeof(g_inventory_player_before));
+    /* 200FIGHT remains resident while 201SELCT runs, exactly like the DOS
+     * caller's swap/call/swap flow. Town has no resident execution VM, so
+     * only that context needs a host-side return image. */
+    if (!g_inventory_return_to_fight) {
+        memcpy(g_inventory_return_vga, g_game_vga,
+               sizeof(g_inventory_return_vga));
+        memcpy(g_inventory_return_vga, g_framebuf, ZELIARD_FB_SIZE);
+    }
     /* Reproduce the selector's inherited framebuffer contract with the
      * GMMCGA:2106 clear primitive: rows 14..157 of the 224-pixel playfield
      * are black while the stone frame and HUD remain intact. */
@@ -326,6 +441,10 @@ static void inventory_open(void) {
         return;
     }
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    framebuf_rgb_disable();
+    /* 200FIGHT:do_combat_round posts cue 0Bh immediately before calling
+     * the selector. Use the same transition cue for the host-owned call. */
+    zel_opening_audio_write_cue(0x0B);
 }
 
 static bool game_fetch_asset(void *context, const char *name,
@@ -373,6 +492,8 @@ static void game_memory_init(void) {
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
     g_death_sage_chrome_active = 0;
+    g_inventory_return_to_fight = 0;
+    g_inventory_fight_hud_override = 0;
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
         g_game_exec.segment[i] = g_game_segments[i];
         g_game_exec.segment_size[i] = ZELIARD_GAME_SEGMENT_SIZE;
@@ -546,12 +667,15 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             if (!zeliard_fight_masm_vm_start(
                     g_game_segments[0], sizeof(g_game_segments[0]),
                     g_game_vga, sizeof(g_game_vga))) {
-                platform_log("200FIGHT: exact Malicia runtime start failed");
+                platform_log("200FIGHT: exact cavern runtime start failed");
             } else {
                 g_fight_started = 1;
+                g_inventory_fight_hud_override = 0;
                 g_fight_death_pending = 0;
                 g_fight_death_return_pending = 0;
                 g_fight_death_audio_fade_started = 0;
+                g_fight_regen_pit_ticks = 0;
+                g_fight_regen_frames = 0;
                 g_fight_boundary_selector = 0xFF;
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
                 sync_fight_music();
@@ -568,24 +692,92 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 g_game_segments[0][0xFF17],
                 g_game_segments[0][0xFF1D] != 0,
                 (timer_counter & 1u) != 0);
+            u8 inventory_cue;
+            while ((inventory_cue =
+                    zeliard_inventory_masm_vm_take_sound_cue()) != 0)
+                zel_opening_audio_write_cue(inventory_cue);
+            g_game_segments[0][0xFF75] = 0;
             if (zeliard_inventory_masm_vm_active()) {
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
             } else {
-                memcpy(g_game_vga, g_inventory_return_vga,
-                       sizeof(g_inventory_return_vga));
-                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                if (g_inventory_return_to_fight) {
+                    /* Return to the resident 200FIGHT loop. Do not restore a
+                     * saved screen: its private VGA and world state remained
+                     * live while 201SELCT executed. */
+                    g_inventory_fight_hud_override = memcmp(
+                        g_inventory_player_before, g_game_segments[0],
+                        sizeof(g_inventory_player_before)) != 0;
+                    zeliard_fight_masm_vm_restore_game_state(
+                        g_game_segments[0], sizeof(g_game_segments[0]));
+                    /* The close key belongs to 201SELCT, not the resumed
+                     * fight loop. Match combat_palette_update's reset. */
+                    g_game_segments[0][0xFF18] &= 0xFEu;
+                    g_game_segments[0][0xFF1D] = 0;
+                    g_game_segments[0][0xFF1E] = 0;
+                    zel_opening_audio_write_cue(0x0B);
+                    g_inventory_return_to_fight = 0;
+                    /* Fall through and advance 200FIGHT in this same host
+                     * tick, reproducing the normal post-selector return. */
+                } else {
+                    memcpy(g_game_vga, g_inventory_return_vga,
+                           sizeof(g_inventory_return_vga));
+                    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                    framebuf_rgb_disable();
+                    zel_opening_audio_write_cue(0x0B);
+                    g_inventory_return_to_fight = 0;
+                    zel_opening_audio_tick(dt_ms);
+                    return;
+                }
             }
-            zel_opening_audio_tick(dt_ms);
-            return;
+            if (zeliard_inventory_masm_vm_active()) {
+                zel_opening_audio_tick(dt_ms);
+                return;
+            }
         }
         if (zeliard_fight_masm_vm_active()) {
+            if (zeliard_fight_masm_vm_music_chunk() == 95 &&
+                zel_opening_audio_ready_for_transition()) {
+                /* Exact driver's score-complete callback writes FF26h=FFh,
+                 * releasing 300ROKAD:wait_enable_all. */
+                g_game_segments[0][0xFF26] = 0xFF;
+                zeliard_fight_masm_vm_poke_u8(0xFF26, 0xFF);
+            }
             const u16 hp_before = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
             if (hp_before <= 1) begin_fight_death();
+            const u16 map_width_before =
+                zeliard_fight_masm_vm_peek_u16(0xC002);
             const int frames = zeliard_fight_masm_vm_advance(
                 g_game_segments[0], sizeof(g_game_segments[0]),
                 g_game_vga, sizeof(g_game_vga), input_ticks,
                 g_game_segments[0][0xFF17]);
+            const u16 hp_after_vm = (u16)(
+                g_game_segments[0][ZEL_PLAYER_HP] |
+                ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
+            const int passive_life_restored =
+                advance_fight_passive_life_restoration(
+                    input_ticks, hp_before, hp_after_vm);
+            if (g_inventory_fight_hud_override || passive_life_restored) {
+                zeliard_gmmcga_draw_life_current(
+                    g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+                    sizeof(g_game_segments[0]));
+                if (g_game_segments[0][ZEL_PLAYER_SELECTED_SPELL])
+                    zeliard_gmmcga_draw_spell_charge(
+                        g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+                        sizeof(g_game_segments[0]));
+                if (g_game_segments[0][ZEL_PLAYER_SHIELD])
+                    zeliard_gmmcga_draw_shield_hp(
+                        g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+                        sizeof(g_game_segments[0]));
+                zeliard_fight_masm_vm_restore_vga(
+                    g_game_vga, sizeof(g_game_vga));
+            }
+            const u16 map_width_after =
+                zeliard_fight_masm_vm_peek_u16(0xC002);
+            if (map_width_before != 96u && map_width_after == 96u) {
+                g_fight_connector_music_fade = 1;
+                zel_opening_audio_begin_gameplay_transition_fade();
+            }
             const u16 hp_after = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
             if (hp_after <= 1) begin_fight_death();
@@ -599,6 +791,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             }
             if (frames > 0)
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            if (frames > 0)
+                framebuf_rgb_disable();
             u8 fight_cue;
             while ((fight_cue =
                     zeliard_fight_masm_vm_take_sound_cue()) != 0)
@@ -606,6 +800,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             g_game_segments[0][0xFF75] = 0;
             sync_fight_music();
             if (!zeliard_fight_masm_vm_active()) {
+                g_inventory_fight_hud_override = 0;
                 const u8 operation = zeliard_fight_masm_vm_exit_operation();
                 const u8 selector = zeliard_fight_masm_vm_exit_selector();
                 const u16 dispatch =
@@ -892,6 +1087,9 @@ static int test_begin_malicia_at(u16 hp, u16 start_position,
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
+    g_inventory_fight_hud_override = 0;
+    g_fight_regen_pit_ticks = 0;
+    g_fight_regen_frames = 0;
     return zeliard_fight_masm_vm_start(
         cs, sizeof(g_game_segments[0]), g_game_vga, sizeof(g_game_vga));
 }
@@ -1004,6 +1202,59 @@ EXPORT int              zeliard_cavern_transition_complete(void) { return g_cave
 EXPORT int              zeliard_cavern_transition_step(void) { return g_cavern_transition.step; }
 EXPORT int              zeliard_fight_active(void) { return zeliard_fight_masm_vm_active(); }
 EXPORT int              zeliard_fight_ip(void) { return zeliard_fight_masm_vm_ip(); }
+EXPORT int              zeliard_fight_map_width(void) {
+    return zeliard_fight_masm_vm_active()
+        ? zeliard_fight_masm_vm_peek_u16(0xC002)
+        : -1;
+}
+EXPORT int              zeliard_fight_music_chunk(void) {
+    return zeliard_fight_masm_vm_active()
+        ? zeliard_fight_masm_vm_music_chunk()
+        : -1;
+}
+EXPORT int              zeliard_test_restart_fight(
+                            int selector, int start_position,
+                            int map_scroll_row, int screen_position) {
+    if (g_scene != SCENE_GAME || selector < 0 || selector > 0xFF ||
+        start_position < 0 || start_position > 0xFFFF ||
+        map_scroll_row < 0 || map_scroll_row > 0xFF ||
+        screen_position < 0 || screen_position > 0xFF)
+        return 0;
+    u8 *cs = g_game_segments[0];
+    zeliard_fight_masm_vm_stop();
+    cs[0x0080] = (u8)start_position;
+    cs[0x0081] = (u8)((unsigned)start_position >> 8);
+    cs[0x0082] = (u8)map_scroll_row;
+    cs[0x0083] = (u8)screen_position;
+    cs[0x00C4] = (u8)selector;
+    cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
+    cs[0xFF33] = 5;
+    g_fight_started = 1;
+    g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
+    g_fight_regen_pit_ticks = 0;
+    g_fight_regen_frames = 0;
+    if (!zeliard_fight_masm_vm_start(
+            cs, sizeof(g_game_segments[0]), g_game_vga,
+            sizeof(g_game_vga)))
+        return 0;
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    sync_fight_music();
+    return 1;
+}
+EXPORT int              zeliard_test_defeat_pulpo(void) {
+    if (!zeliard_fight_masm_vm_active() ||
+        zeliard_fight_masm_vm_peek_u16(0xC002) != 52)
+        return 0;
+    return zeliard_fight_masm_vm_poke_u16(0xAA83, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xAA9E, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+}
+EXPORT int              zeliard_test_fight_u8(unsigned offset) {
+    return zeliard_fight_masm_vm_active() && offset <= 0xFFFF
+        ? zeliard_fight_masm_vm_peek_u8((u16)offset) : -1;
+}
 EXPORT int              zeliard_fight_boundary(void) {
     return g_fight_boundary_selector == 0xFF ? -1
                                              : g_fight_boundary_selector;

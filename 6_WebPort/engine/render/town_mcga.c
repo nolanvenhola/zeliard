@@ -277,9 +277,11 @@ int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
         sword == 0)
         return -1;
 
-    const u16 pointer_offset = (u16)(0xE200 + (u16)(sword - 1) * 2u);
-    if ((size_t)pointer_offset + 2 > item_size) return -1;
-    size_t source = read_u16_le(item_seg + pointer_offset);
+    /* GMMCGA:254Ch uses the first relocated ITEMP pointer as the sword-bank
+     * base, then advances 010Eh bytes per one-based sword id.  E202h is the
+     * next equipment-family pointer, not sword #2. */
+    size_t source = read_u16_le(item_seg + 0xE200) +
+                    (size_t)(sword - 1u) * 0x10Eu;
     const u16 x = (u16)((bx >> 8) * 8u);
     const u16 y = (u8)bx;
     if (source + 18u * 15u > item_size || x + 20u > 320u || y + 18u > 200u)

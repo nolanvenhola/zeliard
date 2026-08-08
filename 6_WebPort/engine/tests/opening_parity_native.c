@@ -1429,6 +1429,8 @@ static int run_rain_princess_preamble_hidden_case(void) {
     const uint32_t entry_ms = OPDMO_TEST_WAIT_MS(2 * 8 * 0x14);
 
     opening_init();
+    opening_render_phase_for_test(OPENING_PHASE_RAIN_PRINCESS, 0);
+    uint64_t entry = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     opening_render_phase_for_test(OPENING_PHASE_RAIN_PRINCESS, entry_ms);
     uint64_t before = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
 
@@ -1440,10 +1442,11 @@ static int run_rain_princess_preamble_hidden_case(void) {
         entry_ms + OPDMO_TEST_WAIT_MS(0x10));
     uint64_t after = fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
 
-    int ok = before == after;
-    printf("rain_princess_preamble_hidden: %s before=%016llx after=%016llx\n",
-           ok ? "PASS" : "FAIL", (unsigned long long)before,
-           (unsigned long long)after);
+    int ok = entry == before && before == after;
+    printf("rain_princess_preamble_hidden: %s entry=%016llx "
+           "before=%016llx after=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned long long)entry,
+           (unsigned long long)before, (unsigned long long)after);
     return ok;
 }
 

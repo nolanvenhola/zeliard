@@ -19,6 +19,15 @@
 ;
 ;==========================================================================
 
+; Persistent cavern object state [0x0000-0x007F].  200FIGHT's authored
+; entity link pointer/mask pairs set these bits when an item is collected or
+; a hidden stash/door is opened; process_map_seg_updates consumes them when
+; the MDT is loaded again.
+cavern_object_state     equ     0000h
+cavern_object_state_end equ     0080h
+
+;==========================================================================
+
 ; Map scroll position  [0x0080-0x0082]  (validated 2026-04-27 by static
 ; cross-reference: 54 word ptr ds:[80h] refs, 19 byte ptr ds:[82h] refs,
 ; all in 200FIGHT.asm scroll routines).

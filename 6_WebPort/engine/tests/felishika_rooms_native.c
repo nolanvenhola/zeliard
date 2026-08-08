@@ -213,6 +213,41 @@ static int runtime_round_trip(void) {
     return ok;
 }
 
+static int sage_life_hud_round_trip(void) {
+    u8 *cs = calloc(1, 0x10000);
+    u8 *vga = calloc(1, 0x10000);
+    u8 *expected = calloc(1, 0x10000);
+    zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+    if (!cs || !vga || !expected || !room ||
+        load_raw(cs, 0, "assets/stdply.bin") ||
+        load_payload(cs, 0x6000, "assets/town.bin") || load_font(cs)) {
+        free(cs); free(vga); free(expected); free(room); return 0;
+    }
+    cs[ZEL_PLAYER_HP] = 0x40;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 0x40;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    zeliard_gmmcga_draw_life_scale(vga, 0x10000, 0);
+    zeliard_gmmcga_draw_life_max(vga, 0x10000, cs, 0x10000);
+    zeliard_gmmcga_draw_life_current(vga, 0x10000, cs, 0x10000);
+    int ok = zeliard_room_enter(room, ZEL_ROOM_SAGE, cs, 0x10000,
+                                vga, 0x10000) == 0;
+    cs[ZEL_PLAYER_HP] = 0x80;
+    cs[ZEL_PLAYER_HP_MAX] = 0x80;
+    memcpy(expected, room->saved_vga, 0x10000);
+    ok &= zeliard_gmmcga_draw_life_max(
+              expected, 0x10000, cs, 0x10000) == 0;
+    ok &= zeliard_gmmcga_draw_life_current(
+              expected, 0x10000, cs, 0x10000) == 0;
+    ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
+    ok &= memcmp(vga, expected, 0x10000) == 0;
+    printf("sage_life_hud_round_trip: %s hp=%u/%u frame=%016llx\n",
+           ok ? "PASS" : "FAIL", (unsigned)cs[ZEL_PLAYER_HP],
+           (unsigned)cs[ZEL_PLAYER_HP_MAX], fnv1a64(vga, 0x10000));
+    free(cs); free(vga); free(expected); free(room);
+    return ok;
+}
+
 static unsigned long long frame_hash_without_rect(const u8 *frame,
                                                    u16 x, u16 y,
                                                    u16 width, u16 height) {
@@ -608,9 +643,38 @@ static int muralla_release_vm_drugstore_text_repress(void) {
     ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
     ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
     ok &= intro_frame != description_frame;
+    const unsigned long long shop_menu_backdrop =
+        frame_rect_hash(vga, 156, 34, 112, 45);
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    const unsigned long long second_list_backdrop =
+        frame_rect_hash(vga, 156, 34, 112, 45);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT;
+    const unsigned long long second_intro_backdrop =
+        frame_rect_hash(vga, 156, 34, 112, 45);
+    ok &= second_list_backdrop == shop_menu_backdrop &&
+          second_intro_backdrop == shop_menu_backdrop;
+    for (unsigned page = 0; ok && page < 12 &&
+         zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT; ++page)
+        ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    for (unsigned page = 0; ok && page < 12 &&
+         zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT; ++page)
+        ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
+    ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
+    const unsigned long long returned_menu_backdrop =
+        frame_rect_hash(vga, 156, 34, 112, 45);
+    ok &= returned_menu_backdrop == shop_menu_backdrop;
     printf("muralla_release_vm_drugstore_text_repress: ticks=%u "
-           "frames=%016llx>%016llx kind=%d\n", ticks, intro_frame,
-           description_frame, zeliard_room_masm_vm_input_kind());
+           "frames=%016llx>%016llx backdrop=%016llx/%016llx/%016llx/%016llx "
+           "kind=%d\n", ticks, intro_frame, description_frame,
+           shop_menu_backdrop, second_list_backdrop, second_intro_backdrop,
+           returned_menu_backdrop, zeliard_room_masm_vm_input_kind());
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -1330,6 +1394,7 @@ int main(void) {
     const int ok = king == 0xC3F7143FE6C981F1ULL &&
                    sage == 0xA6873B3AD33ACEC7ULL &&
                    omoya == 0x1C86E94322A50C57ULL && runtime_round_trip() &&
+                   sage_life_hud_round_trip() &&
                    king_branch_selection() && prompt_clear_service() &&
                    church_script_flow() &&
                    muralla_shop_menu_frames() &&

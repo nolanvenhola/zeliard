@@ -18,6 +18,13 @@ try {
     m._zeliard_opening_set_phase_for_test(3);
     m._zeliard_key(13);
     m._zeliard_tick(0);
+    /* Enter Muralla with sword #2 and a full 0100h life bar so the reverse
+       route can prove that both are reconstructed from live state. */
+    m._zeliard_test_game_set_u8(0x92, 2);
+    m._zeliard_test_game_set_u8(0x90, 0);
+    m._zeliard_test_game_set_u8(0x91, 1);
+    m._zeliard_test_game_set_u8(0xB2, 0);
+    m._zeliard_test_game_set_u8(0xB3, 1);
     m._zeliard_key_down(39);
     let ticks = 0;
     while (m._zeliard_town_area() !== 1 && ticks++ < 3000)
@@ -109,8 +116,8 @@ try {
     m._zeliard_test_game_set_u8(0x87, 0);
     m._zeliard_test_game_set_u8(0x8B, 0x64);
     m._zeliard_test_game_set_u8(0x8C, 0);
-    m._zeliard_test_game_set_u8(0x90, 0);
-    m._zeliard_test_game_set_u8(0x91, 1);
+    m._zeliard_test_game_set_u8(0x90, 0x40);
+    m._zeliard_test_game_set_u8(0x91, 0);
     m._zeliard_test_game_set_u8(0xB2, 0);
     m._zeliard_test_game_set_u8(0xB3, 1);
     m._zeliard_test_game_set_u8(0xC2, 0);
@@ -131,6 +138,28 @@ try {
       m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
     const finishDiff = finishFrame.reduce((count, value, index) =>
       count + (value !== window.__townFrameBefore[index]), 0);
+    const rectDiff = (x, y, width, height) => {
+      let count = 0;
+      for (let row = 0; row < height; ++row)
+        for (let column = 0; column < width; ++column) {
+          const index = (y + row) * 320 + x + column;
+          count += finishFrame[index] !== window.__townFrameBefore[index];
+        }
+      return count;
+    };
+    const finishLifeDiff = rectDiff(84, 163, 100, 6);
+    const finishSwordDiff = rectDiff(192, 171, 20, 18);
+    const rectHash = (x, y, width, height) => {
+      let hash = 0xcbf29ce484222325n;
+      for (let row = 0; row < height; ++row)
+        for (let column = 0; column < width; ++column) {
+          hash ^= BigInt(finishFrame[(y + row) * 320 + x + column]);
+          hash = BigInt.asUintN(64, hash * 0x100000001b3n);
+        }
+      return hash.toString(16).padStart(16, '0');
+    };
+    const finishLifeHash = rectHash(84, 163, 100, 6);
+    const finishSwordHash = rectHash(192, 171, 20, 18);
     const finishTransition = m._zeliard_cavern_transition_active();
     m._zeliard_tick(20);
     const paletteNow = m.HEAPU8.subarray(
@@ -139,7 +168,8 @@ try {
       m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
     return { ...entry, returned: {
       exitTicks, returnTicks,
-      finishDiff, finishTransition,
+      finishDiff, finishLifeDiff, finishSwordDiff,
+      finishLifeHash, finishSwordHash, finishTransition,
       area: m._zeliard_town_area(),
       fight: m.ccall('zeliard_fight_active', 'number'),
       transition: m._zeliard_cavern_transition_active(),
@@ -147,6 +177,8 @@ try {
       startHi: m._zeliard_test_game_u8(0x81),
       scroll: m._zeliard_test_game_u8(0x82),
       column: m._zeliard_test_game_u8(0x83),
+      hp: m._zeliard_test_game_u8(0x90) |
+        (m._zeliard_test_game_u8(0x91) << 8),
       paletteDiff: paletteNow.reduce((count, value, index) =>
         count + (value !== window.__townPaletteBefore[index]), 0),
       frameDiff: frameNow.reduce((count, value, index) =>
@@ -165,7 +197,11 @@ try {
   }
   if (returned.error || returned.area !== 1 || returned.fight ||
       returned.transition || returned.finishTransition ||
-      returned.finishDiff !== 0 || returned.startLo !== result.startLo ||
+      returned.hp !== 0x40 || returned.finishDiff < 1 ||
+      returned.finishLifeDiff < 1 ||
+      returned.finishLifeHash !== '814e303d8c7e90bd' ||
+      returned.finishSwordHash !== '077a65acb967926d' ||
+      returned.startLo !== result.startLo ||
       returned.startHi !== result.startHi ||
       returned.scroll !== result.scroll ||
       returned.column !== result.column)

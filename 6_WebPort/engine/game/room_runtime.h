@@ -41,6 +41,8 @@ typedef struct {
     u16 script_wait_ticks;
     u32 entry_gold;
     u16 entry_almas;
+    u16 entry_hp;
+    u16 entry_hp_max;
     u8 saved_code[0x1C00];
     u8 saved_vga[0x10000];
     u8 room_tiles[0x3000];

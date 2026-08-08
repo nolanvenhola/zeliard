@@ -140,6 +140,13 @@ TEST_MALICIA_RUNTIME_SRC := \
 	load/fill_buffer.c \
 	render/palette.c \
 	platform/platform_sdl.c
+TEST_PELIGRO_RUNTIME_SRC := \
+	tests/peligro_runtime_native.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
+	load/fill_buffer.c \
+	render/palette.c \
+	platform/platform_sdl.c
 TEST_OPENING_FRAME_DUMP_SRC := \
 	tests/opening_frame_dump_native.c \
 	core/framebuf.c \
@@ -337,7 +344,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_fight_active","_zeliard_fight_ip","_zeliard_fight_boundary","_zeliard_test_enter_room","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_fight_active","_zeliard_fight_ip","_zeliard_fight_map_width","_zeliard_fight_music_chunk","_zeliard_fight_boundary","_zeliard_test_restart_fight","_zeliard_test_defeat_pulpo","_zeliard_test_fight_u8","_zeliard_test_enter_room","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -372,7 +379,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native build/inventory-masm-vm-native build/cavern-transition-native build/malicia-runtime-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native build/inventory-masm-vm-native build/cavern-transition-native build/malicia-runtime-native build/peligro-runtime-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -402,6 +409,7 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/inventory-masm-vm-native
 	./build/cavern-transition-native
 	./build/malicia-runtime-native
+	./build/peligro-runtime-native
 
 build/opening-parity-native: $(TEST_OPENING_SRC) Makefile
 	@mkdir -p build
@@ -514,6 +522,10 @@ build/cavern-transition-native: $(TEST_CAVERN_TRANSITION_SRC) Makefile
 build/malicia-runtime-native: $(TEST_MALICIA_RUNTIME_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_MALICIA_RUNTIME_SRC)
+
+build/peligro-runtime-native: $(TEST_PELIGRO_RUNTIME_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_PELIGRO_RUNTIME_SRC)
 
 build/gameplay-parity-native: $(TEST_GAMEPLAY_SRC) Makefile
 	@mkdir -p build

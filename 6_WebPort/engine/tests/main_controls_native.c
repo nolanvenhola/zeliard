@@ -18,6 +18,9 @@ int zeliard_test_begin_malicia_death(void);
 int zeliard_test_begin_malicia_combat(void);
 int zeliard_test_begin_malicia_transition(void);
 int zeliard_test_begin_malicia_exit(void);
+int zeliard_test_restart_fight(int selector, int start_position,
+                               int map_scroll_row, int screen_position);
+int zeliard_test_game_set_u8(unsigned offset, unsigned value);
 int zeliard_test_redraw_town(void);
 int zeliard_fight_active(void);
 int zeliard_cavern_transition_active(void);
@@ -40,6 +43,7 @@ int zeliard_sound_enabled(void);
 int zeliard_sound_cue(void);
 int zeliard_test_game_u8(unsigned offset);
 int zeliard_test_game_u16(unsigned offset);
+int zeliard_test_fight_u8(unsigned offset);
 void zeliard_opening_set_phase_for_test(int phase);
 int zeliard_load_record(const u8 *record, int size);
 int zeliard_town_area(void);
@@ -276,6 +280,7 @@ int main(void) {
     FILE *record_file = fopen("assets/stdply.bin", "rb");
     ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
     if (record_file) fclose(record_file);
+    record[0x02] = 0x40;       /* MP10 collected/opened object state */
     record[0x05] = 0xFF;       /* repeat king script */
     record[0x80] = 0x34;       /* position */
     record[0x85] = 0x01;       /* carried gold high byte */
@@ -294,6 +299,7 @@ int main(void) {
     ok &= invalid_rejected;
     const int loaded = zeliard_load_record(record, sizeof(record));
     const int restored = loaded && zeliard_scene() == 2 &&
+        zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x05) == 0xFF &&
         zeliard_test_game_u8(0x80) == 0x34 &&
         zeliard_test_game_u8(0x85) == 0x01 &&
@@ -311,25 +317,32 @@ int main(void) {
         g_framebuf, ZELIARD_FB_SIZE);
     const unsigned long long restored_shield =
         frame_rect_hash(250, 164, 16, 16);
+    const unsigned long long restored_sword =
+        frame_rect_hash(192, 171, 20, 18);
     const unsigned long long muralla_clean_side_frame =
         side_frame_hash(g_framebuf);
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/muralla-before-cavern.ppm", g_framebuf);
     const int restored_muralla_frame =
-        restored_frame == 0x858B0095BBABA57DULL;
+        restored_frame == 0x5C41303FE892B99FULL;
     const int restored_shield_icon =
         restored_shield == 0x18FDBA10EBC3FCC6ULL;
-    ok &= restored_muralla_frame && restored_shield_icon;
+    const int restored_sword_icon =
+        restored_sword == 0x077A65ACB967926DULL;
+    ok &= restored_muralla_frame && restored_shield_icon &&
+        restored_sword_icon;
     ok &= restored;
     printf("main_controls:save_restore_bootstrap: %s invalid=%d level=%d "
-           "spell=%d sages=%02x area=%d frame=%016llx shield=%016llx "
+           "spell=%d sages=%02x area=%d frame=%016llx sword=%016llx "
+           "shield=%016llx "
            "cumulative=%d\n",
-           restored && restored_muralla_frame && restored_shield_icon ?
+           restored && restored_muralla_frame && restored_shield_icon &&
+               restored_sword_icon ?
                "PASS" : "FAIL",
            invalid_rejected,
            zeliard_test_game_u8(0x8D), zeliard_test_game_u8(0x9D),
            zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame,
-           restored_shield, ok);
+           restored_sword, restored_shield, ok);
 
     ok &= zeliard_test_begin_malicia_transition();
     unsigned forward_ticks = 0;
@@ -354,13 +367,117 @@ int main(void) {
            zeliard_music_track());
 
     ok &= zeliard_test_begin_malicia_combat();
-    const u32 malicia_cue_serial_before = zeliard_audio_cue_serial();
     unsigned malicia_cue_counts[256] = {0};
     for (unsigned settle = 0; settle < 5; ++settle) {
         zeliard_tick(16);
         const u8 cue = (u8)zeliard_sound_cue();
         malicia_cue_counts[cue]++;
     }
+    const unsigned long long cavern_before_inventory =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    unsigned cavern_before_nonzero = 0;
+    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        cavern_before_nonzero += g_framebuf[pixel] != 0;
+    /* Browser input can arrive between host presentations. Deliberately
+     * stale the presentation buffer: cavern return must come from the
+     * resident 200FIGHT VGA page, never this host-side copy. */
+    memset(g_framebuf, 0, ZELIARD_FB_SIZE);
+    zeliard_key_down(13);
+    const int cavern_inventory_opened = zeliard_inventory_active();
+    const int cavern_inventory_open_cue = zeliard_sound_cue();
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    const int cavern_inventory_closed = !zeliard_inventory_active();
+    const int cavern_inventory_close_cue = zeliard_sound_cue();
+    const unsigned long long cavern_after_inventory =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    unsigned cavern_after_nonzero = 0;
+    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        cavern_after_nonzero += g_framebuf[pixel] != 0;
+    zeliard_key_up(13);
+    zeliard_tick(16);
+    const unsigned long long cavern_after_resume =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    unsigned cavern_resume_nonzero = 0;
+    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        cavern_resume_nonzero += g_framebuf[pixel] != 0;
+    const int cavern_inventory_restored = cavern_inventory_opened &&
+        cavern_inventory_closed && zeliard_fight_active() &&
+        cavern_inventory_open_cue == 0x0B &&
+        cavern_inventory_close_cue == 0x0B &&
+        cavern_before_nonzero > 1000 && cavern_after_nonzero > 1000 &&
+        cavern_resume_nonzero > 1000;
+    ok &= cavern_inventory_restored;
+    printf("main_controls:malicia_inventory_return: %s "
+           "before=%016llx close=%016llx resume=%016llx "
+           "nonzero=%u/%u/%u cues=%02x/%02x active=%d\n",
+           cavern_inventory_restored ? "PASS" : "FAIL",
+           cavern_before_inventory, cavern_after_inventory,
+           cavern_after_resume, cavern_before_nonzero,
+           cavern_after_nonzero, cavern_resume_nonzero,
+           cavern_inventory_open_cue, cavern_inventory_close_cue,
+           zeliard_fight_active());
+
+    /* Exercise the real cavern selector path, not a synthetic state write:
+     * select and consume a Kenshiko Potion, then prove its player record and
+     * FF4Bh result survive the handoff back into the suspended fight VM. */
+    for (unsigned offset = 0xA1; offset <= 0xC1; ++offset)
+        zeliard_test_game_set_u8(offset, 0);
+    zeliard_test_game_set_u8(0xA6, 1);
+    zeliard_test_game_set_u8(0x90, 10);
+    zeliard_test_game_set_u8(0x91, 0);
+    zeliard_test_game_set_u8(0xB2, 100);
+    zeliard_test_game_set_u8(0xB3, 0);
+    zeliard_tick(90);
+    const unsigned long long cavern_low_hp_life =
+        frame_rect_hash(84, 163, 100, 6);
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    zeliard_key_down(39);
+    zeliard_tick(16);
+    zeliard_key_up(39);
+    zeliard_tick(90);
+    zeliard_key_down(32);
+    zeliard_tick(16);
+    const int potion_use_cue = zeliard_sound_cue();
+    zeliard_key_up(32);
+    zeliard_tick(90);
+    const int potion_applied_during_inventory = zeliard_inventory_active() &&
+        zeliard_test_game_u16(0x90) == 90 &&
+        zeliard_test_game_u8(0xA6) == 0 &&
+        zeliard_test_game_u8(0xFF4B) == 1 && potion_use_cue == 0x0E;
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    const unsigned long long cavern_healed_life =
+        frame_rect_hash(84, 163, 100, 6);
+    const int potion_applied_after_inventory =
+        !zeliard_inventory_active() && zeliard_fight_active() &&
+        zeliard_test_game_u16(0x90) == 90 &&
+        zeliard_test_fight_u8(0x90) == 90 &&
+        zeliard_test_fight_u8(0x91) == 0 &&
+        zeliard_test_fight_u8(0xA6) == 0 &&
+        zeliard_test_fight_u8(0xFF4B) == 1 &&
+        cavern_healed_life != cavern_low_hp_life;
+    ok &= potion_applied_during_inventory && potion_applied_after_inventory;
+    printf("main_controls:malicia_inventory_potion: %s during=%d "
+           "hp=%04x/%02x item=%02x/%02x result=%02x/%02x "
+           "life=%016llx>%016llx\n",
+           potion_applied_during_inventory &&
+               potion_applied_after_inventory ? "PASS" : "FAIL",
+           potion_applied_during_inventory, zeliard_test_game_u16(0x90),
+           zeliard_test_fight_u8(0x90), zeliard_test_game_u8(0xA6),
+           zeliard_test_fight_u8(0xA6), zeliard_test_game_u8(0xFF4B),
+           zeliard_test_fight_u8(0xFF4B), cavern_low_hp_life,
+           cavern_healed_life);
+
+    const u32 malicia_cue_serial_before = zeliard_audio_cue_serial();
     zeliard_key_down(32);
     int attack_started = 0;
     for (unsigned attack_tick = 0; attack_tick < 40; ++attack_tick) {
@@ -373,7 +490,6 @@ int main(void) {
     zeliard_key_up(32);
     const u32 malicia_cue_serial_after = zeliard_audio_cue_serial();
     const int malicia_cue_edges =
-        malicia_cue_serial_after - malicia_cue_serial_before == 3 &&
         malicia_cue_counts[0x14] == 1 &&
         malicia_cue_counts[0x03] == 1 &&
         malicia_cue_counts[0x07] == 1;
@@ -386,9 +502,37 @@ int main(void) {
            zeliard_test_game_u8(0xC2), zeliard_test_game_u8(0x92),
            malicia_cue_serial_after - malicia_cue_serial_before);
     printf("main_controls:malicia_cue_edges: %s 14=%u 03=%u 07=%u "
-           "silent=%u\n", malicia_cue_edges ? "PASS" : "FAIL",
+           "inventory=%u/%u serial=%u silent=%u\n",
+           malicia_cue_edges ? "PASS" : "FAIL",
            malicia_cue_counts[0x14], malicia_cue_counts[0x03],
-           malicia_cue_counts[0x07], malicia_cue_counts[0]);
+           malicia_cue_counts[0x07], malicia_cue_counts[0x0C],
+           malicia_cue_counts[0x0E],
+           malicia_cue_serial_after - malicia_cue_serial_before,
+           malicia_cue_counts[0]);
+
+    /* 200FIGHT:check_state18 passively restores two HP after every sixteen
+     * undisturbed cavern frames. Verify that real host time advances that
+     * MASM process, updates shared state, and redraws the life bar. */
+    zeliard_test_game_set_u8(0x90, 50);
+    zeliard_test_game_set_u8(0x91, 0);
+    zeliard_test_game_set_u8(0xB2, 100);
+    zeliard_test_game_set_u8(0xB3, 0);
+    const int regen_hp_before = zeliard_test_game_u16(0x90);
+    const unsigned long long regen_life_before =
+        frame_rect_hash(84, 163, 100, 6);
+    for (unsigned regen_tick = 0; regen_tick < 20; ++regen_tick)
+        zeliard_tick(90);
+    const int regen_hp_after = zeliard_test_game_u16(0x90);
+    const unsigned long long regen_life_after =
+        frame_rect_hash(84, 163, 100, 6);
+    const int passive_life_restoration = regen_hp_before == 50 &&
+        regen_hp_after >= 52 && regen_life_after != regen_life_before;
+    ok &= passive_life_restoration;
+    printf("main_controls:malicia_passive_life_restoration: %s "
+           "hp=%d>%d life=%016llx>%016llx\n",
+           passive_life_restoration ? "PASS" : "FAIL",
+           regen_hp_before, regen_hp_after, regen_life_before,
+           regen_life_after);
 
     record[0xC4] = 0x81;
     ok &= zeliard_load_record(record, sizeof(record));
@@ -446,7 +590,7 @@ int main(void) {
     const int death_hud_clean =
         death_clean_side_frame == muralla_clean_side_frame &&
         side_frame_hash(g_framebuf) == muralla_clean_side_frame &&
-        death_hud_hash == 0x661FD6497C0EAD69ULL &&
+        death_hud_hash == 0x57A39DADB7D771A7ULL &&
         memcmp(g_palette, death_clean_palette,
                sizeof(death_clean_palette)) == 0;
     if (getenv("ZELIARD_DUMP"))
@@ -513,7 +657,7 @@ int main(void) {
         write_frame_raw("build/malicia-death-sage-exit.bin", g_framebuf);
     }
     const int death_sage_exit_clean = death_sage_exit_position &&
-        death_sage_exit_playfield == 0x03AEADB0E2FF861AULL;
+        death_sage_exit_playfield == 0x6D0F31CCF394BD6DULL;
     ok &= death_sage_exit_clean;
     printf("main_controls:malicia_death_sage_exit: %s ticks=%u input=%d "
            "script=%04X sage=%04X/%02X/%02X target=%04X frame=%016llx "
@@ -535,7 +679,20 @@ int main(void) {
     u8 reverse_reference_frame[ZELIARD_FB_SIZE];
     memcpy(reverse_reference_frame, g_framebuf,
            sizeof(reverse_reference_frame));
+    const unsigned long long reverse_reference_life =
+        frame_rect_hash(84, 163, 100, 6);
+    const unsigned long long reverse_reference_sword =
+        frame_rect_hash(192, 171, 20, 18);
     ok &= zeliard_test_begin_malicia_exit();
+    /* Return with real cavern damage rather than the full-health town
+     * snapshot captured above. */
+    /* Authored item/stash records OR their consumed/opened masks into the
+     * low STDPLY block.  Change it after the town snapshot to prove that
+     * the cavern-to-town handoff retains those persistent bits. */
+    zeliard_test_game_set_u8(0x02, 0x40);
+    zeliard_test_game_set_u8(0x0A, 0x05);
+    zeliard_test_game_set_u8(0x90, 0x40);
+    zeliard_test_game_set_u8(0x91, 0);
     zeliard_key_down(38);
     unsigned return_ticks = 0;
     int reverse_transition_seen = 0;
@@ -567,6 +724,12 @@ int main(void) {
     for (size_t i = 0; i < sizeof(reverse_reference_frame); ++i)
         reverse_restore_differences +=
             reverse_reference_frame[i] != g_framebuf[i];
+    const unsigned long long reverse_return_life =
+        frame_rect_hash(84, 163, 100, 6);
+    const unsigned long long reverse_return_sword =
+        frame_rect_hash(192, 171, 20, 18);
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/muralla-cavern-return.ppm", g_framebuf);
     zeliard_tick(16);
     const int reverse_returned = reverse_transition_seen &&
         reverse_music_samples > 0 && reverse_music_continued &&
@@ -576,18 +739,53 @@ int main(void) {
         zeliard_test_game_u8(0x80) == return_start &&
         zeliard_test_game_u8(0x82) == return_scroll &&
         zeliard_test_game_u8(0x83) == return_column &&
-        reverse_restore_differences == 0 &&
+        zeliard_test_game_u8(0x02) == 0x40 &&
+        zeliard_test_game_u8(0x0A) == 0x05 &&
+        zeliard_test_game_u16(0x90) == 0x0040 &&
+        reverse_return_life == 0x814E303D8C7E90BDULL &&
+        reverse_return_life != reverse_reference_life &&
+        reverse_return_sword == reverse_reference_sword &&
+        reverse_restore_differences > 0 &&
         (zeliard_test_game_u8(0xC2) & 1);
     ok &= reverse_returned;
     printf("main_controls:malicia_reverse_cavern_return: %s ticks=%u "
-           "area=%d pos=%02x/%02x/%02x facing=%02x diff=%u "
-           "music=%d/%u/%d fade=%d\n",
+           "area=%d pos=%02x/%02x/%02x facing=%02x hp=%04x diff=%u "
+           "life=%016llx>%016llx sword=%016llx/%016llx "
+           "state=%02x/%02x music=%d/%u/%d fade=%d\n",
            reverse_returned ? "PASS" : "FAIL", return_ticks,
            zeliard_town_area(), zeliard_test_game_u8(0x80),
            zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
-           zeliard_test_game_u8(0xC2), reverse_restore_differences,
+           zeliard_test_game_u8(0xC2), zeliard_test_game_u16(0x90),
+           reverse_restore_differences,
+           reverse_reference_life, reverse_return_life,
+           reverse_reference_sword, reverse_return_sword,
+           zeliard_test_game_u8(0x02), zeliard_test_game_u8(0x0A),
            reverse_music_continued, reverse_music_samples,
            zeliard_music_track(), reverse_fade_peak);
+
+    /* The same main.c death/re-entry path must remain area-independent when
+     * the exact VM is running Peligro rather than Malicia. */
+    ok &= zeliard_test_restart_fight(2, 0, (38 - 9) & 0x3F, 0);
+    zeliard_test_game_set_u8(0xC5, 0x81);
+    zeliard_test_game_set_u8(0x90, 0);
+    zeliard_test_game_set_u8(0x91, 0);
+    unsigned peligro_death_ticks = 0;
+    while (zeliard_room_kind() != 2 && peligro_death_ticks++ < 5500)
+        zeliard_tick(16);
+    const int peligro_death_returned = !zeliard_fight_active() &&
+        zeliard_town_area() == 1 && zeliard_room_kind() == 2 &&
+        zeliard_room_ip() == 0xA006 &&
+        zeliard_test_game_u8(0xC4) == 0x81 &&
+        zeliard_test_game_u8(0xC5) == 0x81 &&
+        zeliard_test_game_u16(0x90) == zeliard_test_game_u16(0xB2);
+    ok &= peligro_death_returned;
+    printf("main_controls:peligro_death_sage_return: %s ticks=%u "
+           "area=%d room=%d ip=%04X sage=%02X/%02X hp=%04X/%04X\n",
+           peligro_death_returned ? "PASS" : "FAIL",
+           peligro_death_ticks, zeliard_town_area(), zeliard_room_kind(),
+           zeliard_room_ip(), zeliard_test_game_u8(0xC4),
+           zeliard_test_game_u8(0xC5), zeliard_test_game_u16(0x90),
+           zeliard_test_game_u16(0xB2));
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

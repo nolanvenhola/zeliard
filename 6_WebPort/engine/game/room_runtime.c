@@ -254,6 +254,9 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0;
     room->entry_gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
     room->entry_almas = zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS);
+    room->entry_hp = zeliard_player_read_u16(&player, ZEL_PLAYER_HP);
+    room->entry_hp_max = zeliard_player_read_u16(
+        &player, ZEL_PLAYER_HP_MAX);
     if (kind == ZEL_ROOM_KING) {
         game_seg[GVAR_TEXT_X] = 0;
         game_seg[GVAR_TEXT_Y] = 0;
@@ -311,6 +314,21 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
     const u16 almas = zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS);
     if (almas != room->entry_almas &&
         zeliard_gmmcga_draw_almas(vga, vga_size, game_seg, game_size))
+        return -1;
+    const u16 hp = zeliard_player_read_u16(&player, ZEL_PLAYER_HP);
+    const u16 hp_max = zeliard_player_read_u16(
+        &player, ZEL_PLAYER_HP_MAX);
+    /* 106TOWN:door_type_shop clears/redraws the playfield after the room
+     * program returns but leaves the room program's live HUD pixels intact.
+     * The web shell restores a full cached town frame, so replay the life
+     * driver calls when that restore would otherwise reinstate old values. */
+    if (hp_max != room->entry_hp_max &&
+        zeliard_gmmcga_draw_life_max(
+            vga, vga_size, game_seg, game_size))
+        return -1;
+    if ((hp != room->entry_hp || hp_max != room->entry_hp_max) &&
+        zeliard_gmmcga_draw_life_current(
+            vga, vga_size, game_seg, game_size))
         return -1;
     room->active = 0;
     room->alternate_transition_requested = 0;

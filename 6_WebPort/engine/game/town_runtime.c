@@ -617,6 +617,26 @@ static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
     return 2;
 }
 
+static int draw_building_entry_pose(u8 *cs, const u8 *game_data,
+                                    const u8 *mask_data, u8 *vga,
+                                    size_t vga_size) {
+    /* 106TOWN:door_action sets pose 4, restores the actor background, and
+     * calls draw_and_pump_input once before gfx_fade_to_black_fn. Rebuild the
+     * offscreen actor tiles and commit that rear-facing frame before the room
+     * transition snapshots VGA. */
+    cs[TOWN_POSE_INDEX] = 4;
+    restore_tiles_under_npcs(cs);
+    stamp_npcs_save_tiles(cs);
+    if (zeliard_gtmcga_render_town_actors(
+            cs, 0x10000, game_data, 0x10000,
+            mask_data, 0x10000, vga, vga_size))
+        return -1;
+    mark_player_col_in_cursor_buf(cs);
+    return zeliard_gtmcga_update_town_frame(
+        cs, 0x10000, game_data, 0x10000,
+        mask_data, 0x10000, vga, vga_size);
+}
+
 int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
                                        zeliard_room_kind_t kind,
                                        u8 *vga, size_t vga_size) {
@@ -762,6 +782,9 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     zeliard_town_detect_facing_targets(town, cs, input_direction);
+    if (town->facing_door_type <= 8 &&
+        draw_building_entry_pose(cs, game_data, mask_data, vga, vga_size))
+        return -4;
     if (town->facing_door_type <= 6) {
         const zeliard_room_kind_t kind = town->facing_door_type == 0
             ? ZEL_ROOM_KING : town->facing_door_type == 1
@@ -841,6 +864,11 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
     } else if (town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_LEAVE) {
         if (zeliard_room_leave(&town->room, cs, 0x10000,
                                vga, vga_size)) return -4;
+        /* 106TOWN:door_type_shop resets gvar_pose_idx to 1 immediately
+         * after the room program returns. Room programs reuse that byte;
+         * carrying their value into render_town_actors indexes outside the
+         * valid six-tile player pose and produces a garbled exit sprite. */
+        cs[TOWN_POSE_INDEX] = 1;
         /* 212ARMRP commits directly to player sword/shield bytes and draws
          * the corresponding GMMCGA slots. Our room shell restores the town
          * frame, so repeat those exact driver calls against the live record. */
