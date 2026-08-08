@@ -14,6 +14,7 @@ enum {
     ZEL_INPUT_KEY_ESCAPE = 27,
     ZEL_INPUT_KEY_F1 = 112,
     ZEL_INPUT_KEY_F2 = 113,
+    ZEL_INPUT_KEY_F9 = 120,
 };
 
 typedef enum {
@@ -23,6 +24,7 @@ typedef enum {
     ZEL_INPUT_ACTION_ESCAPE = 1 << 2,
     ZEL_INPUT_ACTION_TOGGLE_MUSIC = 1 << 3,
     ZEL_INPUT_ACTION_TOGGLE_SOUND = 1 << 4,
+    ZEL_INPUT_ACTION_SPEED_MENU = 1 << 5,
 } zel_input_action_t;
 
 typedef struct {

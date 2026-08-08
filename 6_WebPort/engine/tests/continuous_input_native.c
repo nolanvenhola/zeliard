@@ -93,6 +93,15 @@ int main(void) {
     ok &= mem[SFX_LATCH] == 0xFF;
     printf("continuous_input:special_key_latches: %s\n", ok ? "PASS" : "FAIL");
 
+    actions = zel_input_key_down(&input, mem, ZEL_INPUT_KEY_F9);
+    ok &= actions == ZEL_INPUT_ACTION_SPEED_MENU;
+    ok &= word_at(mem, TIMER_COUNTER) == 0x8000;
+    ok &= zel_input_key_down(&input, mem, ZEL_INPUT_KEY_F9) ==
+        ZEL_INPUT_ACTION_NONE;
+    zel_input_key_up(&input, mem, ZEL_INPUT_KEY_F9);
+    ok &= word_at(mem, TIMER_COUNTER) == 0;
+    printf("continuous_input:f9_speed_edge: %s\n", ok ? "PASS" : "FAIL");
+
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_LEFT);
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_SPACE);
     mem[SPACE_ACTION] = 0xFF;

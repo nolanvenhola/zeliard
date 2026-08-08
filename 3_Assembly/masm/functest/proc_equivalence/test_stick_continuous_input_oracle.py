@@ -141,6 +141,13 @@ def main() -> int:
     m.call(HANDLE_SPECIAL_KEYS)
     ok &= m.byte(SFX_LATCH) == 0xFF
 
+    # F9 is a level-held 8000h timer bit.  The game loops dispatch the
+    # resident speed_change_handler while it is set, then wait for release.
+    m.call(PROCESS_SCANCODE, 0x43)
+    ok &= m.word(TIMER_COUNTER) == 0x8000
+    m.call(PROCESS_SCANCODE, 0xC3)
+    ok &= m.word(TIMER_COUNTER) == 0
+
     print("stick_continuous_input: " + ("PASS" if ok else "FAIL") +
           f" dir={m.byte(INPUT_DIRECTION):02x} skip={m.byte(SKIP_FLAG):02x}" +
           f" timer={m.word(TIMER_COUNTER):04x} ascii={m.byte(ASCII_ACTION):02x}" +

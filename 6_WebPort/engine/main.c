@@ -39,6 +39,8 @@ typedef enum {
 
 static game_scene_t g_scene = SCENE_OPENING;
 static int g_paused;
+static int g_speed_menu_active;
+static int g_speed_menu_selected;
 static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
@@ -523,6 +525,48 @@ static void apply_input_actions(u32 actions) {
         zel_opening_audio_toggle_music();
     if (actions & ZEL_INPUT_ACTION_TOGGLE_SOUND)
         zel_opening_audio_toggle_sound();
+    if (g_speed_menu_active) {
+        const u32 dismiss = ZEL_INPUT_ACTION_ESCAPE |
+            ZEL_INPUT_ACTION_SPACE | ZEL_INPUT_ACTION_ENTER |
+            ZEL_INPUT_ACTION_SPEED_MENU;
+        if (!g_speed_menu_selected &&
+            (actions & ZEL_INPUT_ACTION_ESCAPE)) {
+            /* wait_for_digit_or_esc returns with AL still holding the
+             * current digit on Escape. The handler redraws/stores that
+             * unchanged value, posts cue 1, then enters its dismiss wait. */
+            u8 speed = g_game_segments[0][0xFF33];
+            if (speed < 1u || speed > 10u)
+                speed = 5u;
+            opening_speed_overlay_set_digit((u8)(10u - speed));
+            g_game_segments[0][0xFF75] = 1;
+            zel_opening_audio_write_cue(1);
+            g_speed_menu_selected = 1;
+            return;
+        }
+        if ((actions & dismiss) && g_speed_menu_selected) {
+            g_game_segments[0][0xFF1D] = 0;
+            g_game_segments[0][0xFF29] = 0;
+            opening_speed_overlay_hide();
+            g_speed_menu_active = 0;
+            g_speed_menu_selected = 0;
+            g_paused = 0;
+        }
+        return;
+    }
+    if ((actions & ZEL_INPUT_ACTION_SPEED_MENU) && !g_paused &&
+        g_scene == SCENE_GAME) {
+        u8 speed = g_game_segments[0][0xFF33];
+        if (speed < 1u || speed > 10u)
+            speed = 5u;
+        opening_speed_overlay_show_game(g_game_segments[0], 0x10000,
+                                        (u8)(10u - speed));
+        g_game_segments[0][0xFF75] = 2;
+        zel_opening_audio_write_cue(2);
+        g_speed_menu_active = 1;
+        g_speed_menu_selected = 0;
+        g_paused = 1;
+        return;
+    }
     if ((actions & ZEL_INPUT_ACTION_ESCAPE) && !g_paused) {
         if (g_scene == SCENE_GAME)
             opening_pause_overlay_show_game(g_game_segments[0], 0x10000);
@@ -609,6 +653,8 @@ EXPORT void zeliard_init(void) {
     game_memory_init();
     g_scene = SCENE_OPENING;
     g_paused = 0;
+    g_speed_menu_active = 0;
+    g_speed_menu_selected = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
     zel_opening_audio_init();
@@ -990,6 +1036,18 @@ EXPORT void zeliard_key_up(int keycode) {
 
 EXPORT void zeliard_text_key(int ascii) {
     if (g_session_terminated) return;
+    if (g_speed_menu_active && ascii >= '0' && ascii <= '9') {
+        const u8 digit = (u8)(ascii - '0');
+        const u8 speed = (u8)(10u - digit);
+        g_game_segments[0][0xFF33] = speed;
+        if (zeliard_fight_masm_vm_active())
+            zeliard_fight_masm_vm_poke_u8(0xFF33, speed);
+        opening_speed_overlay_set_digit(digit);
+        g_game_segments[0][0xFF75] = 1;
+        zel_opening_audio_write_cue(1);
+        g_speed_menu_selected = 1;
+        return;
+    }
     if (g_scene != SCENE_GAME || !g_town_runtime.room.active ||
         g_town_runtime.room.kind != ZEL_ROOM_SAGE) return;
     if (ascii >= 'a' && ascii <= 'z') ascii -= 'a' - 'A';
@@ -1030,6 +1088,11 @@ EXPORT int              zeliard_music_track(void) { return zel_opening_audio_mus
 EXPORT void             zeliard_music_complete(int track) { zel_opening_audio_music_complete(track); }
 EXPORT int              zeliard_music_attenuation(void) { return zel_opening_audio_attenuation(); }
 EXPORT int              zeliard_paused(void) { return g_paused; }
+EXPORT int              zeliard_speed_menu_active(void) { return g_speed_menu_active; }
+EXPORT int              zeliard_game_speed_digit(void) {
+    const u8 speed = g_game_segments[0][0xFF33];
+    return speed >= 1u && speed <= 10u ? 10 - speed : 5;
+}
 EXPORT int              zeliard_session_terminated(void) { return g_session_terminated; }
 EXPORT int              zeliard_music_enabled(void) { return zel_opening_audio_music_enabled(); }
 EXPORT int              zeliard_sound_enabled(void) { return zel_opening_audio_sound_enabled(); }
