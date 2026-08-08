@@ -14,8 +14,10 @@ typedef struct {
     u8 scroll_pass;
     u8 scroll_wait_ticks;
     u8 prompt_active;
+    u8 prompt_kind;
     u8 prompt_selection;
     u8 prompt_direction_latch;
+    u8 control_wait_dialog;
     u8 original_npc_direction;
     u8 original_npc_type;
     u16 npc_offset;

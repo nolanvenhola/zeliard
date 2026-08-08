@@ -188,12 +188,14 @@ int zeliard_gmmcga_draw_text_char(u8 *vga, size_t vga_size,
                                   const u8 *cs, size_t cs_size,
                                   u8 character, u8 selector, u16 bx, u8 y) {
     if (!vga || !cs || vga_size < 0x10000 || cs_size < 0x10000 ||
-        character < 0x20 || character >= 0x80 || bx + 8 > 320 || y + 8 > 200)
+        character >= 0x80 || bx + 8 > 320 || y + 8 > 200)
         return -1;
     const u8 color = cs[0xFF77] ? (u8)(selector * 0x11u)
                                       : cs[(u16)(0x24EA + selector)];
     const u16 font = read_u16_at(cs, 0xF500);
-    const u16 source = (u16)(font + (u16)(character - 0x20) * 8u);
+    /* GMMCGA keeps the character index in BL, so values below 20h wrap
+     * before the font-table multiply. LLMP uses 01h in its cape prelude. */
+    const u16 source = (u16)(font + (u16)(u8)(character - 0x20) * 8u);
     for (u8 row = 0; row < 8; ++row) {
         u8 bits = cs[(u16)(source + row)];
         const u16 dest = (u16)((u16)(y + row) * 320u + bx);

@@ -28,6 +28,11 @@ enum {
     GVAR_INPUT_DIRECTION = 0xFF17,
 };
 
+enum {
+    TOWN_PROMPT_YES_NO = 0,
+    TOWN_PROMPT_TAKE_NO_TAKE = 1,
+};
+
 static u16 read_u16(const u8 *memory, u16 offset) {
     return (u16)(memory[offset] | ((u16)memory[(u16)(offset + 1)] << 8));
 }
@@ -35,6 +40,24 @@ static u16 read_u16(const u8 *memory, u16 offset) {
 static void write_u16(u8 *memory, u16 offset, u16 value) {
     memory[offset] = (u8)value;
     memory[(u16)(offset + 1)] = (u8)(value >> 8);
+}
+
+static void process_town_event_table(u8 *cs) {
+    u16 si = read_u16(cs, 0xC015);
+    for (u16 outer = 0; outer < 0x100 && si <= 0xFFFC; ++outer) {
+        const u16 flag_pointer = read_u16(cs, si);
+        si = (u16)(si + 2);
+        if (flag_pointer == 0xFFFF) return;
+        const u8 mask = cs[si++];
+        const int active = (cs[flag_pointer] & mask) != 0;
+        for (u16 inner = 0; inner < 0x100 && si <= 0xFFFC; ++inner) {
+            const u16 destination = read_u16(cs, si);
+            si = (u16)(si + 2);
+            if (destination == 0xFFFF) break;
+            const u8 value = cs[si++];
+            if (active) cs[destination] = value;
+        }
+    }
 }
 
 static u16 find_npc_offset(const u8 *cs, u16 position) {
@@ -68,7 +91,8 @@ static u8 count_wrapped_lines(const u8 *cs, u16 si) {
             width = 0;
             continue;
         }
-        width = (u16)(width + cs[(u16)(CHAR_GLYPH_TABLE + ch - 0x20)]);
+        width = (u16)(width +
+            cs[(u16)(CHAR_GLYPH_TABLE + (u8)(ch - 0x20))]);
         if (ch == 0x20 && (u16)(width + measure_word(cs, si)) >= 0xA8) {
             ++lines;
             width = 0;
@@ -157,6 +181,29 @@ static int draw_yes_no_prompt(zeliard_town_dialog_t *dialog,
     return 0;
 }
 
+static int draw_take_prompt(zeliard_town_dialog_t *dialog,
+                            const u8 *cs, u8 *vga, size_t vga_size) {
+    /* 106TOWN:ctrl_89_dialog builds a 2-row Take/No Take menu from the
+     * resident strings at 6736h and 673Bh. */
+    u16 frame = dialog->panel_ax;
+    frame = (u16)((u16)((u8)(frame >> 8) * 2u) << 8 | (u8)frame);
+    frame = (u16)(frame + 0x1832u);
+    dialog->prompt_position = (u16)(frame + 0x0203u);
+    if (zeliard_gmmcga_fill_frame(vga, vga_size, frame, 0x1219, 0) ||
+        draw_prompt_string(cs, vga, vga_size, 0x6736,
+                           dialog->prompt_position, 0) ||
+        draw_prompt_string(cs, vga, vga_size, 0x673B,
+                           dialog->prompt_position, 1))
+        return -1;
+    draw_prompt_cursor(vga, dialog->prompt_position,
+                       dialog->prompt_selection);
+    return 0;
+}
+
+static int render_dialog(zeliard_town_dialog_t *dialog,
+                         u8 *cs, u8 *vga, size_t vga_size,
+                         u8 dialog_id, u16 ax);
+
 static int finish_dialog_newline(zeliard_town_dialog_t *dialog, u8 *cs,
                                  u8 *vga, size_t vga_size) {
     if (++cs[TEXT_ROW_FLAG] >= 7 && cs[TEXT_ANIM_STEP] != 8) {
@@ -202,22 +249,49 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
         }
         if (ch == 0x81) {
             dialog->prompt_active = 1;
+            dialog->prompt_kind = TOWN_PROMPT_YES_NO;
             dialog->prompt_selection = 0;
             dialog->prompt_direction_latch = 0;
             dialog->waiting = 1;
             return draw_yes_no_prompt(dialog, cs, vga, vga_size) ? -3 : 0;
         }
+        if (ch == 0x83) {
+            cs[0x0034] |= 0x80;
+            cs[0x009A] = 0xFF;
+            process_town_event_table(cs);
+            dialog->waiting = dialog->final_wait = 1;
+            return 0;
+        }
+        if (ch == 0x85) {
+            cs[TEXT_DONE_FLAG] = 0xFF;
+            return render_dialog(dialog, cs, vga, vga_size,
+                                 4, dialog->panel_ax);
+        }
+        if (ch == 0x87) {
+            dialog->control_wait_dialog = 5;
+            dialog->waiting = 1;
+            return 0;
+        }
+        if (ch == 0x89) {
+            dialog->prompt_active = 1;
+            dialog->prompt_kind = TOWN_PROMPT_TAKE_NO_TAKE;
+            dialog->prompt_selection = 0;
+            dialog->prompt_direction_latch = 0;
+            dialog->waiting = 1;
+            return draw_take_prompt(dialog, cs, vga, vga_size) ? -3 : 0;
+        }
         if (ch & 0x80) return -2;
         const u16 packed = read_u16(cs, TEXT_DRAW_X);
         u16 x = (u16)((u8)(packed >> 8) * 8u + cs[TEXT_COL_POS] + 4u);
         const u8 y = (u8)((u8)packed + cs[TEXT_BOX_COLS] * 10u + 4u);
-        x = (u16)(x - cs[(u16)(CHAR_WIDTH_TABLE + ch - 0x20)]);
+        x = (u16)(x -
+            cs[(u16)(CHAR_WIDTH_TABLE + (u8)(ch - 0x20))]);
         if (zeliard_gmmcga_draw_text_char(vga, vga_size, cs, 0x10000,
                                           ch, 1, x, y))
             return -3;
         ++dialog->glyph_count;
         cs[TEXT_COL_POS] = (u8)(cs[TEXT_COL_POS] +
-            cs[(u16)(CHAR_GLYPH_TABLE + ch - 0x20)]);
+            cs[(u16)(CHAR_GLYPH_TABLE + (u8)(ch - 0x20))]);
         if (ch == 0x20 &&
             (u16)(cs[TEXT_COL_POS] + measure_word(cs, si)) >= 0xA8) {
             const int result = start_dialog_newline(
@@ -355,21 +429,51 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
             const u8 previous = dialog->prompt_selection;
             if (direction == 1) dialog->prompt_selection = 0;
             else if (direction == 2) dialog->prompt_selection = 1;
-            if (previous != dialog->prompt_selection &&
-                draw_yes_no_prompt(dialog, cs, vga, vga_size))
-                return -1;
+            if (previous != dialog->prompt_selection) {
+                const int draw_result =
+                    dialog->prompt_kind == TOWN_PROMPT_TAKE_NO_TAKE
+                    ? draw_take_prompt(dialog, cs, vga, vga_size)
+                    : draw_yes_no_prompt(dialog, cs, vga, vga_size);
+                if (draw_result) return -1;
+            }
         }
         if (!cs[GVAR_SPACE] && !cs[GVAR_ENTER] && !cs[GVAR_SKIP]) return 0;
         cs[GVAR_SPACE] = cs[GVAR_ENTER] = cs[GVAR_SKIP] = 0;
-        /* prompt_yes_no returns carry for Yes. ctrl_81_header dispatches
-         * carry to dialog 13 and no-carry to dialog 12. */
-        const u8 next_dialog = dialog->prompt_selection ? 12 : 13;
+        u8 next_dialog;
+        if (dialog->prompt_kind == TOWN_PROMPT_TAKE_NO_TAKE) {
+            next_dialog = 6;
+            if (!dialog->prompt_selection) {
+                const u16 almas = read_u16(cs, 0x008B);
+                if (almas < 2500) {
+                    next_dialog = 7;
+                } else {
+                    write_u16(cs, 0x008B, (u16)(almas - 2500));
+                    cs[0x0034] |= 0x40;
+                    u16 slot = 0x00A1;
+                    while (slot <= 0x00A5 && cs[slot] != 0) ++slot;
+                    if (slot <= 0x00A5) cs[slot] = 5;
+                    process_town_event_table(cs);
+                    next_dialog = 8;
+                }
+            }
+        } else {
+            /* prompt_yes_no returns carry for Yes. ctrl_81_header dispatches
+             * carry to dialog 13 and no-carry to dialog 12. */
+            next_dialog = dialog->prompt_selection ? 12 : 13;
+        }
         dialog->prompt_active = dialog->waiting = 0;
         return render_dialog(dialog, cs, vga, vga_size,
                              next_dialog, dialog->panel_ax);
     }
     if (!cs[GVAR_SPACE] && !cs[GVAR_ENTER] && !cs[GVAR_SKIP]) return 0;
     cs[GVAR_SPACE] = cs[GVAR_ENTER] = cs[GVAR_SKIP] = 0;
+    if (dialog->control_wait_dialog) {
+        const u8 next_dialog = dialog->control_wait_dialog;
+        dialog->control_wait_dialog = 0;
+        dialog->waiting = 0;
+        return render_dialog(dialog, cs, vga, vga_size,
+                             next_dialog, dialog->panel_ax);
+    }
     if (dialog->page_wait) {
         dialog->waiting = dialog->page_wait = 0;
         clear_page_prompt(vga, read_u16(cs, TEXT_DRAW_X));

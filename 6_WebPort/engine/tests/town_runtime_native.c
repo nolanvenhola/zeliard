@@ -1503,6 +1503,199 @@ int main(void) {
            ZEL_ROOM_INN, dorado_bank_trigger, dorado_bank_fade,
            ZEL_ROOM_BANK);
     free(dorado);
+
+    /* Ticket #84: Llama's release LLMP descriptor selects MGT1, DPAT,
+     * CMAN, and the 200FIGHT handoff target 47h -> start 36h/column 0Dh. */
+    static u8 llama_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                             [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 llama_vga[0x10000];
+    zeliard_game_exec_state_t llama_game = {0};
+    zeliard_town_runtime_t *llama = calloc(1, sizeof(*llama));
+    ok &= llama != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        llama_game.segment[i] = llama_segments[i];
+        llama_game.segment_size[i] = sizeof(llama_segments[i]);
+    }
+    ok &= load_direct(llama_segments[0], sizeof(llama_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(llama_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(llama_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(llama_segments[3], sizeof(llama_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(llama_segments[0]) &&
+          load_item_panel(llama_segments[1]);
+    llama_segments[0][0x00C4] = 0x87;
+    llama_segments[0][0x00C5] = 0x87;
+    llama_segments[0][0x0080] = 0x36;
+    llama_segments[0][0x0083] = 0x0D;
+    llama_segments[0][ZEL_PLAYER_SWORD] = 1;
+    llama_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    llama_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    llama_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int llama_result = llama ? zeliard_town_enter_first_frame(
+        llama, &llama_game, llama_vga, sizeof(llama_vga)) : -99;
+    const unsigned long long llama_frame =
+        fnv1a64(llama_vga, sizeof(llama_vga));
+    const unsigned long long llama_playfield =
+        fnv1a64(llama_vga, 160u * 320u);
+    const unsigned long long llama_capture =
+        fnv1a64(llama_segments[0] + 0xA000, 0x1500);
+    const unsigned long long llama_state =
+        selected_state_hash(llama_segments[0]);
+    const unsigned long long llama_npcs =
+        npc_state_hash(llama_segments[0]);
+    const u8 llama_story_before[3] = {
+        llama_segments[0][0xD0D2], llama_segments[0][0xD0DA],
+        llama_segments[0][0xD0E2],
+    };
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-llama-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(llama_vga, 1, sizeof(llama_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= llama_result == 0 && llama->area == ZEL_TOWN_AREA_LLAMA;
+    ok &= llama->music_index == 2 && llama->map_side == 0 &&
+          llama->palette_index == 1 && llama->town_text_record == 0xC8E0;
+    ok &= llama_frame == 0xA8D2A6F63DAA834AULL &&
+          llama_playfield == 0x490A5B10473F47A4ULL &&
+          llama_capture == 0xF2C3F82A0F93D06DULL &&
+          llama_state == 0x9163832A08DECDB0ULL &&
+          llama_npcs == 0x55B5FACA82E29E35ULL;
+    ok &= llama_story_before[0] == 0 && llama_story_before[1] == 3 &&
+          llama_story_before[2] == 18;
+
+    static u8 llama_snapshot[sizeof(llama_segments) + sizeof(llama_vga)];
+    memcpy(llama_snapshot, llama_segments, sizeof(llama_segments));
+    memcpy(llama_snapshot + sizeof(llama_segments), llama_vga,
+           sizeof(llama_vga));
+    const zeliard_town_runtime_t llama_runtime_snapshot = *llama;
+
+    /* Door type 8 uses route record 0: the wrapped start value is authored
+     * by 106TOWN's unconditional destination-10h subtraction. */
+    llama_segments[0][0x0080] = 252;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 13;
+    u16 llama_tile = (u16)(0xC017 + 252 * 8);
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_route_0 = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
+    ok &= llama_route_0 > 0 && llama->cavern_exit_requested &&
+          (u16)(llama_segments[0][0x0080] |
+                ((u16)llama_segments[0][0x0081] << 8)) == 0xFFF1 &&
+          llama_segments[0][0x0082] == 0x0C &&
+          llama_segments[0][0x00C3] == 0 &&
+          llama_segments[0][0x00C4] == 0x12;
+
+    memcpy(llama_segments, llama_snapshot, sizeof(llama_segments));
+    memcpy(llama_vga, llama_snapshot + sizeof(llama_segments),
+           sizeof(llama_vga));
+    *llama = llama_runtime_snapshot;
+    llama_segments[0][0x0080] = 0;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 4;
+    llama_tile = 0xC017;
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_paguro = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 4, 1);
+    ok &= llama_paguro > 0 && llama->cavern_exit_requested &&
+          (u16)(llama_segments[0][0x0080] |
+                ((u16)llama_segments[0][0x0081] << 8)) == 0x0088 &&
+          llama_segments[0][0x0082] == 0x3D &&
+          llama_segments[0][0x00C3] == 0xFF &&
+          llama_segments[0][0x00C4] == 0x12;
+
+    memcpy(llama_segments, llama_snapshot, sizeof(llama_segments));
+    memcpy(llama_vga, llama_snapshot + sizeof(llama_segments),
+           sizeof(llama_vga));
+    *llama = llama_runtime_snapshot;
+    llama_segments[0][0x0080] = 205;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 13;
+    llama_tile = (u16)(0xC017 + 205 * 8);
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_route_2 = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
+    ok &= llama_route_2 > 0 && llama->cavern_exit_requested &&
+          (u16)(llama_segments[0][0x0080] |
+                ((u16)llama_segments[0][0x0081] << 8)) == 0x000B &&
+          llama_segments[0][0x0082] == 0x03 &&
+          llama_segments[0][0x00C3] == 0 &&
+          llama_segments[0][0x00C4] == 0x15;
+
+    memcpy(llama_segments, llama_snapshot, sizeof(llama_segments));
+    memcpy(llama_vga, llama_snapshot + sizeof(llama_segments),
+           sizeof(llama_vga));
+    *llama = llama_runtime_snapshot;
+    llama_segments[0][0x0080] = 159;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 13;
+    llama_tile = (u16)(0xC017 + 159 * 8);
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_inn_trigger = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
+    const int llama_inn_fade = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 88, 0);
+    ok &= llama_inn_trigger > 0 && llama_inn_fade > 0 &&
+          llama->room.active && llama->room.kind == ZEL_ROOM_INN &&
+          llama->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(llama_segments, llama_snapshot, sizeof(llama_segments));
+    memcpy(llama_vga, llama_snapshot + sizeof(llama_segments),
+           sizeof(llama_vga));
+    *llama = llama_runtime_snapshot;
+    llama_segments[0][0x0080] = 125;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 13;
+    llama_tile = (u16)(0xC017 + 125 * 8);
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_bank_trigger = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
+    const int llama_bank_fade = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 88, 0);
+    ok &= llama_bank_trigger > 0 && llama_bank_fade > 0 &&
+          llama->room.active && llama->room.kind == ZEL_ROOM_BANK &&
+          llama->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(llama_segments, llama_snapshot, sizeof(llama_segments));
+    memcpy(llama_vga, llama_snapshot + sizeof(llama_segments),
+           sizeof(llama_vga));
+    *llama = llama_runtime_snapshot;
+    llama_segments[0][0x0030] = 0xFF;
+    llama_segments[0][0x0034] = 0xC0;
+    const int llama_story = zeliard_town_enter_first_frame(
+        llama, &llama_game, llama_vga, sizeof(llama_vga));
+    const u8 llama_story_after[3] = {
+        llama_segments[0][0xD0D2], llama_segments[0][0xD0DA],
+        llama_segments[0][0xD0E2],
+    };
+    ok &= llama_story == 0 && llama_story_after[0] == 2 &&
+          llama_story_after[1] == 9 && llama_story_after[2] == 16;
+    printf("town_llama_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx music=%u "
+           "story=%02x/%02x/%02x>%02x/%02x/%02x\n",
+           llama_result, llama_frame, llama_playfield, llama_capture,
+           llama_state, llama_npcs, (unsigned)llama->music_index,
+           llama_story_before[0], llama_story_before[1],
+           llama_story_before[2], llama_story_after[0],
+           llama_story_after[1], llama_story_after[2]);
+    printf("town_llama_routes: edge=%d/fff1/0c/00/12 "
+           "paguro=%d/0088/3d/ff/12 inferno=%d/000b/03/00/15 "
+           "inn=%d/%d/%d bank=%d/%d/%d\n",
+           llama_route_0, llama_paguro, llama_route_2,
+           llama_inn_trigger, llama_inn_fade, ZEL_ROOM_INN,
+           llama_bank_trigger, llama_bank_fade, ZEL_ROOM_BANK);
+    free(llama);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,
