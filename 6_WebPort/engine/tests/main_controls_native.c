@@ -855,6 +855,36 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), satono_playfield);
 
+    /* Riza's town handoff and a Bosque .USR restore must select BSMP,
+     * MPAT/MMAN, and MGT2 as one transaction. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x12] &= (u8)~0x08;
+    record[0x80] = 0x2B;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x83;
+    record[0xC5] = 0x83;
+    const int bosque_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long bosque_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int bosque_bootstrap = bosque_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 3 && zeliard_test_game_u8(0xC4) == 0x83 &&
+        zeliard_test_game_u8(0x80) == 0x2B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 4 &&
+        bosque_playfield == 0xAAA634D89DBA5AA5ULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/bosque-save-bootstrap.ppm", g_framebuf);
+    ok &= bosque_bootstrap;
+    printf("main_controls:bosque_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           bosque_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), bosque_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

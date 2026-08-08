@@ -154,6 +154,61 @@ static int test_muralla_multipage_dialog(void) {
     return ok;
 }
 
+static int test_bosque_sentry_prompt(void) {
+    u8 segment[0x10000] = {0};
+    u8 scratch[0x10000] = {0};
+    u8 vga[0x10000] = {0};
+    zeliard_town_dialog_t dialog = {0};
+    size_t driver_size = 0;
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = driver && driver_size <= 0xE000;
+    if (ok) memcpy(segment + 0x2000, driver, driver_size);
+    free(driver);
+    ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin");
+    ok &= load_raw(segment + 0xC000, 0x4000, "assets/bsmp.mdt");
+    ok &= load_font(segment);
+    segment[0x00C2] = 0;
+
+    const int begin = ok ? zeliard_town_dialog_begin_facing(
+        &dialog, segment, scratch, NULL, 0, NULL, 0,
+        vga, sizeof(vga), 0x0009) : -99;
+    ok &= begin == 0 && dialog.active;
+    for (unsigned guard = 0; guard < 200 && !dialog.prompt_active; ++guard) {
+        if (dialog.scroll_active || dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        } else if (dialog.waiting) {
+            segment[0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+        }
+    }
+    const unsigned long long prompt_hash = fnv1a64(vga, sizeof(vga));
+    ok &= dialog.prompt_active && dialog.prompt_selection == 0;
+
+    /* Down selects No; confirmation dispatches BSMP dialog 12 exactly as
+     * ctrl_81_header's no-carry path does. */
+    segment[0xFF17] = 2;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    ok &= dialog.prompt_selection == 1;
+    segment[0xFF17] = 0;
+    segment[0xFF1D] = 0xFF;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    const u16 denied_pc = (u16)(segment[0x7C58] |
+                                ((u16)segment[0x7C59] << 8));
+    const unsigned long long denied_hash = fnv1a64(vga, sizeof(vga));
+    ok &= dialog.active && !dialog.prompt_active && dialog.final_wait;
+    ok &= prompt_hash == 0x26F8F2DC2A165E3FULL &&
+          denied_hash == 0xDCD72C80F7676981ULL && denied_pc == 0xCC5A;
+    printf("town_bosque_sentry_prompt: %s prompt=%016llx no=%016llx "
+           "selection=%u pc=%04x glyphs=%u\n",
+           ok ? "PASS" : "FAIL", prompt_hash, denied_hash,
+           dialog.prompt_selection, denied_pc, dialog.glyph_count);
+    return ok;
+}
+
 int main(void) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
@@ -202,7 +257,8 @@ int main(void) {
            dialog.glyph_count, text_pc, dialog.pending_sound_cue,
            fnv1a64(vga, sizeof(vga)));
     ok &= test_muralla_multipage_dialog();
-    printf("VERDICT: %s: Felishika and Muralla dialog MASM parity\n",
+    ok &= test_bosque_sentry_prompt();
+    printf("VERDICT: %s: Felishika, Muralla, and Bosque dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }
