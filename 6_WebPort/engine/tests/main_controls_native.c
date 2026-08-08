@@ -10,6 +10,7 @@ void zeliard_tick(u32 dt_ms);
 void zeliard_key(int keycode);
 void zeliard_key_down(int keycode);
 void zeliard_key_up(int keycode);
+void zeliard_text_key(int ascii);
 int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
 int zeliard_test_fight_returns_to_town(int operation, int selector,
@@ -35,6 +36,8 @@ u32 zeliard_phase_elapsed(void);
 u32 zeliard_audio_opl_write_count(void);
 u32 zeliard_audio_cue_serial(void);
 int zeliard_paused(void);
+int zeliard_speed_menu_active(void);
+int zeliard_game_speed_digit(void);
 int zeliard_music_track(void);
 void zeliard_music_complete(int track);
 int zeliard_music_attenuation(void);
@@ -209,6 +212,42 @@ int main(void) {
     ok &= game_pause_pixels == 446;
     zeliard_key(32);
     ok &= zeliard_paused() == 0 && zeliard_music_track() == 3;
+    u8 before_speed_menu[ZELIARD_FB_SIZE];
+    memcpy(before_speed_menu, g_framebuf, sizeof(before_speed_menu));
+    zeliard_key(120);
+    const int speed_menu_opened = zeliard_paused() &&
+        zeliard_speed_menu_active() && zeliard_game_speed_digit() == 5 &&
+        zeliard_sound_cue() == 2 &&
+        g_framebuf[70 * ZELIARD_WIDTH + 104] == 0x09 &&
+        g_framebuf[72 * ZELIARD_WIDTH + 106] == 0;
+    zeliard_text_key('9');
+    const int speed_selected = zeliard_speed_menu_active() &&
+        zeliard_game_speed_digit() == 9 &&
+        zeliard_test_game_u8(0xFF33) == 1 && zeliard_sound_cue() == 1;
+    /* Restore the suite's canonical default cadence before later movement
+     * fixtures; selecting again while the prompt is open is legal. */
+    zeliard_text_key('5');
+    zeliard_key(32);
+    const int speed_menu_closed = !zeliard_paused() &&
+        !zeliard_speed_menu_active() &&
+        memcmp(before_speed_menu, g_framebuf, sizeof(before_speed_menu)) == 0;
+    zeliard_key(120);
+    zeliard_key(27);
+    const int speed_escape_selected = zeliard_paused() &&
+        zeliard_speed_menu_active() && zeliard_game_speed_digit() == 5;
+    zeliard_key(27);
+    const int speed_escape_closed = !zeliard_paused() &&
+        !zeliard_speed_menu_active();
+    ok &= speed_menu_opened && speed_selected && speed_menu_closed &&
+        speed_escape_selected && speed_escape_closed;
+    printf("main_controls:f9_speed_menu: %s opened=%d selected=%d "
+           "closed=%d digit=%d internal=%d\n",
+           speed_menu_opened && speed_selected && speed_menu_closed &&
+               speed_escape_selected && speed_escape_closed ?
+               "PASS" : "FAIL",
+           speed_menu_opened, speed_selected, speed_menu_closed,
+           speed_selected ? 9 : zeliard_game_speed_digit(),
+           speed_selected ? 1 : zeliard_test_game_u8(0xFF33));
     zeliard_key_down(39);
     zeliard_tick(90);
     zeliard_key_up(39);

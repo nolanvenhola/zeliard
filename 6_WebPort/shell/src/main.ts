@@ -28,6 +28,8 @@ type EngineExports = {
     _zeliard_music_complete(track: number): void;
     _zeliard_music_attenuation(): number;
     _zeliard_paused(): number;
+    _zeliard_speed_menu_active(): number;
+    _zeliard_game_speed_digit(): number;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
@@ -461,6 +463,7 @@ async function boot() {
             Escape: 27,
             F1: 112,
             F2: 113,
+            F9: 120,
         };
         const keycode = keycodes[e.key];
         if (keycode === undefined) {
@@ -497,6 +500,7 @@ async function boot() {
             Escape: 27,
             F1: 112,
             F2: 113,
+            F9: 120,
         };
         const keycode = keycodes[e.key];
         if (keycode === undefined)

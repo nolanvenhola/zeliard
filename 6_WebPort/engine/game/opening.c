@@ -823,10 +823,21 @@ enum {
     PAUSE_W = 64,
     PAUSE_H = 16
 };
+enum {
+    SPEED_X = 104,
+    SPEED_Y = 70,
+    SPEED_W = 120,
+    SPEED_H = 40
+};
 static u8             g_pause_indexed_backup[PAUSE_W * PAUSE_H];
 static u8             g_pause_rgb_backup[PAUSE_W * PAUSE_H * 3];
 static int            g_pause_rgb_active;
 static int            g_pause_overlay_active;
+static u8             g_speed_indexed_backup[SPEED_W * SPEED_H];
+static u8             g_speed_rgb_backup[SPEED_W * SPEED_H * 3];
+static int            g_speed_rgb_active;
+static int            g_speed_overlay_active;
+static u8             g_speed_text_color;
 static palette_color_t g_opening_palette[256];
 static palette_color_t g_title_card_palette[256];
 static u32            g_elapsed   = 0;
@@ -6384,6 +6395,7 @@ static void render_destiny_story(u32 elapsed_ms) {
 
 void opening_init(void) {
     g_pause_overlay_active = 0;
+    g_speed_overlay_active = 0;
     g_pause_rgb_active = 0;
     memset(g_images, 0, sizeof(g_images));
     memset(&g_hou_overlay, 0, sizeof(g_hou_overlay));
@@ -6686,6 +6698,79 @@ void opening_pause_overlay_hide(void) {
     }
     g_rgb_framebuf_active = g_pause_rgb_active;
     g_pause_overlay_active = 0;
+}
+
+static void speed_overlay_draw_char(int x, int y, u8 ch, u8 color) {
+    if (!g_font_ready || ch < 0x20u)
+        return;
+    const size_t glyph = (size_t)g_font.ptr_a +
+        (size_t)(ch - 0x20u) * 8u;
+    if (glyph + 8u > g_font.size)
+        return;
+    for (int row = 0; row < 8; ++row) {
+        const u8 bits = g_font.data[glyph + (size_t)row];
+        for (int col = 0; col < 8; ++col)
+            if (bits & (u8)(0x80u >> col))
+                pause_overlay_set_pixel(x + col, y + row, color);
+    }
+}
+
+static void speed_overlay_draw_text(int x, int y, const char *text,
+                                    u8 color) {
+    for (size_t i = 0; text[i]; ++i)
+        speed_overlay_draw_char(x + (int)i * 8, y, (u8)text[i], color);
+}
+
+void opening_speed_overlay_set_digit(u8 digit) {
+    if (!g_speed_overlay_active || digit > 9u)
+        return;
+    for (int row = 0; row < 8; ++row)
+        for (int col = 0; col < 8; ++col)
+            pause_overlay_set_pixel(204 + col, 90 + row, 0);
+    speed_overlay_draw_char(204, 90, (u8)('0' + digit),
+                            g_speed_text_color);
+}
+
+void opening_speed_overlay_show_game(const u8 *game_seg, size_t game_size,
+                                     u8 digit) {
+    if (g_speed_overlay_active || !game_seg || game_size < 0x10000)
+        return;
+    g_speed_rgb_active = g_rgb_framebuf_active;
+    for (int row = 0; row < SPEED_H; ++row) {
+        const size_t src = (size_t)(SPEED_Y + row) * ZELIARD_WIDTH + SPEED_X;
+        const size_t dst = (size_t)row * SPEED_W;
+        memcpy(g_speed_indexed_backup + dst, g_framebuf + src, SPEED_W);
+        memcpy(g_speed_rgb_backup + dst * 3u, g_rgb_framebuf + src * 3u,
+               SPEED_W * 3u);
+    }
+    const int cinematic = game_seg[0xFF77] != 0;
+    const u8 border = cinematic ? 0xFF : 0x09;
+    g_speed_text_color = cinematic ? 0x77 : game_seg[0x24EB];
+    for (int row = 0; row < SPEED_H; ++row)
+        for (int col = 0; col < SPEED_W; ++col)
+            pause_overlay_set_pixel(SPEED_X + col, SPEED_Y + row,
+                (row < 2 || row >= SPEED_H - 2 || col < 2 ||
+                 col >= SPEED_W - 2) ? border : 0u);
+    /* stick.asm passes BX=0074h/CL=52h for the CR-delimited prompt and
+     * BX=00CCh/CL=5Ah for the selected digit. */
+    speed_overlay_draw_text(116, 82, "Speed change", g_speed_text_color);
+    speed_overlay_draw_text(116, 90, "Select 0-9:", g_speed_text_color);
+    g_speed_overlay_active = 1;
+    opening_speed_overlay_set_digit(digit <= 9u ? digit : 5u);
+}
+
+void opening_speed_overlay_hide(void) {
+    if (!g_speed_overlay_active)
+        return;
+    for (int row = 0; row < SPEED_H; ++row) {
+        const size_t dst = (size_t)(SPEED_Y + row) * ZELIARD_WIDTH + SPEED_X;
+        const size_t src = (size_t)row * SPEED_W;
+        memcpy(g_framebuf + dst, g_speed_indexed_backup + src, SPEED_W);
+        memcpy(g_rgb_framebuf + dst * 3u, g_speed_rgb_backup + src * 3u,
+               SPEED_W * 3u);
+    }
+    g_rgb_framebuf_active = g_speed_rgb_active;
+    g_speed_overlay_active = 0;
 }
 
 void opening_tick(u32 dt_ms) {

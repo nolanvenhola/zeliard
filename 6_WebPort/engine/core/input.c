@@ -45,6 +45,7 @@ static const key_binding_t KEY_BINDINGS[] = {
     {ZEL_INPUT_KEY_ESCAPE, 0x01, 0, 0, 0x0008, 1u << 6, 0},
     {ZEL_INPUT_KEY_F1,     0x3B, 0, 0, 0x1000, 1u << 7, 0},
     {ZEL_INPUT_KEY_F2,     0x3C, 0, 0, 0x2000, 1u << 8, 0},
+    {ZEL_INPUT_KEY_F9,     0x43, 0, 0, 0x8000, 1u << 10, 0},
 };
 
 static u16 read_u16(const u8 *mem, u16 off) {
@@ -126,6 +127,8 @@ u32 zel_input_key_down(zel_input_state_t *state, u8 *mem, int keycode) {
         return ZEL_INPUT_ACTION_ENTER;
     if (keycode == ZEL_INPUT_KEY_ESCAPE)
         return ZEL_INPUT_ACTION_ESCAPE;
+    if (keycode == ZEL_INPUT_KEY_F9)
+        return ZEL_INPUT_ACTION_SPEED_MENU;
     return ZEL_INPUT_ACTION_NONE;
 }
 
