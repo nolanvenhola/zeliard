@@ -205,6 +205,13 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/358ENP3.grp', 'c09e98daa21c766f2d55e4b550bb7b8e15f4531ef7bc4bb089ad5c7a7029118d'), 'enp3.grp'],
     [verifiedMasmOutput('zelres3/376MPP3.grp', '1ed8823204df4b736c7e20bdd7fb337360b85208675c335cfaa24fb732dbe411'), 'mpp3.grp'],
     [verifiedMasmOutput('zelres3/387MUS3.msd', '9bba17b712e90f6acf6541f22b8a6dd708ba5f9f2d5040a62fd906694aedbbe9'), 'mus3.msd'],
+    /* Escarcha (MP41) plus adjoining Glacial MP40 and the Area-4 ice family. */
+    [verifiedMasmOutput('zelres3/304EAI4.bin', 'b0c7de9d05227cc94938fc8bf570d900606175d413ec7d2e88fd9c424c92f0a5'), 'eai4.bin'],
+    [verifiedMasmOutput('zelres3/328MP40.mdt', '45b8011d17f6be5207f87040ae5bbb3f0ec3349ea87ae91526f36171fdc042fc'), 'mp40.mdt'],
+    [verifiedMasmOutput('zelres3/329MP41.mdt', '8e30300abec8aa83ad5acc8c7cc24699e19254741a4e5a831c44b934caea6ff0'), 'mp41.mdt'],
+    [verifiedMasmOutput('zelres3/359ENP4.grp', '5b6765a6c3748afd902d0bb0ce62c3401423cf30eb60e321d095ab1bd68508da'), 'enp4.grp'],
+    [verifiedMasmOutput('zelres3/377MPP4.grp', '206424b4aa8aa37b1a725663e92623b98fbcc8e264c3d5c6c099b24967a71909'), 'mpp4.grp'],
+    [verifiedMasmOutput('zelres3/388MUS4.msd', '2d7b8854ae7b8aaac0ee98cafb6cfd6567d62f0cc0fc85498d5bd29fe31b96a1'), 'mus4.msd'],
     /* Riza and its exact Pollo chamber handoff. */
     [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
     [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],
