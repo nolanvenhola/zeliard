@@ -168,15 +168,16 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_start(
         riza_game, sizeof(riza_game), riza_vga, sizeof(riza_vga));
     int riza_handoff = advance_frame(riza_game, riza_vga, 1);
-    riza_handoff |= advance_frame(riza_game, riza_vga, 1);
-    printf("madera_riza_handoff_probe: advanced=%d active=%d operation=%02x "
-           "selector=%02x\n", riza_handoff,
+    printf("madera_riza_handoff_probe: advanced=%d active=%d width=%u "
+           "music=%02x objects=%04x\n", riza_handoff,
            zeliard_fight_masm_vm_active(),
-           zeliard_fight_masm_vm_exit_operation(),
-           zeliard_fight_masm_vm_exit_selector());
-    ok &= riza_handoff && !zeliard_fight_masm_vm_active();
-    ok &= zeliard_fight_masm_vm_exit_operation() == 1;
-    ok &= zeliard_fight_masm_vm_exit_selector() == 6;
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(),
+           zeliard_fight_masm_vm_peek_u16(0xC010));
+    ok &= riza_handoff && zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 204;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 88;
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC010) == 0xCEA8;
 
     printf("VERDICT: %s: Madera exact fight VM resources and state\n",
            ok ? "PASS" : "FAIL");
