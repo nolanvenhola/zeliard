@@ -212,6 +212,10 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/359ENP4.grp', '5b6765a6c3748afd902d0bb0ce62c3401423cf30eb60e321d095ab1bd68508da'), 'enp4.grp'],
     [verifiedMasmOutput('zelres3/377MPP4.grp', '206424b4aa8aa37b1a725663e92623b98fbcc8e264c3d5c6c099b24967a71909'), 'mpp4.grp'],
     [verifiedMasmOutput('zelres3/388MUS4.msd', '2d7b8854ae7b8aaac0ee98cafb6cfd6567d62f0cc0fc85498d5bd29fe31b96a1'), 'mus4.msd'],
+    /* Glacial's exact Agar chamber handoff. */
+    [verifiedMasmOutput('zelres3/312ZELA.bin', '93fe0e0b96810082867875884b142ed75548617e47491fa7f7c518bb43c8f875'), 'zela.bin'],
+    [verifiedMasmOutput('zelres3/330MP4D.mdt', 'f6d72154c8bc0f379511516235b50096b5feb23295600c89ad891358772f2df2'), 'mp4d.mdt'],
+    [verifiedMasmOutput('zelres3/367ZELA.grp', 'ff2ec29b24d111d28b9d1727ffc7ae93b7c1cb193e97036b84a3d155c424d99f'), 'zela.grp'],
     /* Riza and its exact Pollo chamber handoff. */
     [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
     [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],

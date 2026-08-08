@@ -154,6 +154,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
+    {2, 13, "zela.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
@@ -167,6 +168,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
+    {2, 68, "zela.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
@@ -207,12 +209,13 @@ static const char *map_for_selector(u8 selector) {
         case 0x25: return "mp3d.mdt";
         case 0x08:
         case 0x26: return "mp40.mdt";
-        /* MP41 is Escarcha; its authored doors cross back into the adjacent
-         * MP40 Glacial map in both directions.  Keep both map loads resident
-         * so Escarcha traversal never drops out of 200FIGHT.  Glacial's own
-         * full verification and Agar handoff remain the following ticket. */
         case 0x09:
         case 0x27: return "mp41.mdt";
+        /* MP4D is Agar's chamber.  The release engine reaches it through
+         * MP40's x224/y18 door, then owns the directional ROKA run and the
+         * complete ENCOUNTER! wipe before dispatching ZELA. */
+        case 0x0A:
+        case 0x28: return "mp4d.mdt";
         default: return NULL;
     }
 }

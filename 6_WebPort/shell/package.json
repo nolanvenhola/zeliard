@@ -18,6 +18,7 @@
     "cavern:browser-test": "node test_cavern_transition_browser.mjs",
     "peligro:browser-test": "node test_peligro_browser.mjs",
     "escarcha:browser-test": "node test_escarcha_browser.mjs",
+    "glacial:browser-test": "node test_glacial_browser.mjs",
     "shops:animation-test": "node test_shop_animations_browser.mjs",
     "bank:input-test": "node test_bank_input_browser.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",
