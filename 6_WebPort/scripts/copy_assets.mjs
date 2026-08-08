@@ -216,6 +216,16 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/312ZELA.bin', '93fe0e0b96810082867875884b142ed75548617e47491fa7f7c518bb43c8f875'), 'zela.bin'],
     [verifiedMasmOutput('zelres3/330MP4D.mdt', 'f6d72154c8bc0f379511516235b50096b5feb23295600c89ad891358772f2df2'), 'mp4d.mdt'],
     [verifiedMasmOutput('zelres3/367ZELA.grp', 'ff2ec29b24d111d28b9d1727ffc7ae93b7c1cb193e97036b84a3d155c424d99f'), 'zela.grp'],
+    /* Cementar, its Corroer reverse routes, and the Vista chamber. */
+    [verifiedMasmOutput('zelres3/305EAI5.bin', '1da372b13d26b4a70607a9a0d54d7db505dd6486bc22173b6d874b3f6bbe9410'), 'eai5.bin'],
+    [verifiedMasmOutput('zelres3/313MEDA.bin', '2aae9bee5cf6581507c2f1a5aca63b9083bb6dd6635e5dca69addb51d4e16c5c'), 'meda.bin'],
+    [verifiedMasmOutput('zelres3/331MP50.mdt', 'ab94a37b64917f7a10a54b9fb199dcdaab05d4c089d0fc88054bedbb854bb325'), 'mp50.mdt'],
+    [verifiedMasmOutput('zelres3/332MP51.mdt', 'c8ffd7c7a14f09b09617b18ba4c24c4e7526b8c88efe338ab82937cb89c4f106'), 'mp51.mdt'],
+    [verifiedMasmOutput('zelres3/333MP5D.mdt', '5163eb116c039b3b92cad56b0ece00b3af1a935a075b5bc80fbf7626239514f9'), 'mp5d.mdt'],
+    [verifiedMasmOutput('zelres3/360ENP5.grp', '5489c7b79f6a061d3351a04f0d7d6dd19f5b2dc90c9659c50b564b41466559f8'), 'enp5.grp'],
+    [verifiedMasmOutput('zelres3/368MEDA.grp', '6822616f1c7e71e9b340e8c54f8100f1962fcc7c33772548bf822d60c2b2baaa'), 'meda.grp'],
+    [verifiedMasmOutput('zelres3/378MPP5.grp', '1e9dff8ee09cb8861fcc1be7ed307d307891092ca0a91b06ed09791fd7fa364f'), 'mpp5.grp'],
+    [verifiedMasmOutput('zelres3/389MUS5.msd', '457c266ae94e1f26628ee6ed322e0ae52d088dbe546417ccdb4068206539e0cc'), 'mus5.msd'],
     /* Riza and its exact Pollo chamber handoff. */
     [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
     [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],

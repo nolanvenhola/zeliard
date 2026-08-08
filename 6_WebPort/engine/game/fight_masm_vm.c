@@ -151,10 +151,12 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 3, "eai2.bin"},
     {2, 4, "eai3.bin"},
     {2, 5, "eai4.bin"},
+    {2, 6, "eai5.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
     {2, 13, "zela.bin"},
+    {2, 14, "meda.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
@@ -165,18 +167,22 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 58, "enp2.grp"},
     {2, 59, "enp3.grp"},
     {2, 60, "enp4.grp"},
+    {2, 61, "enp5.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
     {2, 68, "zela.grp"},
+    {2, 69, "meda.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
     {2, 78, "mpp4.grp"},
+    {2, 79, "mpp5.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
     {2, 88, "mus3.msd"},
     {2, 89, "mus4.msd"},
+    {2, 90, "mus5.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
 };
@@ -216,6 +222,14 @@ static const char *map_for_selector(u8 selector) {
          * complete ENCOUNTER! wipe before dispatching ZELA. */
         case 0x0A:
         case 0x28: return "mp4d.mdt";
+        case 0x0B:
+        case 0x29: return "mp50.mdt";
+        case 0x0C:
+        case 0x2A: return "mp51.mdt";
+        /* MP5D is Vista's chamber, reached from Cementar's x157/y16
+         * authored boss door through the standard ROKA/ENCOUNTER flow. */
+        case 0x0D:
+        case 0x2B: return "mp5d.mdt";
         default: return NULL;
     }
 }
