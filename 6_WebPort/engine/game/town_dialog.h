@@ -18,6 +18,7 @@ typedef struct {
     u8 prompt_selection;
     u8 prompt_direction_latch;
     u8 control_wait_dialog;
+    u8 scripted;
     u8 original_npc_direction;
     u8 original_npc_type;
     u16 npc_offset;
@@ -47,6 +48,10 @@ int zeliard_town_dialog_begin_facing(zeliard_town_dialog_t *dialog,
                                      size_t mask_data_size,
                                      u8 *vga, size_t vga_size,
                                      u16 npc_position);
+int zeliard_town_dialog_begin_scripted(zeliard_town_dialog_t *dialog,
+                                       u8 *game_seg, u8 *scratch,
+                                       u8 *vga, size_t vga_size,
+                                       u8 dialog_id, u16 panel_ax);
 int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                                  u8 *game_seg, const u8 *scratch,
                                  u8 *vga, size_t vga_size);
