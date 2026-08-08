@@ -37,6 +37,7 @@ typedef enum {
     ZEL_TOWN_AREA_DORADO = 6,
     ZEL_TOWN_AREA_LLAMA = 7,
     ZEL_TOWN_AREA_PUREZA = 8,
+    ZEL_TOWN_AREA_ESCO = 9,
 } zeliard_town_area_t;
 
 typedef struct {
