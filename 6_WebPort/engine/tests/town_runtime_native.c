@@ -889,6 +889,148 @@ int main(void) {
            satono->room.kind);
     zeliard_room_masm_vm_stop();
     free(satono);
+
+    /* Ticket #80: Bosque's stable first frame uses the release BSMP/MPAT/
+     * MMAN selector set.  The position is the exact 200FIGHT handoff from
+     * Riza: target 3Ch becomes start 2Bh, screen column 0Dh. */
+    static u8 bosque_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                              [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 bosque_vga[0x10000];
+    zeliard_game_exec_state_t bosque_game = {0};
+    zeliard_town_runtime_t *bosque = calloc(1, sizeof(*bosque));
+    ok &= bosque != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        bosque_game.segment[i] = bosque_segments[i];
+        bosque_game.segment_size[i] = sizeof(bosque_segments[i]);
+    }
+    ok &= load_direct(bosque_segments[0], sizeof(bosque_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(bosque_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(bosque_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(bosque_segments[3], sizeof(bosque_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(bosque_segments[0]) && load_item_panel(bosque_segments[1]);
+    bosque_segments[0][0x00C4] = 0x83;
+    bosque_segments[0][0x00C5] = 0x83;
+    bosque_segments[0][0x0080] = 0x2B;
+    bosque_segments[0][0x0081] = 0;
+    bosque_segments[0][0x0082] = 0;
+    bosque_segments[0][0x0083] = 0x0D;
+    bosque_segments[0][ZEL_PLAYER_SWORD] = 1;
+    bosque_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    bosque_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    bosque_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int bosque_result = bosque ? zeliard_town_enter_first_frame(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga)) : -99;
+    const unsigned long long bosque_frame =
+        fnv1a64(bosque_vga, sizeof(bosque_vga));
+    const unsigned long long bosque_playfield =
+        fnv1a64(bosque_vga, 160u * 320u);
+    const unsigned long long bosque_capture =
+        fnv1a64(bosque_segments[0] + 0xA000, 0x1500);
+    const unsigned long long bosque_state =
+        selected_state_hash(bosque_segments[0]);
+    const unsigned long long bosque_npcs =
+        npc_state_hash(bosque_segments[0]);
+    const unsigned long long bosque_mpat_pixels =
+        fnv1a64(bosque_segments[1] + 0x8100, 0x2EE0);
+    const unsigned long long bosque_mpat_alpha =
+        fnv1a64(bosque_segments[1] + 0xD000, 0x07D0);
+    const unsigned long long bosque_mman_pixels =
+        fnv1a64(bosque_segments[1] + 0x4100, 0x1EC0);
+    const unsigned long long bosque_mman_masks =
+        fnv1a64(bosque_segments[2] + 0x7000, 0x0520);
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-bosque-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(bosque_vga, 1, sizeof(bosque_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= bosque_result == 0 && bosque->area == ZEL_TOWN_AREA_BOSQUE;
+    ok &= bosque->music_index == 2 && bosque->map_side == 0 &&
+          bosque->palette_index == 1 && bosque->town_text_record == 0xC4E0;
+    ok &= bosque_frame == 0x653EE54A0E8B4721ULL &&
+          bosque_playfield == 0xAAA634D89DBA5AA5ULL &&
+          bosque_capture == 0xF2C3F82A0F93D06DULL &&
+          bosque_state == 0x8F27932A06F807C8ULL &&
+          bosque_npcs == 0x8D764A90CC39987EULL;
+    ok &= bosque_mpat_pixels == 0x057549E40BE35E14ULL &&
+          bosque_mpat_alpha == 0x68EDAA05B46B4C6EULL &&
+          bosque_mman_pixels == 0xC287EABFFE898D6CULL &&
+          bosque_mman_masks == 0xF205BFB757BBDA0CULL;
+    ok &= bosque_segments[0][0xCCFA] == 0xC0 &&
+          bosque_segments[0][0xCCFB] == 0x0B;
+
+    static u8 bosque_snapshot[sizeof(bosque_segments) + sizeof(bosque_vga)];
+    memcpy(bosque_snapshot, bosque_segments, sizeof(bosque_segments));
+    memcpy(bosque_snapshot + sizeof(bosque_segments), bosque_vga,
+           sizeof(bosque_vga));
+    const zeliard_town_runtime_t bosque_runtime_snapshot = *bosque;
+
+    /* Door type 9 is route record 1 (Pollo); door type 8 is record 0
+     * (Riza). request_cavern_exit applies the MASM -10h/-0Ah transforms. */
+    bosque_segments[0][0x0080] = 0;
+    bosque_segments[0][0x0081] = 0;
+    bosque_segments[0][0x0083] = 3;
+    bosque_segments[0][0xFF2A] = 0x17;
+    bosque_segments[0][0xFF2B] = 0xC0;
+    const int bosque_pollo = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 20, 1);
+    ok &= bosque_pollo > 0 && bosque->cavern_exit_requested &&
+          bosque_segments[0][0x0080] == 0x85 &&
+          bosque_segments[0][0x0081] == 0 &&
+          bosque_segments[0][0x0082] == 4 &&
+          bosque_segments[0][0x00C3] == 0xFF &&
+          bosque_segments[0][0x00C4] == 6;
+
+    memcpy(bosque_segments, bosque_snapshot, sizeof(bosque_segments));
+    memcpy(bosque_vga, bosque_snapshot + sizeof(bosque_segments),
+           sizeof(bosque_vga));
+    *bosque = bosque_runtime_snapshot;
+    bosque_segments[0][0x0080] = 125;
+    bosque_segments[0][0x0081] = 0;
+    bosque_segments[0][0x0083] = 13;
+    const u16 bosque_riza_tile = (u16)(0xC017 + 125 * 8);
+    bosque_segments[0][0xFF2A] = (u8)bosque_riza_tile;
+    bosque_segments[0][0xFF2B] = (u8)(bosque_riza_tile >> 8);
+    const int bosque_riza = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 20, 1);
+    ok &= bosque_riza > 0 && bosque->cavern_exit_requested &&
+          bosque_segments[0][0x0080] == 0xA9 &&
+          bosque_segments[0][0x0081] == 0 &&
+          bosque_segments[0][0x0082] == 9 &&
+          bosque_segments[0][0x00C3] == 0 &&
+          bosque_segments[0][0x00C4] == 5;
+
+    memcpy(bosque_segments, bosque_snapshot, sizeof(bosque_segments));
+    memcpy(bosque_vga, bosque_snapshot + sizeof(bosque_segments),
+           sizeof(bosque_vga));
+    *bosque = bosque_runtime_snapshot;
+
+    /* crest_hero is bit 3 of the persistent special-item byte at 0012h.
+     * The BSMP event writes the sentry flags/dialog before the first draw. */
+    bosque_segments[0][0x0012] |= 0x08;
+    const int bosque_crest_result = zeliard_town_enter_first_frame(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga));
+    ok &= bosque_crest_result == 0 &&
+          bosque_segments[0][0xCCFA] == 0x80 &&
+          bosque_segments[0][0xCCFB] == 0x0E;
+    printf("town_bosque_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx mpat=%016llx/%016llx "
+           "mman=%016llx/%016llx music=%u sentry=%02x/%02x\n",
+           bosque_result, bosque_frame, bosque_playfield, bosque_capture,
+           bosque_state, bosque_npcs, bosque_mpat_pixels, bosque_mpat_alpha,
+           bosque_mman_pixels, bosque_mman_masks,
+           (unsigned)bosque->music_index, bosque_segments[0][0xCCFA],
+           bosque_segments[0][0xCCFB]);
+    printf("town_bosque_routes: pollo=%d/0085/04/ff/06 "
+           "riza=%d/00a9/09/00/05 crest=%d/%02x/%02x\n",
+           bosque_pollo, bosque_riza, bosque_crest_result,
+           bosque_segments[0][0xCCFA], bosque_segments[0][0xCCFB]);
+    free(bosque);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,

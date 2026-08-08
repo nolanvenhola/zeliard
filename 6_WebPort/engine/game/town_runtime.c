@@ -46,6 +46,7 @@ static const town_area_asset_t TOWN_AREA_ASSETS[] = {
     {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt", "cpat.grp", "mman.grp"},
     {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp", "mman.grp"},
     {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt", "dpat.grp", "cman.grp"},
+    {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt", "mpat.grp", "mman.grp"},
 };
 
 static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {
@@ -460,6 +461,10 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     write_u16(cs, GVAR_TILE_POINTER,
               (u16)(0xC017u + (u16)(u8)read_u16(cs,
                                                 TOWN_START_POSITION) * 8u));
+    /* 106TOWN:frame_update applies descriptor events before it draws the
+     * first actors.  Bosque relies on this ordering: an already-owned Hero
+     * Crest changes the sentry's blocking flags and dialog immediately. */
+    process_town_event_table(cs);
     if (zeliard_gmmcga_draw_first_frame_hud(vga, vga_size, cs, 0x10000,
                                              town->town_text_record) ||
         !append_event(town, (zeliard_town_event_t){
@@ -699,6 +704,7 @@ static int enter_adjacent_town(zeliard_town_runtime_t *town,
     cs[0xFF1E] = 0;
     zeliard_player_write_u8(&player, ZEL_PLAYER_KEY_COUNT, 0);
     zeliard_player_write_u8(&player, ZEL_PLAYER_FRAME_SCRATCH, 0);
+    process_town_event_table(cs);
 
     if (zeliard_gmmcga_draw_first_frame_hud(
             vga, vga_size, cs, 0x10000, town->town_text_record))
@@ -871,6 +877,12 @@ static int run_live_frame(zeliard_town_runtime_t *town,
             &town->dialog, cs, game->segment[3],
             game_data, 0x10000, mask_data, 0x10000,
             vga, vga_size, town->facing_item_position);
+        if (result) return -3;
+    } else if (town->facing_npc_position != 0xFFFF) {
+        const int result = zeliard_town_dialog_begin_facing(
+            &town->dialog, cs, game->segment[3],
+            game_data, 0x10000, mask_data, 0x10000,
+            vga, vga_size, town->facing_npc_position);
         if (result) return -3;
     }
     move_player(cs, game_data, vga, vga_size, input_direction);
