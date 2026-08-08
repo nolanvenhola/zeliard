@@ -51,6 +51,7 @@ static const town_area_asset_t TOWN_AREA_ASSETS[] = {
     {ZEL_TOWN_AREA_TUMBA, 0x85, "tmmp.mdt", "dpat.grp", "cman.grp"},
     {ZEL_TOWN_AREA_DORADO, 0x86, "drmp.mdt", "dpat.grp", "cman.grp"},
     {ZEL_TOWN_AREA_LLAMA, 0x87, "llmp.mdt", "dpat.grp", "cman.grp"},
+    {ZEL_TOWN_AREA_PUREZA, 0x88, "prmp.mdt", "dpat.grp", "cman.grp"},
 };
 
 static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {
@@ -354,6 +355,7 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     town->facing_item_position = 0xFFFF;
     town->facing_npc_position = 0xFFFF;
     town->facing_door_type = 0xFF;
+    town->facing_door_found = 0;
     u8 *cs = game->segment[0];
     zeliard_player_state_t player;
     if (!zeliard_player_state_bind(&player, cs, game->segment_size[0]))
@@ -519,6 +521,7 @@ void zeliard_town_detect_facing_targets(zeliard_town_runtime_t *town, u8 *cs,
     town->facing_item_position = 0xFFFF;
     town->facing_npc_position = 0xFFFF;
     town->facing_door_type = 0xFF;
+    town->facing_door_found = 0;
     const int step = (cs[TOWN_FACING_DIRECTION] & 1) ? -1 : 1;
     const u16 world = player_world_position(cs);
     const u8 column = cs[TOWN_PLAYER_COLUMN];
@@ -556,6 +559,7 @@ void zeliard_town_detect_facing_targets(zeliard_town_runtime_t *town, u8 *cs,
             if (position == world || position == (u16)(world + 1) ||
                 position == (u16)(world - 1)) {
                 town->facing_door_type = cs[(u16)(si + 2)];
+                town->facing_door_found = 1;
                 break;
             }
             si = (u16)(si + 3);
@@ -830,6 +834,14 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         const int continued = zeliard_town_dialog_continue(
             &town->dialog, cs, game->segment[3], vga, vga_size);
         if (continued < 0) return -3;
+        if (town->special_door_pending && !town->dialog.active) {
+            cs[0x0045] |= 0x80;
+            town->special_door_pending = 0;
+            town->building_transition =
+                ZEL_TOWN_BUILDING_TRANSITION_SPECIAL;
+            town->building_transition_pass = 0;
+            town->building_transition_ticks = 0;
+        }
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
         return 0;
@@ -852,7 +864,7 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     zeliard_town_detect_facing_targets(town, cs, input_direction);
-    if (town->facing_door_type <= 0xFE &&
+    if (town->facing_door_found &&
         draw_building_entry_pose(cs, game_data, mask_data, vga, vga_size))
         return -4;
     if (town->facing_door_type <= 7) {
@@ -872,6 +884,23 @@ static int run_live_frame(zeliard_town_runtime_t *town,
     }
     if (town->facing_door_type >= 8 && town->facing_door_type != 0xFF) {
         request_cavern_exit(town, cs, (u8)(town->facing_door_type - 8u));
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
+    if (town->facing_door_found && town->facing_door_type == 0xFF) {
+        if (cs[0x0045] & 0x80) {
+            town->building_transition =
+                ZEL_TOWN_BUILDING_TRANSITION_SPECIAL;
+            town->building_transition_pass = 0;
+            town->building_transition_ticks = 0;
+        } else {
+            if (zeliard_town_dialog_begin_scripted(
+                    &town->dialog, cs, game->segment[3], vga, vga_size,
+                    0, 0x0918))
+                return -3;
+            town->special_door_pending = 1;
+        }
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
         return 0;
@@ -946,6 +975,17 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
                  vga, vga_size, 0, 0xC61C, 0x1700) ||
              zeliard_gmmcga_draw_shield_hp(vga, vga_size, cs, 0x10000)))
             return -4;
+    } else if (town->building_transition ==
+               ZEL_TOWN_BUILDING_TRANSITION_SPECIAL) {
+        /* 106TOWN:door_type_special loads town selector 86h (Dorado),
+         * preserves the last-sage selector, then restarts the town at
+         * start 0084h / screen column 0Dh under UGM2.MSD. */
+        cs[PLAYER_CURRENT_AREA] = 0x86;
+        write_u16(cs, TOWN_START_POSITION, 0x0084);
+        cs[TOWN_PLAYER_COLUMN] = 0x0D;
+        if (zeliard_town_enter_first_frame(
+                town, game, vga, vga_size)) return -4;
+        return 1;
     }
     town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_NONE;
     town->pending_room_kind = ZEL_ROOM_NONE;

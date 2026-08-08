@@ -417,6 +417,32 @@ int zeliard_town_dialog_begin_facing(zeliard_town_dialog_t *dialog,
                         npc_position, 1);
 }
 
+int zeliard_town_dialog_begin_scripted(zeliard_town_dialog_t *dialog,
+                                       u8 *cs, u8 *scratch,
+                                       u8 *vga, size_t vga_size,
+                                       u8 dialog_id, u16 panel_ax) {
+    if (!dialog || !cs || !scratch || !vga || dialog->active) return -1;
+    memset(dialog, 0, sizeof(*dialog));
+    dialog->active = 1;
+    dialog->scripted = 1;
+    dialog->npc_offset = 0xFFFF;
+    dialog->panel_ax = panel_ax;
+    dialog->panel_cx = 0x1658;
+    if (zeliard_gmmcga_save_rect(vga, vga_size, scratch, 0x10000,
+                                  panel_ax, dialog->panel_cx, 0)) {
+        dialog->active = 0;
+        return -1;
+    }
+    cs[TEXT_DONE_FLAG] = 0xFF;
+    cs[GVAR_SOUND] = 0x1E;
+    dialog->pending_sound_cue = 0x1E;
+    cs[GVAR_SPACE] = 0;
+    const int result = render_dialog(dialog, cs, vga, vga_size,
+                                     dialog_id, panel_ax);
+    if (result) dialog->active = 0;
+    return result;
+}
+
 int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                                  u8 *cs, const u8 *scratch,
                                  u8 *vga, size_t vga_size) {
@@ -486,8 +512,10 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
     if (zeliard_gmmcga_restore_rect(vga, vga_size, scratch, 0x10000,
                                      dialog->panel_ax, dialog->panel_cx, 0))
         return -1;
-    cs[(u16)(dialog->npc_offset + 5)] = dialog->original_npc_type;
-    cs[(u16)(dialog->npc_offset + 2)] = dialog->original_npc_direction;
+    if (!dialog->scripted) {
+        cs[(u16)(dialog->npc_offset + 5)] = dialog->original_npc_type;
+        cs[(u16)(dialog->npc_offset + 2)] = dialog->original_npc_direction;
+    }
     cs[TEXT_DONE_FLAG] = cs[TEXT_WRAP_FLAG] = 0;
     dialog->active = dialog->waiting = 0;
     return 1;

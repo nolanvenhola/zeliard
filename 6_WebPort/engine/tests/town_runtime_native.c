@@ -1696,6 +1696,176 @@ int main(void) {
            llama_inn_trigger, llama_inn_fade, ZEL_ROOM_INN,
            llama_bank_trigger, llama_bank_fade, ZEL_ROOM_BANK);
     free(llama);
+
+    /* Ticket #85: Pureza's PRMP descriptor selects UGM1, DPAT, CMAN,
+     * and the release 200FIGHT target 4Ch -> start 3Bh/column 0Dh. */
+    static u8 pureza_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                              [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 pureza_vga[0x10000];
+    zeliard_game_exec_state_t pureza_game = {0};
+    zeliard_town_runtime_t *pureza = calloc(1, sizeof(*pureza));
+    ok &= pureza != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        pureza_game.segment[i] = pureza_segments[i];
+        pureza_game.segment_size[i] = sizeof(pureza_segments[i]);
+    }
+    ok &= load_direct(pureza_segments[0], sizeof(pureza_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(pureza_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(pureza_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(pureza_segments[3], sizeof(pureza_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(pureza_segments[0]) &&
+          load_item_panel(pureza_segments[1]);
+    pureza_segments[0][0x00C4] = 0x88;
+    pureza_segments[0][0x00C5] = 0x88;
+    pureza_segments[0][0x0080] = 0x3B;
+    pureza_segments[0][0x0083] = 0x0D;
+    pureza_segments[0][ZEL_PLAYER_SWORD] = 1;
+    pureza_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    pureza_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    pureza_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int pureza_result = pureza ? zeliard_town_enter_first_frame(
+        pureza, &pureza_game, pureza_vga, sizeof(pureza_vga)) : -99;
+    const unsigned long long pureza_frame =
+        fnv1a64(pureza_vga, sizeof(pureza_vga));
+    const unsigned long long pureza_playfield =
+        fnv1a64(pureza_vga, 160u * 320u);
+    const unsigned long long pureza_capture =
+        fnv1a64(pureza_segments[0] + 0xA000, 0x1500);
+    const unsigned long long pureza_state =
+        selected_state_hash(pureza_segments[0]);
+    const unsigned long long pureza_npcs =
+        npc_state_hash(pureza_segments[0]);
+    ok &= pureza_result == 0 && pureza->area == ZEL_TOWN_AREA_PUREZA;
+    ok &= pureza->music_index == 1 && pureza->map_side == 1 &&
+          pureza->palette_index == 2 && pureza->town_text_record == 0xCA20;
+    ok &= pureza_frame == 0x4A498D3EFDDB8598ULL &&
+          pureza_playfield == 0x594014704DE81F54ULL &&
+          pureza_capture == 0xF2C3F82A0F93D06DULL &&
+          pureza_state == 0xA2CE5BCC9919D384ULL &&
+          pureza_npcs == 0x01DFDBDC7D06DBAFULL;
+    ok &= pureza_segments[0][0xD090] == 5 &&
+          (u16)(pureza_segments[0][0xD0B1] |
+                ((u16)pureza_segments[0][0xD0B2] << 8)) == 0x0124;
+
+    static u8 pureza_snapshot[sizeof(pureza_segments) + sizeof(pureza_vga)];
+    memcpy(pureza_snapshot, pureza_segments, sizeof(pureza_segments));
+    memcpy(pureza_snapshot + sizeof(pureza_segments), pureza_vga,
+           sizeof(pureza_vga));
+    const zeliard_town_runtime_t pureza_runtime_snapshot = *pureza;
+
+    static const struct { u16 position; u8 type; } pureza_doors[] = {
+        {49, 4}, {93, 7}, {128, 2}, {181, 6}, {231, 3}, {294, 0xFF},
+    };
+    for (size_t i = 0; i < sizeof(pureza_doors) / sizeof(pureza_doors[0]);
+         ++i) {
+        const u16 start = (u16)(pureza_doors[i].position - 17);
+        pureza_segments[0][0x0080] = (u8)start;
+        pureza_segments[0][0x0081] = (u8)(start >> 8);
+        pureza_segments[0][0x0083] = 13;
+        zeliard_town_detect_facing_targets(pureza, pureza_segments[0], 1);
+        ok &= pureza->facing_door_found &&
+              pureza->facing_door_type == pureza_doors[i].type;
+    }
+
+    /* The sole boundary record enters the authored Pureza cavern route. */
+    pureza_segments[0][0x0080] = 0;
+    pureza_segments[0][0x0081] = 0;
+    pureza_segments[0][0x0083] = 0;
+    pureza_segments[0][0xFF2A] = 0x17;
+    pureza_segments[0][0xFF2B] = 0xC0;
+    const int pureza_route = zeliard_town_advance_pit(
+        pureza, &pureza_game, pureza_vga, sizeof(pureza_vga), 20, 4);
+    ok &= pureza_route > 0 && pureza->cavern_exit_requested &&
+          (u16)(pureza_segments[0][0x0080] |
+                ((u16)pureza_segments[0][0x0081] << 8)) == 0x005F &&
+          pureza_segments[0][0x0082] == 0x0B &&
+          pureza_segments[0][0x00C3] == 0xFF &&
+          pureza_segments[0][0x00C4] == 0x17;
+
+    /* Event order is significant: finding the Lion Head Key removes the
+     * help NPC and selects dialog 6; using it later overrides dialog 7. */
+    memcpy(pureza_segments, pureza_snapshot, sizeof(pureza_segments));
+    memcpy(pureza_vga, pureza_snapshot + sizeof(pureza_segments),
+           sizeof(pureza_vga));
+    *pureza = pureza_runtime_snapshot;
+    pureza_segments[0][0x0042] = 0x08;
+    ok &= zeliard_town_enter_first_frame(
+              pureza, &pureza_game, pureza_vga, sizeof(pureza_vga)) == 0 &&
+          pureza_segments[0][0xD090] == 6 &&
+          pureza_segments[0][0xD0B1] == 0xFF &&
+          pureza_segments[0][0xD0B2] == 0xFF;
+    pureza_segments[0][0x002B] = 0x10;
+    ok &= zeliard_town_enter_first_frame(
+              pureza, &pureza_game, pureza_vga, sizeof(pureza_vga)) == 0 &&
+          pureza_segments[0][0xD090] == 7;
+
+    /* With the warning already seen, special door FF fades to Dorado at
+     * 0084h/0Dh, but C5 keeps Pureza as the Sage/death-return town. */
+    memcpy(pureza_segments, pureza_snapshot, sizeof(pureza_segments));
+    memcpy(pureza_vga, pureza_snapshot + sizeof(pureza_segments),
+           sizeof(pureza_vga));
+    *pureza = pureza_runtime_snapshot;
+    pureza_segments[0][0x0045] = 0x80;
+    pureza_segments[0][0x0080] = 0x15;
+    pureza_segments[0][0x0081] = 0x01;
+    pureza_segments[0][0x0083] = 0x0D;
+    const u16 pureza_tile = (u16)(0xC017 + 0x0115 * 8);
+    pureza_segments[0][0xFF2A] = (u8)pureza_tile;
+    pureza_segments[0][0xFF2B] = (u8)(pureza_tile >> 8);
+    const int pureza_special_trigger = zeliard_town_advance_pit(
+        pureza, &pureza_game, pureza_vga, sizeof(pureza_vga), 20, 1);
+    const int pureza_special_fade = zeliard_town_advance_pit(
+        pureza, &pureza_game, pureza_vga, sizeof(pureza_vga), 88, 0);
+    ok &= pureza_special_trigger > 0 && pureza_special_fade > 0 &&
+          pureza->area == ZEL_TOWN_AREA_DORADO &&
+          pureza_segments[0][0x00C4] == 0x86 &&
+          pureza_segments[0][0x00C5] == 0x88 &&
+          (u16)(pureza_segments[0][0x0080] |
+                ((u16)pureza_segments[0][0x0081] << 8)) == 0x0084 &&
+          pureza_segments[0][0x0083] == 0x0D &&
+          pureza->music_index == 3;
+
+    memcpy(pureza_segments, pureza_snapshot, sizeof(pureza_segments));
+    memcpy(pureza_vga, pureza_snapshot + sizeof(pureza_segments),
+           sizeof(pureza_vga));
+    *pureza = pureza_runtime_snapshot;
+    pureza_segments[0][0x0045] = 0;
+    pureza_segments[0][0x0080] = 0x15;
+    pureza_segments[0][0x0081] = 0x01;
+    pureza_segments[0][0x0083] = 0x0D;
+    pureza_segments[0][0xFF2A] = (u8)pureza_tile;
+    pureza_segments[0][0xFF2B] = (u8)(pureza_tile >> 8);
+    const int pureza_warning_trigger = zeliard_town_advance_pit(
+        pureza, &pureza_game, pureza_vga, sizeof(pureza_vga), 20, 1);
+    ok &= pureza_warning_trigger > 0 && pureza->dialog.active &&
+          pureza->special_door_pending;
+    unsigned pureza_warning_ticks = 0;
+    while (ok && pureza->area == ZEL_TOWN_AREA_PUREZA &&
+           pureza_warning_ticks < 20000) {
+        if (pureza->dialog.waiting) pureza_segments[0][0xFF1D] = 0xFF;
+        ok &= zeliard_town_advance_pit(
+                  pureza, &pureza_game, pureza_vga,
+                  sizeof(pureza_vga), 1, 0) >= 0;
+        ++pureza_warning_ticks;
+    }
+    ok &= pureza->area == ZEL_TOWN_AREA_DORADO &&
+          (pureza_segments[0][0x0045] & 0x80) &&
+          pureza_segments[0][0x00C5] == 0x88;
+
+    printf("town_pureza_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx music=%u\n",
+           pureza_result, pureza_frame, pureza_playfield, pureza_capture,
+           pureza_state, pureza_npcs,
+           (unsigned)pureza_runtime_snapshot.music_index);
+    printf("town_pureza_routes: cavern=%d/005f/0b/ff/17 "
+           "special=%d/%d/86/0084/0d warning=%d/%u sage=88\n",
+           pureza_route, pureza_special_trigger, pureza_special_fade,
+           pureza_warning_trigger, pureza_warning_ticks);
+    free(pureza);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,

@@ -930,6 +930,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             return;
         }
         const int room_was_active = g_town_runtime.room.active;
+        const zeliard_town_area_t town_area_before = g_town_runtime.area;
         cavern_town_origin_t town_origin = {
             .valid = 1,
             .area_id = g_game_segments[0][ZEL_PLAYER_SAVE_SAGE],
@@ -998,6 +999,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         if (!room_was_active && g_town_runtime.room.active)
             zel_opening_audio_stop();
         else if (room_was_active && !g_town_runtime.room.active)
+            zel_audio_play_music(current_town_music());
+        else if (town_area_before != g_town_runtime.area)
             zel_audio_play_music(current_town_music());
         if (g_town_runtime.dialog.pending_sound_cue) {
             zel_opening_audio_write_cue(

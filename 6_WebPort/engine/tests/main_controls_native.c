@@ -1007,6 +1007,37 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), llama_playfield);
 
+    /* Pureza save records select PRMP/DPAT/CMAN and the release fight-to-
+     * town target 4Ch -> start 3Bh / screen column 0Dh. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x42] = 0;
+    record[0x2B] = 0;
+    record[0x80] = 0x3B;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x88;
+    record[0xC5] = 0x88;
+    const int pureza_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long pureza_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int pureza_bootstrap = pureza_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 8 && zeliard_test_game_u8(0xC4) == 0x88 &&
+        zeliard_test_game_u8(0x80) == 0x3B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 5 &&
+        pureza_playfield == 0x594014704DE81F54ULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/pureza-save-bootstrap.ppm", g_framebuf);
+    ok &= pureza_bootstrap;
+    printf("main_controls:pureza_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           pureza_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), pureza_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

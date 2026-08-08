@@ -36,6 +36,7 @@ typedef enum {
     ZEL_TOWN_AREA_TUMBA = 5,
     ZEL_TOWN_AREA_DORADO = 6,
     ZEL_TOWN_AREA_LLAMA = 7,
+    ZEL_TOWN_AREA_PUREZA = 8,
 } zeliard_town_area_t;
 
 typedef struct {
@@ -51,6 +52,7 @@ typedef enum {
     ZEL_TOWN_BUILDING_TRANSITION_NONE = 0,
     ZEL_TOWN_BUILDING_TRANSITION_ENTER,
     ZEL_TOWN_BUILDING_TRANSITION_LEAVE,
+    ZEL_TOWN_BUILDING_TRANSITION_SPECIAL,
 } zeliard_town_building_transition_t;
 
 typedef struct {
@@ -65,7 +67,9 @@ typedef struct {
     u16 facing_item_position;
     u16 facing_npc_position;
     u8 facing_door_type;
+    u8 facing_door_found;
     u8 cavern_exit_requested;
+    u8 special_door_pending;
     zeliard_town_building_transition_t building_transition;
     zeliard_room_kind_t pending_room_kind;
     u8 building_transition_pass;

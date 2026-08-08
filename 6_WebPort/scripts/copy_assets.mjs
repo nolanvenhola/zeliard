@@ -149,6 +149,7 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/241TMMP.mdt', 'f568a1df5589c89837d0e7e5c2538a5ef5e4199ac3dbd664005e566ad411351a'), 'tmmp.mdt'],
     [verifiedMasmOutput('zelres2/242DRMP.mdt', 'f55ed17ef56c26447469f96ac966c5cd163f3a7ccd23756cad4e02a35d2c0b49'), 'drmp.mdt'],
     [verifiedMasmOutput('zelres2/243LLMP.mdt', '00140a4065e22c71e33b0c9620f2d1e9b5f49d168c00ebdfe832117c72dcf2a2'), 'llmp.mdt'],
+    [verifiedMasmOutput('zelres2/244PRMP.mdt', '9feb513c17adeb8158d45918dd6268e661d649c6c8e9f1c5ec217d457231234d'), 'prmp.mdt'],
     [verifiedMasmOutput('zelres2/206GFMCA.bin', 'f30b5029001a3fa0b718608fcb99a4f9aa384fe5d447e5a234fe3a01298f56dd'), 'gfmcga.bin'],
     [verifiedMasmOutput('zelres2/200FIGHT.bin', 'cfb5c91d14c816e966f2c335c8e85a8c0baf60ca7cc9831b24a5088c99d40a77'), 'fight.bin'],
     [verifiedMasmOutput('zelres2/201SELCT.bin', '1814d4a7aa8ac97a913b339e55f95dbac32d7eeb069219a6f76e47fc3f3770a9'), 'select.bin'],

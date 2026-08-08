@@ -300,6 +300,43 @@ static int test_llama_cape_and_elf_crest(void) {
     return ok;
 }
 
+static int test_pureza_special_door_warning(void) {
+    u8 segment[0x10000] = {0};
+    u8 scratch[0x10000] = {0};
+    u8 vga[0x10000], background[0x10000];
+    zeliard_town_dialog_t dialog = {0};
+    for (size_t i = 0; i < sizeof(vga); ++i)
+        vga[i] = background[i] = (u8)(i * 13u + 7u);
+    size_t driver_size = 0;
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = driver && driver_size <= 0xE000;
+    if (ok) memcpy(segment + 0x2000, driver, driver_size);
+    free(driver);
+    ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin") &&
+          load_raw(segment + 0xC000, 0x4000, "assets/prmp.mdt") &&
+          load_font(segment);
+    const int begin = ok ? zeliard_town_dialog_begin_scripted(
+        &dialog, segment, scratch, vga, sizeof(vga), 0, 0x0918) : -99;
+    const unsigned long long warning = fnv1a64(vga, sizeof(vga));
+    ok &= begin == 0 && dialog.active && dialog.scripted &&
+          dialog.npc_offset == 0xFFFF && dialog.pending_sound_cue == 0x1E;
+    for (unsigned guard = 0; ok && dialog.active && guard < 20000; ++guard) {
+        if (dialog.scroll_active || dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        } else if (dialog.waiting) {
+            segment[0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+        }
+    }
+    ok &= !dialog.active && memcmp(vga, background, sizeof(vga)) == 0 &&
+          warning == 0xDE68639094AF5E05ULL;
+    printf("town_pureza_special_warning: %s frame=%016llx restore=%016llx\n",
+           ok ? "PASS" : "FAIL", warning, fnv1a64(vga, sizeof(vga)));
+    return ok;
+}
+
 int main(void) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
@@ -350,6 +387,7 @@ int main(void) {
     ok &= test_muralla_multipage_dialog();
     ok &= test_bosque_sentry_prompt();
     ok &= test_llama_cape_and_elf_crest();
+    ok &= test_pureza_special_door_warning();
     printf("VERDICT: %s: town dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
