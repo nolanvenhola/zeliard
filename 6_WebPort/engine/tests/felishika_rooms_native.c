@@ -581,6 +581,42 @@ static int vm_run_to_next_poll(u8 *cs, u8 *vga, u8 direction, u8 space,
     return 1;
 }
 
+static int satono_release_vm_inn_rest(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 2;
+    cs[ZEL_PLAYER_HP] = 8;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 80;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    cs[0x85] = 0; cs[0x86] = 100; cs[0x87] = 0;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_INN, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const unsigned long long menu_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 16000) {
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll();
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0);
+    }
+    const u16 hp = (u16)(cs[ZEL_PLAYER_HP] |
+        ((u16)cs[ZEL_PLAYER_HP + 1] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("satono_release_vm_inn: ticks=%u active=%d hp=%u gold=%u "
+           "menu=%016llx\n", ticks, zeliard_room_masm_vm_active(), hp,
+           gold, menu_frame);
+    ok &= menu_frame == 0x0032097AB091434EULL &&
+          !zeliard_room_masm_vm_active() && hp == 80 && gold == 70;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int vm_browser_space_pulse(zel_input_state_t *input,
                                   u8 *cs, u8 *vga, unsigned *ticks) {
     const u16 start_ip = zeliard_room_masm_vm_ip();
@@ -1411,6 +1447,7 @@ int main(void) {
                    muralla_release_vm_bank_exchange() &&
                    muralla_release_vm_bank_amount_input(0) &&
                    muralla_release_vm_bank_amount_input(1) &&
+                   satono_release_vm_inn_rest() &&
                    king_first_visit_script() &&
                    king_followup_scripts() &&
                    sage_release_vm_menu() &&

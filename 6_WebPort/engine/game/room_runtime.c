@@ -158,14 +158,16 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
                           kind == ZEL_ROOM_ARMORY ? "armrpro.bin" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drugpro.bin" :
                           kind == ZEL_ROOM_CHURCH ? "churpro.bin" :
-                          kind == ZEL_ROOM_BANK ? "bankpro.bin" : NULL;
+                          kind == ZEL_ROOM_BANK ? "bankpro.bin" :
+                          kind == ZEL_ROOM_INN ? "innapro.bin" : NULL;
     const char *graphic = kind == ZEL_ROOM_KING ? "king.grp" :
                           kind == ZEL_ROOM_SAGE ? "kenja.grp" :
                           kind == ZEL_ROOM_VIEWING ? "omoya.grp" :
                           kind == ZEL_ROOM_ARMORY ? "armr.grp" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drug.grp" :
                           kind == ZEL_ROOM_CHURCH ? "church.grp" :
-                          kind == ZEL_ROOM_BANK ? "bank.grp" : NULL;
+                          kind == ZEL_ROOM_BANK ? "bank.grp" :
+                          kind == ZEL_ROOM_INN ? "inn.grp" : NULL;
     if (!program || !graphic) return -2;
 
     memcpy(room->saved_code, game_seg + 0xA000, sizeof(room->saved_code));
@@ -190,7 +192,7 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
             game_seg + 0xA16E, 96, room->room_tiles, 0x3000,
             vga, vga_size, 0x0E17);
     } else if (kind == ZEL_ROOM_SAGE) {
-        game_seg[0xC006] = 1;
+        if (game_seg[0xC006] == 0) game_seg[0xC006] = 1;
         game_seg[0xBB12] = 0x17;
         game_seg[0xBB13] = 0x07;
         const u16 header = (u16)(game_seg[0xACBD] |

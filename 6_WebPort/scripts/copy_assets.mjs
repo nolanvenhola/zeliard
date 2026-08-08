@@ -137,10 +137,13 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/208YMPD.bin', '00fc13d63b6ef310bb10096581337ca5498b1342cf3806c04b77315c1c937342'), 'ympd.bin'],
     [verifiedMasmOutput('zelres2/233CPATG.grp', 'e6355b4a8f2fc6c0cd2bca33ac0add875f20e1b994e71b5ea9a1b32c8e2a8cf8'), 'cpat.grp'],
     [verifiedMasmOutput('zelres2/234MPATG.grp', '8b45794a38d7e6953e7c90d53d05c2c7b41838339ca208bc3499fccba6c8265f'), 'mpat.grp'],
+    [verifiedMasmOutput('zelres2/235DPATG.grp', '73eac4be24de62cf52816f6a251c365a6ee261bd5b4bd4818915cf3a90c5c84c'), 'dpat.grp'],
     [verifiedMasmOutput('zelres2/229MMANG.grp', '99743acf6fc08f80fd6c286a17c71872c84c878d93fde4f85cd66640c62eec87'), 'mman.grp'],
+    [verifiedMasmOutput('zelres2/230CMANG.grp', '52f518594b3297999006346bf69da1c03b2ddf910d21a872ce640f2de19b275e'), 'cman.grp'],
     [verifiedMasmOutput('zelres2/231TMANG.grp', '193abe062dd5cfc11d9c37a1522d1947753de36e844e75e07f95c45cb3cc0e26'), 'tman.grp'],
     [verifiedMasmOutput('zelres2/236CMAP.mdt', 'b17a070dcd246f37a12f4299cb9a9cd53901e753647bfe6f7773144875bb986b'), 'cmap.mdt'],
     [verifiedMasmOutput('zelres2/237MRMP.mdt', '7c2e8c771b8c0582a6e1cf8fb78aa7b42d9830d47d04e039dbb090cf42782d83'), 'mrmp.mdt'],
+    [verifiedMasmOutput('zelres2/238STMP.mdt', '7aa03913251d353cd4758e77db78174f986719b29723c307a674ff2509353450'), 'stmp.mdt'],
     [verifiedMasmOutput('zelres2/206GFMCA.bin', 'f30b5029001a3fa0b718608fcb99a4f9aa384fe5d447e5a234fe3a01298f56dd'), 'gfmcga.bin'],
     [verifiedMasmOutput('zelres2/200FIGHT.bin', 'cfb5c91d14c816e966f2c335c8e85a8c0baf60ca7cc9831b24a5088c99d40a77'), 'fight.bin'],
     [verifiedMasmOutput('zelres2/201SELCT.bin', '1814d4a7aa8ac97a913b339e55f95dbac32d7eeb069219a6f76e47fc3f3770a9'), 'select.bin'],
@@ -162,6 +165,8 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres2/222CHRCH.grp', '75d435e68e4a4c0030ed38f7d7ab5ccc8544a580441322d18bf903e155ffeea5'), 'church.grp'],
     [verifiedMasmOutput('zelres2/215DRUGP.bin', 'c4fe6430497686cc0a01919fca71a410ccd956f2675fc82b547f441211dbb6e5'), 'drugpro.bin'],
     [verifiedMasmOutput('zelres2/223DRUGG.grp', '2826d141c6a8eec7f4330e788e5dd0a533479b007638558c99eb9caef0d2db19'), 'drug.grp'],
+    [verifiedMasmOutput('zelres2/216INNAP.bin', 'fe937910a238e012d750238df9a7f5bed9574327eec1b5e3b5048f56074ef9b2'), 'innapro.bin'],
+    [verifiedMasmOutput('zelres2/224SPRTS.grp', '0f635d9eb8eeac27d89efd69dbc1de60410bb75b5495768d4911384513911526'), 'inn.grp'],
     /* First cavern: exact MP10 map, Area 1 AI/sprites, palette, boss, and score. */
     [verifiedMasmOutput('zelres3/301EAI1.bin', 'fe2d16a57a9078091dd320b7050ee106a85a7ab53fb9148a78617de38063e543'), 'eai1.bin'],
     /* Boss-victory ROKADEMO overlay: raised sword, crystal ascent, HUD award. */
