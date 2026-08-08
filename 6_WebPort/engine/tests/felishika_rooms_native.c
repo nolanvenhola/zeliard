@@ -1050,6 +1050,68 @@ static int dorado_release_vm_inn_rest(void) {
     return ok;
 }
 
+static int llama_release_vm_bank_exchange(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0x8B] = 8; cs[0x8C] = 0; cs[0xC006] = 7;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_BANK, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    const u16 almas = (u16)(cs[0x8B] | ((u16)cs[0x8C] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("llama_release_vm_bank_exchange: ticks=%u almas=%u "
+           "gold=%06x script=%04x kind=%d\n", ticks, almas, gold,
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           zeliard_room_masm_vm_input_kind());
+    ok &= almas == 0 && gold == 4;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int llama_release_vm_inn_rest(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 7;
+    cs[ZEL_PLAYER_HP] = 8;
+    cs[ZEL_PLAYER_HP + 1] = 0;
+    cs[ZEL_PLAYER_HP_MAX] = 80;
+    cs[ZEL_PLAYER_HP_MAX + 1] = 0;
+    cs[0x85] = 0; cs[0x86] = 250; cs[0x87] = 0;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_INN, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    const unsigned long long menu_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    while (ok && zeliard_room_masm_vm_active() && ticks++ < 16000) {
+        const u8 acknowledge = zeliard_room_masm_vm_at_input_poll();
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, acknowledge, 0);
+    }
+    const u16 hp = (u16)(cs[ZEL_PLAYER_HP] |
+        ((u16)cs[ZEL_PLAYER_HP + 1] << 8));
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    printf("llama_release_vm_inn: ticks=%u active=%d hp=%u gold=%u "
+           "menu=%016llx\n", ticks, zeliard_room_masm_vm_active(), hp,
+           gold, menu_frame);
+    ok &= menu_frame == 0x8DCAFD5210EE9F71ULL &&
+          !zeliard_room_masm_vm_active() && hp == 80 && gold == 50;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static u32 bank_amount(const u8 *cs) {
     return ((u32)cs[0xAD29] << 16) |
            (u16)(cs[0xAD2A] | ((u16)cs[0xAD2B] << 8));
@@ -1605,11 +1667,13 @@ int main(void) {
                    muralla_release_vm_bank_exchange() &&
                    tumba_release_vm_bank_exchange() &&
                    dorado_release_vm_bank_exchange() &&
+                   llama_release_vm_bank_exchange() &&
                    muralla_release_vm_bank_amount_input(0) &&
                    muralla_release_vm_bank_amount_input(1) &&
                    satono_release_vm_inn_rest() &&
                    tumba_release_vm_inn_rest() &&
                    dorado_release_vm_inn_rest() &&
+                   llama_release_vm_inn_rest() &&
                    king_first_visit_script() &&
                    king_followup_scripts() &&
                    sage_release_vm_menu() &&

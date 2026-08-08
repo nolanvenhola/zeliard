@@ -209,6 +209,97 @@ static int test_bosque_sentry_prompt(void) {
     return ok;
 }
 
+static int test_llama_cape_and_elf_crest(void) {
+    u8 segment[0x10000] = {0};
+    u8 scratch[0x10000] = {0};
+    u8 vga[0x10000] = {0};
+    zeliard_town_dialog_t dialog = {0};
+    size_t player_size = 0, driver_size = 0;
+    u8 *player = read_file("assets/stdply.bin", &player_size);
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = player && player_size <= sizeof(segment) &&
+             driver && driver_size <= 0xE000;
+    if (ok) {
+        memcpy(segment, player, player_size);
+        memcpy(segment + 0x2000, driver, driver_size);
+    }
+    free(player);
+    free(driver);
+    ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin") &&
+          load_raw(segment + 0xC000, 0x4000, "assets/llmp.mdt") &&
+          load_font(segment);
+    segment[0x00C2] = 0;
+    segment[0x008B] = (u8)3000;
+    segment[0x008C] = (u8)(3000 >> 8);
+
+    const int cape_begin = ok ? zeliard_town_dialog_begin(
+        &dialog, segment, scratch, vga, sizeof(vga), 0x00FF) : -99;
+    ok &= cape_begin == 0 && dialog.active;
+    for (unsigned guard = 0; guard < 2000 && !dialog.prompt_active; ++guard) {
+        if (dialog.scroll_active || dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        } else if (dialog.waiting) {
+            segment[0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+        }
+    }
+    const unsigned long long cape_prompt = fnv1a64(vga, sizeof(vga));
+    ok &= dialog.prompt_active && dialog.prompt_kind == 1 &&
+          dialog.prompt_selection == 0 &&
+          cape_prompt == 0xED42F39FAE63627BULL;
+    segment[0xFF1D] = 0xFF;
+    const int cape_confirm = zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga));
+    ok &= cape_confirm == 0;
+    const unsigned long long cape_bought = fnv1a64(vga, sizeof(vga));
+    const u16 almas = (u16)(segment[0x008B] |
+                            ((u16)segment[0x008C] << 8));
+    ok &= dialog.final_wait && almas == 500 &&
+          (segment[0x0034] & 0x40) && segment[0x00A1] == 5 &&
+          segment[0xD0DA] == 9 &&
+          cape_bought == 0xC539BB106A8AEE52ULL;
+
+    /* Paguro's completion switches the hut resident to dialog 1. Opcode
+     * 83h awards the Elf Crest, sets the portrait/event bit, and immediately
+     * reapplies LLMP's authored NPC mutations. */
+    memset(&dialog, 0, sizeof(dialog));
+    memset(vga, 0, sizeof(vga));
+    segment[0x0030] = 0xFF;
+    segment[0xD0D2] = 1;
+    const int crest_begin = zeliard_town_dialog_begin_facing(
+        &dialog, segment, scratch, NULL, 0, NULL, 0,
+        vga, sizeof(vga), 0x00DC);
+    ok &= crest_begin == 0 && dialog.active;
+    for (unsigned guard = 0;
+         guard < 2000 &&
+             !(dialog.final_wait && segment[0x009A] == 0xFF);
+         ++guard) {
+        if (dialog.scroll_active || dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        } else if (dialog.waiting) {
+            segment[0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+        }
+    }
+    const unsigned long long crest_award = fnv1a64(vga, sizeof(vga));
+    ok &= dialog.final_wait && segment[0x009A] == 0xFF &&
+          (segment[0x0034] & 0x80) && segment[0xD0D2] == 2 &&
+          segment[0xD0E2] == 16 && segment[0xD0EA] == 11 &&
+          crest_award == 0xC053CC50772FD625ULL;
+    printf("town_llama_cape_crest: %s prompt=%016llx bought=%016llx "
+           "crest=%016llx almas=%u wearable=%u flags=%02x/%02x "
+           "dialogs=%u/%u/%u\n",
+           ok ? "PASS" : "FAIL", cape_prompt, cape_bought, crest_award,
+           almas, segment[0x00A1],
+           segment[0x0034], segment[0x009A], segment[0xD0D2],
+           segment[0xD0DA], segment[0xD0E2]);
+    return ok;
+}
+
 int main(void) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
@@ -258,7 +349,8 @@ int main(void) {
            fnv1a64(vga, sizeof(vga)));
     ok &= test_muralla_multipage_dialog();
     ok &= test_bosque_sentry_prompt();
-    printf("VERDICT: %s: Felishika, Muralla, and Bosque dialog MASM parity\n",
+    ok &= test_llama_cape_and_elf_crest();
+    printf("VERDICT: %s: town dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

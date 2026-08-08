@@ -976,6 +976,37 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), dorado_playfield);
 
+    /* Llama save records select LLMP/DPAT/CMAN, MGT2, and the exact
+     * 200FIGHT-to-town coordinate handoff in one bootstrap transaction. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x30] = 0;
+    record[0x34] = 0;
+    record[0x80] = 0x36;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x87;
+    record[0xC5] = 0x87;
+    const int llama_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long llama_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int llama_bootstrap = llama_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 7 && zeliard_test_game_u8(0xC4) == 0x87 &&
+        zeliard_test_game_u8(0x80) == 0x36 &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 4 &&
+        llama_playfield == 0x490A5B10473F47A4ULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/llama-save-bootstrap.ppm", g_framebuf);
+    ok &= llama_bootstrap;
+    printf("main_controls:llama_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           llama_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), llama_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }
