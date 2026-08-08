@@ -109,11 +109,14 @@ static void relocate_words(u8 *memory, size_t address, u8 count,
 
 static void sync_game_state_to_host(u8 *game_seg, const u8 *memory,
                                     size_t game) {
-    /* 201SELCT owns its A000-AE1F overlay and scratch region. Only the
-     * player record, stick state, and shared gvar block survive its return. */
+    /* 201SELCT owns its A000-AE1F overlay and scratch region. The Magia
+     * Stone is the exception to the usual player-record-only contract:
+     * release MASM's item-5 handler seeds four seven-byte orbiting-sprite
+     * records in 200FIGHT's shared EB60h work buffer. */
     memcpy(game_seg, memory + game, 233);
     memcpy(game_seg + 0x02BC, memory + game + 0x02BC, 9);
     memcpy(game_seg + 0x05C1, memory + game + 0x05C1, 5);
+    memcpy(game_seg + 0xEB60, memory + game + 0xEB60, 4u * 7u);
     memcpy(game_seg + 0xFF00, memory + game + 0xFF00, 0x80);
 }
 

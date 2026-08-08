@@ -137,7 +137,8 @@ save_sage                      equ     0C4h
 last_sage_visited              equ     0C5h
 heal_pulse_count               equ     0C6h
 current_level_idx              equ     0C8h
-key_count                      equ     0E4h
+sabre_oil_power                equ     0E4h    ; temporary Sabre Oil sword-power stack
+key_count                      equ     0E4h    ; compatibility alias — earlier wrong name
 sages_spoken_bitmap                   equ     0E5h
 scene_trans_request            equ     0E6h
 gvar_pose_idx                  equ     0E7h

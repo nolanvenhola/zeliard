@@ -144,9 +144,9 @@ shield	db	0		; [93h] shield tier (1-based; init 0 = no shield)
 ; shield_HP (16-bit word) — current shield HP.  200FIGHT
 ; apply_combat_damage_with_absorb (line 3501) subtracts damage scaled
 ; by shield tier from this word; on underflow, clears both [93h]
-; and [94h] = "shield broken".  201SELCT's use_magia_stone adds an
+; and [94h] = "shield broken".  201SELCT's use_holy_water adds an
 ; effect-tbl[shield] amount to this word and clamps to shield_max_HP
-; — consistent with the magia stone being a shield-repair item.
+; — consistent with Holy Water being the shield-repair item.
 shield_HP	dw	0		; [94h-95h] current shield HP (16-bit; init=0)
 ;
 ; [96h..9Ch]: shield_max_HP (16-bit cap), then player_speed/power, then
@@ -334,7 +334,7 @@ weapon_shop_shields_esco	db	0FCh	; [0E3h] Esco (full)
 ; bytes are heavily used.  0xE7 is the single most-accessed byte in the whole
 ; stdply chunk (38 reads + 7 inc + 7 cmp + 5 or + 4 and; called "Unknown
 ; state var" in game.asm).  0xE6 and 0xE8 are flag bytes (test FFh).
-key_count	db	0		; [E4h] player's collected-key count (from 201SELCT)
+sabre_oil_power db	0	; [E4h] temporary Sabre Oil sword-power stack
 sages_spoken_bitmap	db	0		; [E5h] sages spoken-with bitmap (TCRF: +128=Muralla..+1=Pureza)
 scene_trans_request db 0	; [scene_trans_request] scene-transition request (polled in main_loop_body)
 gvar_pose_idx	db	0		; [E7h] player pose state (bit7=mode flag, low7=pose idx)

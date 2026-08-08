@@ -435,6 +435,9 @@ static void sync_host_state(u8 *game_seg, u8 *vga) {
     u8 *memory = zel_fight86_memory();
     const size_t fight = linear(FIGHT_SEG, 0);
     memcpy(game_seg, memory + fight, 0x100);
+    /* Four release-MASM Magia Stone orbit records. Keep their advancing
+     * phase visible to 201SELCT if inventory is opened again. */
+    memcpy(game_seg + 0xEB60, memory + fight + 0xEB60, 4u * 7u);
     memcpy(game_seg + 0xFF00, memory + fight + 0xFF00, 0x80);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
 }
@@ -495,10 +498,12 @@ int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
     if (!g_fight_vm.active || !game_seg || game_size < 0x10000) return 0;
     u8 *memory = zel_fight86_memory();
     const size_t fight = linear(FIGHT_SEG, 0);
-    /* The DOS selector and 200FIGHT share DS.  Mirror every persistent
-     * selector result before resuming: player/equipment/item fields plus
-     * the complete shared gvar block (including FF4Bh item result). */
+    /* The DOS selector and 200FIGHT share DS. Mirror every persistent
+     * selector result before resuming: player/equipment/item fields, the
+     * four Magia Stone orbit records, and the complete shared gvar block
+     * (including FF4Bh item result). */
     memcpy(memory + fight, game_seg, 0x100);
+    memcpy(memory + fight + 0xEB60, game_seg + 0xEB60, 4u * 7u);
     memcpy(memory + fight + 0xFF00, game_seg + 0xFF00, 0x80);
     return 1;
 }

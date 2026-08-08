@@ -71,7 +71,8 @@ current_area_id         equ     0C4h    ; current area (high bit=in-town, low 7=
 player_level            equ     0C4h    ; alias — earlier name (was misnomer)
 heal_pulse_count        equ     0C6h    ; HP heal-pulse counter, 16-bit (canonical in stdply.inc)
 player_tileset          equ     0C8h    ; legacy alias; use current_level_idx
-key_count               equ     0E4h    ; player's collected-key count
+sabre_oil_power         equ     0E4h    ; temporary Sabre Oil sword-power stack
+key_count               equ     0E4h    ; compatibility alias — earlier wrong name
 scene_trans_request     equ     0E6h    ; scene-transition request (canonical in stdply.inc)
 gvar_pose_idx           equ     0E7h    ; player pose state (canonical in stdply.inc)
 init_complete_flag      equ     0E8h    ; post-init steady-state (canonical in stdply.inc)

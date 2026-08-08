@@ -757,6 +757,21 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     if (town->dialog.active) {
+        /* 106TOWN's dialog wait loops call tick_npcs_then_pump. That entry
+         * advances every normal NPC, falls through to render_town_actors,
+         * commits the frame, and only then samples the continue key. The
+         * speaking NPC remains stationary because begin_dialog temporarily
+         * changes its dispatch type to 7. */
+        zeliard_town_tick_npcs(cs);
+        if (zeliard_gtmcga_render_town_actors(
+                cs, 0x10000, game_data, 0x10000,
+                mask_data, 0x10000, vga, vga_size))
+            return -1;
+        mark_player_col_in_cursor_buf(cs);
+        if (zeliard_gtmcga_update_town_frame(
+                cs, 0x10000, game_data, 0x10000,
+                mask_data, 0x10000, vga, vga_size))
+            return -2;
         const int continued = zeliard_town_dialog_continue(
             &town->dialog, cs, game->segment[3], vga, vga_size);
         if (continued < 0) return -3;

@@ -531,6 +531,45 @@ int main(void) {
     const u8 muralla_dialog_id = segments[0][(u16)(muralla_talk_npc + 7)];
     const u8 muralla_npc_direction = segments[0][(u16)(muralla_talk_npc + 2)];
     const u8 muralla_npc_type = segments[0][(u16)(muralla_talk_npc + 5)];
+
+    /* 106TOWN dialog waits call tick_npcs_then_pump: the speaker is switched
+     * to stationary type 7 while every other NPC continues its normal
+     * movement/animation dispatch. Exercise the public PIT path so this
+     * cannot regress into a dialog-only early return. */
+    ok &= zeliard_town_dialog_begin_live(
+        &town.dialog, segments[0], segments[3],
+        segments[1], sizeof(segments[1]),
+        segments[2], sizeof(segments[2]), vga, sizeof(vga),
+        muralla_talk_position) == 0;
+    const unsigned long long dialog_npc_state_before =
+        npc_state_hash(segments[0]);
+    const u16 dialog_speaker_position_before =
+        (u16)(segments[0][muralla_talk_npc] |
+              ((u16)segments[0][(u16)(muralla_talk_npc + 1)] << 8));
+    segments[0][0xFF33] = 5;
+    const int dialog_motion_frames = zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 20, 0);
+    const unsigned long long dialog_npc_state_after =
+        npc_state_hash(segments[0]);
+    const u16 dialog_speaker_position_after =
+        (u16)(segments[0][muralla_talk_npc] |
+              ((u16)segments[0][(u16)(muralla_talk_npc + 1)] << 8));
+    printf("town_dialog_npc_motion: frames=%d active=%d "
+           "npc=%016llx/%016llx speaker=%04x/%04x type=%u\n",
+           dialog_motion_frames, town.dialog.active,
+           dialog_npc_state_before, dialog_npc_state_after,
+           dialog_speaker_position_before, dialog_speaker_position_after,
+           segments[0][(u16)(muralla_talk_npc + 5)]);
+    ok &= dialog_motion_frames == 1 && town.dialog.active &&
+        dialog_npc_state_after != dialog_npc_state_before &&
+        dialog_speaker_position_after == dialog_speaker_position_before &&
+        segments[0][(u16)(muralla_talk_npc + 5)] == 7;
+
+    if (muralla_snapshot) {
+        memcpy(segments, muralla_snapshot, sizeof(segments));
+        memcpy(vga, muralla_snapshot + sizeof(segments), sizeof(vga));
+        town = muralla_town_snapshot;
+    }
     const u8 muralla_saved_player_col = segments[0][0x0083];
     segments[0][0x0083] = 5;
     ok &= zeliard_gtmcga_render_town_actors(
