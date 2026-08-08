@@ -47,6 +47,7 @@ static const town_area_asset_t TOWN_AREA_ASSETS[] = {
     {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp", "mman.grp"},
     {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt", "dpat.grp", "cman.grp"},
     {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt", "mpat.grp", "mman.grp"},
+    {ZEL_TOWN_AREA_HELADA, 0x84, "hlmp.mdt", "dpat.grp", "cman.grp"},
 };
 
 static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {

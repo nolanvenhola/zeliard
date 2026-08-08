@@ -1031,6 +1031,147 @@ int main(void) {
            bosque_pollo, bosque_riza, bosque_crest_result,
            bosque_segments[0][0xCCFA], bosque_segments[0][0xCCFB]);
     free(bosque);
+
+    /* Ticket #81: Helada's release HLMP descriptor selects UGM1, DPAT,
+     * CMAN, and the 200FIGHT handoff target 2Ch -> start 1Bh/column 0Dh. */
+    static u8 helada_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                              [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 helada_vga[0x10000];
+    zeliard_game_exec_state_t helada_game = {0};
+    zeliard_town_runtime_t *helada = calloc(1, sizeof(*helada));
+    ok &= helada != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        helada_game.segment[i] = helada_segments[i];
+        helada_game.segment_size[i] = sizeof(helada_segments[i]);
+    }
+    ok &= load_direct(helada_segments[0], sizeof(helada_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(helada_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(helada_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(helada_segments[3], sizeof(helada_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(helada_segments[0]) && load_item_panel(helada_segments[1]);
+    helada_segments[0][0x00C4] = 0x84;
+    helada_segments[0][0x00C5] = 0x84;
+    helada_segments[0][0x0080] = 0x1B;
+    helada_segments[0][0x0083] = 0x0D;
+    helada_segments[0][ZEL_PLAYER_SWORD] = 1;
+    helada_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    helada_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    helada_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int helada_result = helada ? zeliard_town_enter_first_frame(
+        helada, &helada_game, helada_vga, sizeof(helada_vga)) : -99;
+    const unsigned long long helada_frame =
+        fnv1a64(helada_vga, sizeof(helada_vga));
+    const unsigned long long helada_playfield =
+        fnv1a64(helada_vga, 160u * 320u);
+    const unsigned long long helada_capture =
+        fnv1a64(helada_segments[0] + 0xA000, 0x1500);
+    const unsigned long long helada_state =
+        selected_state_hash(helada_segments[0]);
+    const unsigned long long helada_npcs =
+        npc_state_hash(helada_segments[0]);
+    const u8 helada_story_before[4] = {
+        helada_segments[0][0xCDD4], helada_segments[0][0xCDD5],
+        helada_segments[0][0xCDDD], helada_segments[0][0xCDED],
+    };
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-helada-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(helada_vga, 1, sizeof(helada_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= helada_result == 0 && helada->area == ZEL_TOWN_AREA_HELADA;
+    ok &= helada->music_index == 1 && helada->map_side == 1 &&
+          helada->palette_index == 2 && helada->town_text_record == 0xC738;
+    ok &= helada_frame == 0x39C562E39C145D8BULL &&
+          helada_playfield == 0xBAC31FEAB6F5800EULL &&
+          helada_capture == 0xF2C3F82A0F93D06DULL &&
+          helada_state == 0xA2CE5CCC9919D537ULL &&
+          helada_npcs == 0x8F04116449AC59E2ULL;
+    ok &= helada_story_before[0] == 0x80 &&
+          helada_story_before[1] == 3 &&
+          helada_story_before[2] == 2 &&
+          helada_story_before[3] == 6;
+
+    static u8 helada_snapshot[sizeof(helada_segments) + sizeof(helada_vga)];
+    memcpy(helada_snapshot, helada_segments, sizeof(helada_segments));
+    memcpy(helada_snapshot + sizeof(helada_segments), helada_vga,
+           sizeof(helada_vga));
+    const zeliard_town_runtime_t helada_runtime_snapshot = *helada;
+
+    helada_segments[0][0x0083] = 0xFF;
+    const int helada_left = zeliard_town_advance_pit(
+        helada, &helada_game, helada_vga, sizeof(helada_vga), 20, 0);
+    ok &= helada_left > 0 && helada->cavern_exit_requested &&
+          helada_segments[0][0x0080] == 0x46 &&
+          helada_segments[0][0x0081] == 0 &&
+          helada_segments[0][0x0082] == 0x0C &&
+          helada_segments[0][0x00C3] == 0xFF &&
+          helada_segments[0][0x00C4] == 8;
+
+    memcpy(helada_segments, helada_snapshot, sizeof(helada_segments));
+    memcpy(helada_vga, helada_snapshot + sizeof(helada_segments),
+           sizeof(helada_vga));
+    *helada = helada_runtime_snapshot;
+    helada_segments[0][0x0083] = 0x1C;
+    const int helada_right = zeliard_town_advance_pit(
+        helada, &helada_game, helada_vga, sizeof(helada_vga), 20, 0);
+    ok &= helada_right > 0 && helada->cavern_exit_requested &&
+          helada_segments[0][0x0080] == 0 &&
+          helada_segments[0][0x0081] == 0 &&
+          helada_segments[0][0x0082] == 0x0C &&
+          helada_segments[0][0x00C3] == 0 &&
+          helada_segments[0][0x00C4] == 9;
+
+    memcpy(helada_segments, helada_snapshot, sizeof(helada_segments));
+    memcpy(helada_vga, helada_snapshot + sizeof(helada_segments),
+           sizeof(helada_vga));
+    *helada = helada_runtime_snapshot;
+    helada_segments[0][0x0080] = 75;
+    helada_segments[0][0x0081] = 0;
+    helada_segments[0][0x0083] = 13;
+    const u16 helada_inn_tile = (u16)(0xC017 + 75 * 8);
+    helada_segments[0][0xFF2A] = (u8)helada_inn_tile;
+    helada_segments[0][0xFF2B] = (u8)(helada_inn_tile >> 8);
+    const int helada_inn_trigger = zeliard_town_advance_pit(
+        helada, &helada_game, helada_vga, sizeof(helada_vga), 20, 1);
+    const int helada_inn_fade = zeliard_town_advance_pit(
+        helada, &helada_game, helada_vga, sizeof(helada_vga), 88, 0);
+    ok &= helada_inn_trigger > 0 && helada_inn_fade > 0 &&
+          helada->room.active && helada->room.kind == ZEL_ROOM_INN &&
+          helada->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(helada_segments, helada_snapshot, sizeof(helada_segments));
+    memcpy(helada_vga, helada_snapshot + sizeof(helada_segments),
+           sizeof(helada_vga));
+    *helada = helada_runtime_snapshot;
+    helada_segments[0][0x001A] |= 0x10;
+    const int helada_ruzeria = zeliard_town_enter_first_frame(
+        helada, &helada_game, helada_vga, sizeof(helada_vga));
+    ok &= helada_ruzeria == 0 &&
+          helada_segments[0][0xCDD4] == 0 &&
+          helada_segments[0][0xCDD5] == 7 &&
+          helada_segments[0][0xCDDD] == 8 &&
+          helada_segments[0][0xCDED] == 9;
+    printf("town_helada_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx music=%u "
+           "story=%02x/%02x/%02x/%02x>%02x/%02x/%02x/%02x\n",
+           helada_result, helada_frame, helada_playfield, helada_capture,
+           helada_state, helada_npcs, (unsigned)helada->music_index,
+           helada_story_before[0], helada_story_before[1],
+           helada_story_before[2], helada_story_before[3],
+           helada_segments[0][0xCDD4], helada_segments[0][0xCDD5],
+           helada_segments[0][0xCDDD], helada_segments[0][0xCDED]);
+    printf("town_helada_routes: left=%d/0046/0c/ff/08 "
+           "right=%d/0000/0c/00/09 inn=%d/%d/%d\n",
+           helada_left, helada_right, helada_inn_trigger, helada_inn_fade,
+           ZEL_ROOM_INN);
+    free(helada);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,

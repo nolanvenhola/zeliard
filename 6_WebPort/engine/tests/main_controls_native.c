@@ -885,6 +885,36 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), bosque_playfield);
 
+    /* Helada save records select HLMP/DPAT/CMAN, UGM1, and the exact
+     * 200FIGHT-to-town coordinate handoff in one bootstrap transaction. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x1A] &= (u8)~0x10;
+    record[0x80] = 0x1B;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x84;
+    record[0xC5] = 0x84;
+    const int helada_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long helada_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int helada_bootstrap = helada_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 4 && zeliard_test_game_u8(0xC4) == 0x84 &&
+        zeliard_test_game_u8(0x80) == 0x1B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 5 &&
+        helada_playfield == 0xBAC31FEAB6F5800EULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/helada-save-bootstrap.ppm", g_framebuf);
+    ok &= helada_bootstrap;
+    printf("main_controls:helada_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           helada_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), helada_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }
