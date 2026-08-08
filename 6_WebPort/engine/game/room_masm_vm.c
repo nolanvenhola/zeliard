@@ -377,11 +377,13 @@ static int room_masm_vm_start_impl(zeliard_room_kind_t kind,
                           kind == ZEL_ROOM_DRUGSTORE ? "drugpro.bin" :
                           kind == ZEL_ROOM_CHURCH ? "churpro.bin" :
                           kind == ZEL_ROOM_BANK ? "bankpro.bin" :
+                          kind == ZEL_ROOM_INN ? "innapro.bin" :
                           kind == ZEL_ROOM_SAGE ? "kenjpro.bin" : NULL;
     const char *graphic = kind == ZEL_ROOM_ARMORY ? "armr.grp" :
                           kind == ZEL_ROOM_DRUGSTORE ? "drug.grp" :
                           kind == ZEL_ROOM_CHURCH ? "church.grp" :
                           kind == ZEL_ROOM_BANK ? "bank.grp" :
+                          kind == ZEL_ROOM_INN ? "inn.grp" :
                           kind == ZEL_ROOM_SAGE ? "kenja.grp" : NULL;
     if (!program || !graphic || !game_seg || game_size < 0x10000 ||
         !vga || vga_size < 0x10000) return 0;

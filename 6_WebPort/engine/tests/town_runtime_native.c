@@ -753,6 +753,142 @@ int main(void) {
     ok &= castle_return_playfield == 0x254DCDB105A9AE44ULL;
     ok &= return_cpat_pixels == 0x3E695EED8F9A92ECULL;
     ok &= return_cpat_alpha == 0x2AE75F00707E7659ULL;
+
+    /* Ticket #79: execute the same C service span from the independently
+     * pinned release-MASM Satono fixture.  Satono is the first descriptor
+     * that switches all three authored selectors at once: UGM1, CMAN, DPAT. */
+    static u8 satono_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                              [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 satono_vga[0x10000];
+    zeliard_game_exec_state_t satono_game = {0};
+    zeliard_town_runtime_t *satono = calloc(1, sizeof(*satono));
+    ok &= satono != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        satono_game.segment[i] = satono_segments[i];
+        satono_game.segment_size[i] = sizeof(satono_segments[i]);
+    }
+    ok &= load_direct(satono_segments[0], sizeof(satono_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(satono_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(satono_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(satono_segments[3], sizeof(satono_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(satono_segments[0]) && load_item_panel(satono_segments[1]);
+    satono_segments[0][0x00C4] = 0x82;
+    satono_segments[0][0x00C5] = 0x82;
+    satono_segments[0][0x0080] = 0x4B;
+    satono_segments[0][0x0081] = 0;
+    satono_segments[0][0x0082] = 0;
+    satono_segments[0][0x0083] = 0x0D;
+    satono_segments[0][ZEL_PLAYER_SWORD] = 1;
+    satono_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    satono_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    satono_segments[0][ZEL_PLAYER_SHIELD_HP + 1] = 0;
+    satono_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    satono_segments[0][ZEL_PLAYER_SHIELD_HP_MAX + 1] = 0;
+    const int satono_result = satono ? zeliard_town_enter_first_frame(
+        satono, &satono_game, satono_vga, sizeof(satono_vga)) : -99;
+    const unsigned long long satono_frame =
+        fnv1a64(satono_vga, sizeof(satono_vga));
+    const unsigned long long satono_playfield =
+        fnv1a64(satono_vga, 160u * 320u);
+    const unsigned long long satono_capture =
+        fnv1a64(satono_segments[0] + 0xA000, 0x1500);
+    const unsigned long long satono_state =
+        selected_state_hash(satono_segments[0]);
+    const unsigned long long satono_npcs =
+        npc_state_hash(satono_segments[0]);
+    const unsigned long long satono_dpat_pixels =
+        fnv1a64(satono_segments[1] + 0x8100, 0x2EE0);
+    const unsigned long long satono_dpat_alpha =
+        fnv1a64(satono_segments[1] + 0xD000, 0x07D0);
+    const unsigned long long satono_cman_pixels =
+        fnv1a64(satono_segments[1] + 0x4100, 0x1EC0);
+    const unsigned long long satono_cman_masks =
+        fnv1a64(satono_segments[2] + 0x7000, 0x0520);
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-satono-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(satono_vga, 1, sizeof(satono_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= satono_result == 0 && satono->area == ZEL_TOWN_AREA_SATONO;
+    ok &= satono->music_index == 1 && satono->map_side == 1 &&
+          satono->palette_index == 2 && satono->town_text_record == 0xC6D8;
+    ok &= satono_frame == 0x6C183B551150BDCFULL &&
+          satono_playfield == 0x2B037379CC51F013ULL &&
+          satono_capture == 0xF2C3F82A0F93D06DULL &&
+          satono_state == 0xA4825ECC9A8D201DULL &&
+          satono_npcs == 0xA7B3561BCB693B5FULL;
+    ok &= satono_dpat_pixels == 0x3F819F76329F575EULL &&
+          satono_dpat_alpha == 0x597550E40F08BCB6ULL &&
+          satono_cman_pixels == 0x44D254E063EEEC7DULL &&
+          satono_cman_masks == 0x4F2D17A7A7837D5FULL;
+
+    static u8 satono_snapshot[sizeof(satono_segments) + sizeof(satono_vga)];
+    memcpy(satono_snapshot, satono_segments, sizeof(satono_segments));
+    memcpy(satono_snapshot + sizeof(satono_segments), satono_vga,
+           sizeof(satono_vga));
+    const zeliard_town_runtime_t satono_runtime_snapshot = *satono;
+
+    satono_segments[0][0x0083] = 0xFF;
+    const int satono_left_frames = zeliard_town_advance_pit(
+        satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 0);
+    ok &= satono_left_frames > 0 && satono->cavern_exit_requested;
+    ok &= satono_segments[0][0x0080] == 0x70 &&
+          satono_segments[0][0x0081] == 0 &&
+          satono_segments[0][0x0082] == 0x17 &&
+          satono_segments[0][0x00C3] == 0xFF &&
+          satono_segments[0][0x00C4] == 0;
+
+    memcpy(satono_segments, satono_snapshot, sizeof(satono_segments));
+    memcpy(satono_vga, satono_snapshot + sizeof(satono_segments),
+           sizeof(satono_vga));
+    *satono = satono_runtime_snapshot;
+    satono_segments[0][0x0083] = 0x1C;
+    const int satono_right_frames = zeliard_town_advance_pit(
+        satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 0);
+    ok &= satono_right_frames > 0 && satono->cavern_exit_requested;
+    ok &= satono_segments[0][0x0080] == 0xF6 &&
+          satono_segments[0][0x0081] == 0xFF &&
+          satono_segments[0][0x0082] == 0x34 &&
+          satono_segments[0][0x00C3] == 0 &&
+          satono_segments[0][0x00C4] == 2;
+
+    memcpy(satono_segments, satono_snapshot, sizeof(satono_segments));
+    memcpy(satono_vga, satono_snapshot + sizeof(satono_segments),
+           sizeof(satono_vga));
+    *satono = satono_runtime_snapshot;
+    satono_segments[0][0x0080] = 0x6F;
+    satono_segments[0][0x0081] = 0;
+    satono_segments[0][0x0083] = 0x0D;
+    satono_segments[0][0xFF2A] = 0x8F;
+    satono_segments[0][0xFF2B] = 0xC3;
+    const int satono_inn_trigger = zeliard_town_advance_pit(
+        satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 1);
+    const int satono_inn_fade = zeliard_town_advance_pit(
+        satono, &satono_game, satono_vga, sizeof(satono_vga), 88, 0);
+    ok &= satono_inn_trigger > 0 && satono_inn_fade > 0;
+    ok &= satono->room.active && satono->room.kind == ZEL_ROOM_INN &&
+          satono->room.exact_vm_active && zeliard_room_masm_vm_active();
+    printf("town_satono_entry: rc=%d frame=%016llx playfield=%016llx "
+           "state=%016llx npc=%016llx dpat=%016llx/%016llx "
+           "cman=%016llx/%016llx music=%u\n",
+           satono_result, satono_frame, satono_playfield, satono_state,
+           satono_npcs, satono_dpat_pixels, satono_dpat_alpha,
+           satono_cman_pixels, satono_cman_masks,
+           (unsigned)satono->music_index);
+    printf("town_satono_routes: left=%d/%02x%02x/%02x/%02x/%02x "
+           "right=%d/%02x%02x/%02x/%02x/%02x inn=%d/%d/%d\n",
+           satono_left_frames, 0x00, 0x70, 0x17, 0xFF, 0x00,
+           satono_right_frames, 0xFF, 0xF6, 0x34, 0x00, 0x02,
+           satono_inn_trigger, satono_inn_fade,
+           satono->room.kind);
+    zeliard_room_masm_vm_stop();
+    free(satono);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,

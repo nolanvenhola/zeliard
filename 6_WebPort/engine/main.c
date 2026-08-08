@@ -201,6 +201,15 @@ static int redraw_cavern_return_hud(u8 *vga, size_t vga_size, u8 *cs) {
     return 1;
 }
 
+static zel_music_track_t current_town_music(void) {
+    switch (g_town_runtime.music_index) {
+    case 1: return ZEL_MUSIC_UGM1;
+    case 2: return ZEL_MUSIC_MGT2;
+    case 3: return ZEL_MUSIC_UGM2;
+    default: return ZEL_MUSIC_MGT1;
+    }
+}
+
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
     u8 cavern_object_state[ZEL_PLAYER_CAVERN_OBJECT_STATE_END];
@@ -269,7 +278,7 @@ static void finish_cavern_return_to_town(void) {
             g_game_vga, sizeof(g_game_vga), cs))
         platform_log("200FIGHT: return-town HUD reconstruction failed");
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
-    zel_audio_play_music(ZEL_MUSIC_MGT1);
+    zel_audio_play_music(current_town_music());
 }
 
 static int finish_cavern_death_to_sage(void) {
@@ -636,8 +645,8 @@ static bool enter_game_scene(void) {
     /* game.asm:A1E0 resolves CMAP's descriptor byte 00 to record 0 at
      * A363 (MGT1.MSD). 106TOWN:60A9 starts that game_seg:3000 score with
      * INT 60h AX=0 immediately after the initial town draw. */
-    if (!zel_audio_play_music(ZEL_MUSIC_MGT1)) {
-        platform_log("game bootstrap: MGT1.MSD exact music start failed");
+    if (!zel_audio_play_music(current_town_music())) {
+        platform_log("game bootstrap: exact town music start failed");
         return false;
     }
     g_scene = SCENE_GAME;
@@ -887,11 +896,11 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                         return;
                     }
                     g_fight_death_pending = 0;
-                    if (g_game_segments[0][0x00C4] != 0x80 &&
-                        g_game_segments[0][0x00C4] != 0x81) {
+                    if (!zeliard_town_area_supported(
+                            g_game_segments[0][0x00C4])) {
                         const u8 saved_area = g_game_segments[0][0x00C5];
                         g_game_segments[0][0x00C4] =
-                            saved_area == 0x80 || saved_area == 0x81
+                            zeliard_town_area_supported(saved_area)
                                 ? saved_area
                                 : (u8)(0x80u + (u8)g_town_runtime.area);
                     }
@@ -900,10 +909,10 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                     if (zeliard_town_enter_first_frame(
                             &g_town_runtime, &g_game_exec, g_game_vga,
                             sizeof(g_game_vga)) != 0) {
-                        platform_log("200FIGHT: Muralla return frame failed");
+                        platform_log("200FIGHT: town return frame failed");
                     } else {
                         memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
-                        zel_audio_play_music(ZEL_MUSIC_MGT1);
+                        zel_audio_play_music(current_town_music());
                     }
                 } else {
                     g_fight_boundary_selector = selector;
@@ -959,7 +968,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
         }
         if (g_town_runtime.cavern_exit_requested) {
-            if (town_origin.area_id != 0x80 && town_origin.area_id != 0x81)
+            if (!zeliard_town_area_supported(town_origin.area_id))
                 town_origin.area_id =
                     (u8)(0x80u + (u8)g_town_runtime.area);
             g_cavern_town_origin = town_origin;
@@ -988,7 +997,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         if (!room_was_active && g_town_runtime.room.active)
             zel_opening_audio_stop();
         else if (room_was_active && !g_town_runtime.room.active)
-            zel_audio_play_music(ZEL_MUSIC_MGT1);
+            zel_audio_play_music(current_town_music());
         if (g_town_runtime.dialog.pending_sound_cue) {
             zel_opening_audio_write_cue(
                 g_town_runtime.dialog.pending_sound_cue);

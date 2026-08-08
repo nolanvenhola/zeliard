@@ -826,6 +826,35 @@ int main(void) {
            zeliard_test_game_u8(0xC5), zeliard_test_game_u16(0x90),
            zeliard_test_game_u16(0xB2));
 
+    /* A saved Satono game must bootstrap the authored town selector as one
+     * transaction: STMP/DPAT/CMAN, UGM1, and the saved player coordinates. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x80] = 0x4B;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x82;
+    record[0xC5] = 0x82;
+    const int satono_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long satono_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int satono_bootstrap = satono_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 2 && zeliard_test_game_u8(0xC4) == 0x82 &&
+        zeliard_test_game_u8(0x80) == 0x4B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 5 &&
+        satono_playfield == 0x2B037379CC51F013ULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/satono-save-bootstrap.ppm", g_framebuf);
+    ok &= satono_bootstrap;
+    printf("main_controls:satono_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           satono_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), satono_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

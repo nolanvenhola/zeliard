@@ -30,6 +30,7 @@ typedef enum {
 typedef enum {
     ZEL_TOWN_AREA_FELISHIKA = 0,
     ZEL_TOWN_AREA_MURALLA = 1,
+    ZEL_TOWN_AREA_SATONO = 2,
 } zeliard_town_area_t;
 
 typedef struct {
@@ -53,6 +54,7 @@ typedef struct {
     u16 town_text_record;
     u8 map_side;
     u8 palette_index;
+    u8 music_index;
     zeliard_town_area_t area;
     u32 frame_count;
     u16 facing_item_position;
@@ -74,6 +76,8 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
 /* 200FIGHT:next_level_start + level_start town-coordinate handoff. */
 int zeliard_town_prepare_level_start(u8 *game_seg, size_t game_size,
                                      u8 area_id);
+
+int zeliard_town_area_supported(u8 area_id);
 
 int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
                                        zeliard_room_kind_t kind,

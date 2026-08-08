@@ -12,6 +12,7 @@ typedef enum {
     ZEL_ROOM_DRUGSTORE = 5,
     ZEL_ROOM_CHURCH = 6,
     ZEL_ROOM_BANK = 7,
+    ZEL_ROOM_INN = 8,
 } zeliard_room_kind_t;
 
 typedef struct {
