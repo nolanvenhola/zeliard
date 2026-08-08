@@ -150,6 +150,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 2, "eai1.bin"},
     {2, 3, "eai2.bin"},
     {2, 4, "eai3.bin"},
+    {2, 5, "eai4.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
@@ -162,15 +163,18 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 57, "enp1.grp"},
     {2, 58, "enp2.grp"},
     {2, 59, "enp3.grp"},
+    {2, 60, "enp4.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
+    {2, 78, "mpp4.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
     {2, 88, "mus3.msd"},
+    {2, 89, "mus4.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
 };
@@ -201,6 +205,14 @@ static const char *map_for_selector(u8 selector) {
         case 0x24: return "mp31.mdt";
         case 0x07:
         case 0x25: return "mp3d.mdt";
+        case 0x08:
+        case 0x26: return "mp40.mdt";
+        /* MP41 is Escarcha; its authored doors cross back into the adjacent
+         * MP40 Glacial map in both directions.  Keep both map loads resident
+         * so Escarcha traversal never drops out of 200FIGHT.  Glacial's own
+         * full verification and Agar handoff remain the following ticket. */
+        case 0x09:
+        case 0x27: return "mp41.mdt";
         default: return NULL;
     }
 }

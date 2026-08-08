@@ -228,6 +228,7 @@ int main(void) {
     ok &= expect_gameplay_track_load("ugm2", ZEL_MUSIC_UGM2);
     ok &= expect_gameplay_track_load("mus2", ZEL_MUSIC_MUS2);
     ok &= expect_gameplay_track_load("mus3", ZEL_MUSIC_MUS3);
+    ok &= expect_gameplay_track_load("mus4", ZEL_MUSIC_MUS4);
     static const u8 sfx_pcm_cues[] = {
         0x02, 0x04, 0x07, 0x09, 0x16, 0x1E,
         0x3D, 0x3E, 0x3F, 0x40, 0x41
