@@ -337,6 +337,32 @@ static int test_pureza_special_door_warning(void) {
     return ok;
 }
 
+static int test_ctrl_8b_persistent_flag(void) {
+    u8 segment[0x10000] = {0};
+    u8 scratch[0x10000] = {0};
+    u8 vga[0x10000] = {0};
+    zeliard_town_dialog_t dialog = {0};
+    size_t driver_size = 0;
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = driver && driver_size <= 0xE000;
+    if (ok) memcpy(segment + 0x2000, driver, driver_size);
+    free(driver);
+    ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin") &&
+          load_font(segment);
+    segment[0xC00D] = 0x00;
+    segment[0xC00E] = 0xC1;
+    segment[0xC100] = 0x20;
+    segment[0xC101] = 0xC1;
+    memcpy(segment + 0xC120, (const u8[]){'A', 0x8B, 'B', 0xFF}, 4);
+    const int begin = ok ? zeliard_town_dialog_begin_scripted(
+        &dialog, segment, scratch, vga, sizeof(vga), 0, 0x0918) : -99;
+    ok &= begin == 0 && dialog.final_wait && dialog.glyph_count == 2 &&
+          (segment[0x0004] & 0x80) != 0;
+    printf("town_ctrl_8b: %s flag=%02x glyphs=%u\n",
+           ok ? "PASS" : "FAIL", segment[0x0004], dialog.glyph_count);
+    return ok;
+}
+
 int main(void) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
@@ -388,6 +414,7 @@ int main(void) {
     ok &= test_bosque_sentry_prompt();
     ok &= test_llama_cape_and_elf_crest();
     ok &= test_pureza_special_door_warning();
+    ok &= test_ctrl_8b_persistent_flag();
     printf("VERDICT: %s: town dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

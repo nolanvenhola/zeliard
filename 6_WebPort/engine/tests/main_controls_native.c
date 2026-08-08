@@ -1038,6 +1038,36 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), pureza_playfield);
 
+    /* Esco save records select ESMP/DPAT/CMAN. Its release target ABh in a
+     * D7h-wide map resolves to start 009Ah / screen column 0Dh. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x80] = 0x9A;
+    record[0x81] = 0;
+    record[0x82] = 0;
+    record[0x83] = 0x0D;
+    record[0xC4] = 0x89;
+    record[0xC5] = 0x89;
+    const int esco_loaded = zeliard_load_record(record, sizeof(record));
+    const unsigned long long esco_playfield =
+        fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
+    const int esco_bootstrap = esco_loaded && zeliard_scene() == 2 &&
+        zeliard_town_area() == 9 && zeliard_test_game_u8(0xC4) == 0x89 &&
+        zeliard_test_game_u8(0x80) == 0x9A &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_music_track() == 4 &&
+        esco_playfield == 0xC6E95699DF8A3712ULL;
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/esco-save-bootstrap.ppm", g_framebuf);
+    ok &= esco_bootstrap;
+    printf("main_controls:esco_save_bootstrap: %s area=%d pos=%02x/%02x "
+           "music=%d playfield=%016llx\n",
+           esco_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
+           zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
+           zeliard_music_track(), esco_playfield);
+
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

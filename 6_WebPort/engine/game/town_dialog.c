@@ -280,6 +280,12 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             dialog->waiting = 1;
             return draw_take_prompt(dialog, cs, vga, vga_size) ? -3 : 0;
         }
+        if (ch == 0x8B) {
+            /* 106TOWN:ctrl_set_bit4 persists Esco's hidden-village
+             * progression flag, then resumes walking the same text stream. */
+            cs[0x0004] |= 0x80;
+            continue;
+        }
         if (ch & 0x80) return -2;
         const u16 packed = read_u16(cs, TEXT_DRAW_X);
         u16 x = (u16)((u8)(packed >> 8) * 8u + cs[TEXT_COL_POS] + 4u);
