@@ -1348,6 +1348,161 @@ int main(void) {
            tumba_armory_fade, ZEL_ROOM_ARMORY, tumba_inn_trigger,
            tumba_inn_fade, ZEL_ROOM_INN);
     free(tumba);
+
+    /* Ticket #83: Dorado's release DRMP descriptor selects MGT2, DPAT,
+     * CMAN, and the 200FIGHT handoff target 5Ch -> start 4Bh/column 0Dh. */
+    static u8 dorado_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                              [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 dorado_vga[0x10000];
+    zeliard_game_exec_state_t dorado_game = {0};
+    zeliard_town_runtime_t *dorado = calloc(1, sizeof(*dorado));
+    ok &= dorado != NULL;
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        dorado_game.segment[i] = dorado_segments[i];
+        dorado_game.segment_size[i] = sizeof(dorado_segments[i]);
+    }
+    ok &= load_direct(dorado_segments[0], sizeof(dorado_segments[0]),
+                      "assets/stdply.bin") &&
+          load_direct(dorado_segments[0] + 0x2000, 0xE000,
+                      "assets/gmmcga.bin") &&
+          load_raw(dorado_segments[0] + 0x6000, 0xA000,
+                   "assets/town.bin") &&
+          load_raw(dorado_segments[3], sizeof(dorado_segments[3]),
+                   "assets/mole.bin") &&
+          load_font(dorado_segments[0]) &&
+          load_item_panel(dorado_segments[1]);
+    dorado_segments[0][0x00C4] = 0x86;
+    dorado_segments[0][0x00C5] = 0x86;
+    dorado_segments[0][0x0080] = 0x4B;
+    dorado_segments[0][0x0083] = 0x0D;
+    dorado_segments[0][ZEL_PLAYER_SWORD] = 1;
+    dorado_segments[0][ZEL_PLAYER_SHIELD] = 1;
+    dorado_segments[0][ZEL_PLAYER_SHIELD_HP] = 30;
+    dorado_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    const int dorado_result = dorado ? zeliard_town_enter_first_frame(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga)) : -99;
+    const unsigned long long dorado_frame =
+        fnv1a64(dorado_vga, sizeof(dorado_vga));
+    const unsigned long long dorado_playfield =
+        fnv1a64(dorado_vga, 160u * 320u);
+    const unsigned long long dorado_capture =
+        fnv1a64(dorado_segments[0] + 0xA000, 0x1500);
+    const unsigned long long dorado_state =
+        selected_state_hash(dorado_segments[0]);
+    const unsigned long long dorado_npcs =
+        npc_state_hash(dorado_segments[0]);
+    const u8 dorado_story_before[2] = {
+        dorado_segments[0][0xCDFB], dorado_segments[0][0xCE03],
+    };
+    if (getenv("ZELIARD_DUMP")) {
+        FILE *dump = fopen("build/town-dorado-c-frame.bin", "wb");
+        if (dump) {
+            fwrite(dorado_vga, 1, sizeof(dorado_vga), dump);
+            fclose(dump);
+        }
+    }
+    ok &= dorado_result == 0 && dorado->area == ZEL_TOWN_AREA_DORADO;
+    ok &= dorado->music_index == 3 && dorado->map_side == 1 &&
+          dorado->palette_index == 2 && dorado->town_text_record == 0xC6D8;
+    ok &= dorado_frame == 0x74DBE9B150A09C25ULL &&
+          dorado_playfield == 0x0DE689A1BDEFFA27ULL &&
+          dorado_capture == 0xF2C3F82A0F93D06DULL &&
+          dorado_state == 0xA4825ECC9A8D201DULL &&
+          dorado_npcs == 0x2C9606A30CC60832ULL;
+    ok &= dorado_story_before[0] == 4 && dorado_story_before[1] == 5;
+
+    static u8 dorado_snapshot[sizeof(dorado_segments) + sizeof(dorado_vga)];
+    memcpy(dorado_snapshot, dorado_segments, sizeof(dorado_segments));
+    memcpy(dorado_snapshot + sizeof(dorado_segments), dorado_vga,
+           sizeof(dorado_vga));
+    const zeliard_town_runtime_t dorado_runtime_snapshot = *dorado;
+
+    dorado_segments[0][0x0083] = 0xFF;
+    const int dorado_left = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 20, 0);
+    ok &= dorado_left > 0 && dorado->cavern_exit_requested &&
+          dorado_segments[0][0x0080] == 0x0F &&
+          dorado_segments[0][0x0081] == 0 &&
+          dorado_segments[0][0x0082] == 0x3C &&
+          dorado_segments[0][0x00C3] == 0xFF &&
+          dorado_segments[0][0x00C4] == 0x0F;
+
+    memcpy(dorado_segments, dorado_snapshot, sizeof(dorado_segments));
+    memcpy(dorado_vga, dorado_snapshot + sizeof(dorado_segments),
+           sizeof(dorado_vga));
+    *dorado = dorado_runtime_snapshot;
+    dorado_segments[0][0x0083] = 0x1C;
+    const int dorado_right = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 4, 0);
+    ok &= dorado_right > 0 && dorado->cavern_exit_requested &&
+          (u16)(dorado_segments[0][0x0080] |
+                ((u16)dorado_segments[0][0x0081] << 8)) == 0x012B &&
+          dorado_segments[0][0x0082] == 0x27 &&
+          dorado_segments[0][0x00C3] == 0 &&
+          dorado_segments[0][0x00C4] == 0x0E;
+
+    memcpy(dorado_segments, dorado_snapshot, sizeof(dorado_segments));
+    memcpy(dorado_vga, dorado_snapshot + sizeof(dorado_segments),
+           sizeof(dorado_vga));
+    *dorado = dorado_runtime_snapshot;
+    dorado_segments[0][0x0080] = 53;
+    dorado_segments[0][0x0081] = 0;
+    dorado_segments[0][0x0083] = 13;
+    const u16 dorado_inn_tile = (u16)(0xC017 + 53 * 8);
+    dorado_segments[0][0xFF2A] = (u8)dorado_inn_tile;
+    dorado_segments[0][0xFF2B] = (u8)(dorado_inn_tile >> 8);
+    const int dorado_inn_trigger = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 20, 1);
+    const int dorado_inn_fade = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 88, 0);
+    ok &= dorado_inn_trigger > 0 && dorado_inn_fade > 0 &&
+          dorado->room.active && dorado->room.kind == ZEL_ROOM_INN &&
+          dorado->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(dorado_segments, dorado_snapshot, sizeof(dorado_segments));
+    memcpy(dorado_vga, dorado_snapshot + sizeof(dorado_segments),
+           sizeof(dorado_vga));
+    *dorado = dorado_runtime_snapshot;
+    dorado_segments[0][0x0080] = 111;
+    dorado_segments[0][0x0081] = 0;
+    dorado_segments[0][0x0083] = 13;
+    const u16 dorado_bank_tile = (u16)(0xC017 + 111 * 8);
+    dorado_segments[0][0xFF2A] = (u8)dorado_bank_tile;
+    dorado_segments[0][0xFF2B] = (u8)(dorado_bank_tile >> 8);
+    const int dorado_bank_trigger = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 20, 1);
+    const int dorado_bank_fade = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 88, 0);
+    ok &= dorado_bank_trigger > 0 && dorado_bank_fade > 0 &&
+          dorado->room.active && dorado->room.kind == ZEL_ROOM_BANK &&
+          dorado->room.exact_vm_active && zeliard_room_masm_vm_active();
+    zeliard_room_masm_vm_stop();
+
+    memcpy(dorado_segments, dorado_snapshot, sizeof(dorado_segments));
+    memcpy(dorado_vga, dorado_snapshot + sizeof(dorado_segments),
+           sizeof(dorado_vga));
+    *dorado = dorado_runtime_snapshot;
+    dorado_segments[0][0x002A] |= 4;
+    const int dorado_silkarn = zeliard_town_enter_first_frame(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga));
+    const u8 dorado_silkarn_a = dorado_segments[0][0xCDFB];
+    const u8 dorado_silkarn_b = dorado_segments[0][0xCE03];
+    ok &= dorado_silkarn == 0 &&
+          dorado_silkarn_a == 12 && dorado_silkarn_b == 13;
+    printf("town_dorado_entry: rc=%d frame=%016llx playfield=%016llx "
+           "capture=%016llx state=%016llx npc=%016llx music=%u "
+           "story=%02x/%02x>%02x/%02x\n",
+           dorado_result, dorado_frame, dorado_playfield, dorado_capture,
+           dorado_state, dorado_npcs, (unsigned)dorado->music_index,
+           dorado_story_before[0], dorado_story_before[1],
+           dorado_silkarn_a, dorado_silkarn_b);
+    printf("town_dorado_routes: left=%d/000f/3c/ff/0f "
+           "right=%d/012b/27/00/0e inn=%d/%d/%d bank=%d/%d/%d\n",
+           dorado_left, dorado_right, dorado_inn_trigger, dorado_inn_fade,
+           ZEL_ROOM_INN, dorado_bank_trigger, dorado_bank_fade,
+           ZEL_ROOM_BANK);
+    free(dorado);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,
