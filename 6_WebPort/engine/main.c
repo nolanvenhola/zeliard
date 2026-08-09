@@ -170,6 +170,7 @@ static void sync_fight_music(void) {
                                   : chunk == 88 ? ZEL_MUSIC_MUS3
                                   : chunk == 89 ? ZEL_MUSIC_MUS4
                                   : chunk == 90 ? ZEL_MUSIC_MUS5
+                                  : chunk == 91 ? ZEL_MUSIC_MUS6
                                   : chunk == 94 ? ZEL_MUSIC_MBOS
                                   : chunk == 95 ? ZEL_MUSIC_MFAN
                                                 : ZEL_MUSIC_NONE;

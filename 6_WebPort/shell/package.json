@@ -21,6 +21,7 @@
     "glacial:browser-test": "node test_glacial_browser.mjs",
     "cementar:browser-test": "node test_cementar_browser.mjs",
     "corroer:browser-test": "node test_corroer_browser.mjs",
+    "plata:browser-test": "node test_plata_browser.mjs",
     "shops:animation-test": "node test_shop_animations_browser.mjs",
     "bank:input-test": "node test_bank_input_browser.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",

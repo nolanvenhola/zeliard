@@ -226,6 +226,13 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/368MEDA.grp', '6822616f1c7e71e9b340e8c54f8100f1962fcc7c33772548bf822d60c2b2baaa'), 'meda.grp'],
     [verifiedMasmOutput('zelres3/378MPP5.grp', '1e9dff8ee09cb8861fcc1be7ed307d307891092ca0a91b06ed09791fd7fa364f'), 'mpp5.grp'],
     [verifiedMasmOutput('zelres3/389MUS5.msd', '457c266ae94e1f26628ee6ed322e0ae52d088dbe546417ccdb4068206539e0cc'), 'mus5.msd'],
+    /* Plata (MP61), its Tesoro MP60 boundary, and the Area-6 gold family. */
+    [verifiedMasmOutput('zelres3/306EAI6.bin', '87e10d8c62ad709f981f3c77e48f83074439779b0542a271523ac3dc7305541e'), 'eai6.bin'],
+    [verifiedMasmOutput('zelres3/334MP60.mdt', 'fb7edfcf4e17c0f9c0a7004644af603d85bcc4023c66ed34fba8a32dbb2ad766'), 'mp60.mdt'],
+    [verifiedMasmOutput('zelres3/335MP61.mdt', 'b6368328e0e88ee3f4e64868a79127f30985aa5f5ab90fc461600e38ce61ac66'), 'mp61.mdt'],
+    [verifiedMasmOutput('zelres3/361ENP6.grp', '6df8b6d5ac7ccf37d78fbea9d3928e72277356ddc1ac4736fbdfe959f6405ec7'), 'enp6.grp'],
+    [verifiedMasmOutput('zelres3/379MPP6.grp', '38cdd9a3442b5db1c8ef0473b82479e1cd7000ca525118d1a745ea1d5ef98a51'), 'mpp6.grp'],
+    [verifiedMasmOutput('zelres3/390MUS6.msd', 'e7915cda939ede7dc3df69399cb044b0f9acf63880ed44c41e3142c0f1b81cee'), 'mus6.msd'],
     /* Riza and its exact Pollo chamber handoff. */
     [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
     [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],
