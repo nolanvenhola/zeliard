@@ -24,6 +24,7 @@
     "plata:browser-test": "node test_plata_browser.mjs",
     "tesoro:browser-test": "node test_tesoro_browser.mjs",
     "arrugia:browser-test": "node test_arrugia_browser.mjs",
+    "caliente:browser-test": "node test_caliente_browser.mjs",
     "shops:animation-test": "node test_shop_animations_browser.mjs",
     "bank:input-test": "node test_bank_input_browser.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",

@@ -153,12 +153,14 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 5, "eai4.bin"},
     {2, 6, "eai5.bin"},
     {2, 7, "eai6.bin"},
+    {2, 8, "eai7.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
     {2, 13, "zela.bin"},
     {2, 14, "meda.bin"},
     {2, 15, "lega.bin"},
+    {2, 17, "drgn.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
@@ -171,24 +173,28 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 60, "enp4.grp"},
     {2, 61, "enp5.grp"},
     {2, 62, "enp6.grp"},
+    {2, 63, "enp7.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
     {2, 68, "zela.grp"},
     {2, 69, "meda.grp"},
     {2, 70, "lega.grp"},
+    {2, 71, "drgn.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
     {2, 78, "mpp4.grp"},
     {2, 79, "mpp5.grp"},
     {2, 80, "mpp6.grp"},
+    {2, 81, "mpp7.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
     {2, 88, "mus3.msd"},
     {2, 89, "mus4.msd"},
     {2, 90, "mus5.msd"},
     {2, 91, "mus6.msd"},
+    {2, 92, "mus7.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
 };
@@ -248,6 +254,21 @@ static const char *map_for_selector(u8 selector) {
          * standard ROKA run and ENCOUNTER! wipe before dispatching LEGA. */
         case 0x11:
         case 0x2F: return "mp6d.mdt";
+        /* MP70 is Caliente's heat-damage map.  The release frame loop
+         * applies its periodic Area-7 damage unless accessory 5 (the
+         * Asbestos Cape) is selected. */
+        case 0x12:
+        case 0x30: return "mp70.mdt";
+        case 0x13:
+        case 0x31: return "mp71.mdt";
+        case 0x14:
+        case 0x32: return "mp72.mdt";
+        case 0x15:
+        case 0x33: return "mp73.mdt";
+        /* MP7D is Dragon's chamber.  Caliente's x199/y33 boss door owns
+         * the directional ROKA run and ENCOUNTER! wipe before DRGN. */
+        case 0x16:
+        case 0x34: return "mp7d.mdt";
         default: return NULL;
     }
 }
