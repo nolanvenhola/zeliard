@@ -139,6 +139,9 @@ int main(void) {
     const spell_probe_t rascar_right = cast_spell(5, 3, 0);
     const spell_probe_t rascar_left = cast_spell(5, 3, 1);
     const spell_probe_t rascar_empty = cast_spell(5, 0, 0);
+    const spell_probe_t agua_right = cast_spell(6, 3, 0);
+    const spell_probe_t agua_left = cast_spell(6, 3, 1);
+    const spell_probe_t agua_empty = cast_spell(6, 0, 0);
     print_probe("espada", "right", &right);
     print_probe("espada", "left", &left);
     print_probe("espada", "empty", &empty);
@@ -154,6 +157,9 @@ int main(void) {
     print_probe("rascar", "right", &rascar_right);
     print_probe("rascar", "left", &rascar_left);
     print_probe("rascar", "empty", &rascar_empty);
+    print_probe("agua", "right", &agua_right);
+    print_probe("agua", "left", &agua_left);
+    print_probe("agua", "empty", &agua_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -275,7 +281,43 @@ int main(void) {
         rascar_empty.slot_dir == 0 && rascar_empty.active_mask == 0 &&
         rascar_empty.first_active_hash == 0 &&
         rascar_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&rascar_empty, 0x17) && !has_cue(&rascar_empty, 0x18);
+        has_cue(&rascar_empty, 0x17) && !has_cue(&rascar_empty, 0x18) &&
+        agua_right.ok && agua_left.ok && agua_empty.ok &&
+        agua_right.charge == 2 && agua_right.active == 0 &&
+        agua_right.slot_x == 0xFFFF && agua_right.slot_y == 0x39 &&
+        agua_right.slot_flags == 1 && agua_right.slot_frame == 0x0A &&
+        agua_right.slot_dir == 0 &&
+        agua_right.initial_slot_x[0] == 0x0010 &&
+        agua_right.initial_slot_y[0] == 0x39 &&
+        agua_right.initial_slot_x[1] == 0x0010 &&
+        agua_right.initial_slot_y[1] == 0x3D &&
+        agua_right.initial_slot_x[2] == 0x0010 &&
+        agua_right.initial_slot_y[2] == 0x3B &&
+        agua_right.active_mask == 0x00000FFC &&
+        agua_right.first_active_hash == 0xD3AFD2C23E6E42A8ULL &&
+        agua_right.frame_hash == 0xE0BD8B77231AE163ULL &&
+        has_cue(&agua_right, 0x17) && has_cue(&agua_right, 0x18) &&
+        agua_left.charge == 2 && agua_left.active == 0 &&
+        agua_left.slot_x == 0xFFFF && agua_left.slot_y == 0x39 &&
+        agua_left.slot_flags == 0 && agua_left.slot_frame == 0x0A &&
+        agua_left.slot_dir == 0 &&
+        agua_left.initial_slot_x[0] == 0x0011 &&
+        agua_left.initial_slot_y[0] == 0x39 &&
+        agua_left.initial_slot_x[1] == 0x0011 &&
+        agua_left.initial_slot_y[1] == 0x3D &&
+        agua_left.initial_slot_x[2] == 0x0011 &&
+        agua_left.initial_slot_y[2] == 0x3B &&
+        agua_left.active_mask == 0x00000FFC &&
+        agua_left.first_active_hash == 0x23C9300FB7F284BBULL &&
+        agua_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
+        has_cue(&agua_left, 0x17) && has_cue(&agua_left, 0x18) &&
+        agua_empty.charge == 0 && agua_empty.active == 0 &&
+        agua_empty.slot_x == 0xFFFF && agua_empty.slot_y == 0 &&
+        agua_empty.slot_flags == 0 && agua_empty.slot_frame == 0 &&
+        agua_empty.slot_dir == 0 && agua_empty.active_mask == 0 &&
+        agua_empty.first_active_hash == 0 &&
+        agua_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&agua_empty, 0x17) && !has_cue(&agua_empty, 0x18);
     printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
