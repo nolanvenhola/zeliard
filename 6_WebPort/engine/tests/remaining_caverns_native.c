@@ -162,6 +162,75 @@ static int run_reaccion_connector_case(void) {
     return ok;
 }
 
+static int run_alguien_case(void) {
+    static u8 game[0x10000], vga[0x10000];
+    prepare_player(game, 0x18);
+    game[0x80] = 222 - 16;
+    game[0x82] = (19 - 9) & 0x3F;
+    game[0x98] = 1;
+    game[0xA0] = 7;
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    unsigned encounter_start = 0, boss_music = 0, encounter_finish = 0;
+    unsigned long long encounter_hash = 0, chamber_hash = 0;
+    for (unsigned frame = 1; ok && frame <= 220; ++frame) {
+        const u8 direction = encounter_start ? 0 : 1;
+        ok &= zeliard_fight_masm_vm_advance(
+            game, sizeof(game), vga, sizeof(vga), 20, direction);
+        if (!encounter_start &&
+            zeliard_fight_masm_vm_peek_u16(0xC002) == 70)
+            encounter_start = frame;
+        if (!boss_music && zeliard_fight_masm_vm_music_chunk() == 94)
+            boss_music = frame;
+        if (frame == 56) encounter_hash = fnv1a64(vga, 64000);
+        if (!encounter_finish && encounter_start &&
+            zeliard_fight_masm_vm_at_frame())
+            encounter_finish = frame;
+        if (frame == 180) chamber_hash = fnv1a64(vga, 64000);
+    }
+    printf("alguien_encounter_probe: start=%u music=%u finish=%u width=%u "
+           "hash=%016llx/%016llx\n", encounter_start, boss_music,
+           encounter_finish, zeliard_fight_masm_vm_peek_u16(0xC002),
+           encounter_hash, chamber_hash);
+
+    prepare_player(game, 0x1C);
+    game[0x98] = 1;
+    game[0xA0] = 7;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    const u16 hp = zeliard_fight_masm_vm_peek_u16(0xAA09);
+    ok &= zeliard_fight_masm_vm_poke_u16(0xAA09, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xAA29, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned frames = 0, completion = 0;
+    unsigned long long completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && frames < 300 && !completion) {
+        ok &= zeliard_fight_masm_vm_advance(
+            game, sizeof(game), vga, sizeof(vga), 20, 0);
+        ++frames;
+        if (zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            completion = frames;
+            completion_hash = fnv1a64(vga, 64000);
+        }
+    }
+    printf("alguien_death_probe: hp=%04x frames=%u completion=%u/%02x "
+           "state=%02x/%02x tears=%02x hash=%016llx\n", hp, frames,
+           completion, zeliard_fight_masm_vm_peek_u8(0xFF30),
+           game[0x44], game[0x45], game[0xA0], completion_hash);
+    ok &= encounter_start && boss_music && encounter_finish;
+    ok &= encounter_start == 7 && boss_music == 58;
+    ok &= encounter_finish == 114;
+    ok &= encounter_hash == 0x3FB7C3A9BFE6BE2DULL;
+    ok &= chamber_hash == 0x149B57432C2399C1ULL;
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 70;
+    ok &= hp == 0x0320;
+    ok &= completion == 121;
+    ok &= completion_hash == 0x541A5D42892DE229ULL;
+    return ok;
+}
+
 int main(void) {
     static const cavern_case_t cases[] = {
         {"Reaccion", "mp71.mdt", 0x13, 196, 7, 92, 25, 10, 0x1E,
@@ -186,6 +255,7 @@ int main(void) {
     int ok = 1;
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i)
         ok &= run_case(&cases[i]);
+    ok &= run_alguien_case();
     ok &= run_reaccion_connector_case();
     ok &= run_persistence_case("Reaccion", 0x13, 9, 0x35, 0x10);
     ok &= run_persistence_case("Absor", 0x17, 24, 0x42, 0x10);

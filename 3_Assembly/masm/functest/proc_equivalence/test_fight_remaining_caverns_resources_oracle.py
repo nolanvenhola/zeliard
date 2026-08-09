@@ -23,6 +23,11 @@ RESOURCE_REFS = {
     "area8_ai": (0x9D56, bytes((2, 9))),
     "area8_sprites": (0x9E27, bytes((2, 64))),
     "area8_music": (0x9ECC, bytes((2, 93))),
+    "alguien_code": (0x9D61, bytes((2, 18))),
+    "alguien_sprites": (0x9E32, bytes((2, 72))),
+    "boss_music": (0x9ED7, bytes((2, 94))),
+    "boss_victory_overlay": (0x9C1E, bytes((2, 1))),
+    "boss_encounter_art": (0x9BF1, bytes((2, 56))),
 }
 HASHES = {
     "308EAI8.bin": "dd014b53e0108527bcf55b5514f23601063086dc73aabe81b80fc3134965ee7a",
@@ -36,6 +41,12 @@ HASHES = {
     "348MP8D.mdt": "2a6ffe29b8b4cc955cb30e45ced4a23ce87a30776e1251d59696d03cc23d0589",
     "349MP90.mdt": "b33d5880f8e37686a31acb8c0dd891525992d3a4f35a2b7acad3361571122d8e",
     "350MPA0.mdt": "cabc22c986da57f7181699c80a4886a9265679ebe4d19f6e045b9e356a8d7a56",
+    "300ROKAD.bin": "07236ac426e926d2bf73eccf750101614fb1f04fdc80745dc1a2982cc05ca500",
+    "317AKMA.bin": "cea5025222dc6bb039607a81347ee1cecff17042dc7558dc8cc75c1755973c87",
+    "353DMAN.grp": "687faa9cc9ee9dc7217caf9709c343f28453e4bcbe602418b581b5f8698e8a9e",
+    "355ENCNT.grp": "fd9fd239d60cca4418d042a5785f2f8924685f4edd03ae4768209e4ae0be1e5b",
+    "371AKMA.grp": "6fa2640e7f506bf4e834dad8c32e41b1addb0efacacbae3e67d5b2cd5592d014",
+    "394MFAN.msd": "87b5ec7f3ee8ea5f4086a3198076fc06e1de28d05811159eb8e9f5a829a80dff",
 }
 
 
@@ -117,9 +128,38 @@ def main() -> int:
                   for name, (_filename, expected) in cases.items())
     connector = map_contract(images["341MP73.mdt"])
     connector_ok = connector == (73, 1, 0, 0, 0, (), (), Counter())
+    alguien_room = images["348MP8D.mdt"]
+    alguien_descriptor = struct.unpack_from("<H", alguien_room)[0] - 0xC000
+    alguien_shape = (
+        struct.unpack_from("<H", alguien_room, 2)[0], alguien_room[0x12],
+        len(records(alguien_room, 0x0A, 12)),
+        len(records(alguien_room, 0x10, 16)),
+        alguien_room[alguien_descriptor:alguien_descriptor + 22],
+    )
+    alguien = images["317AKMA.bin"]
+    roka = images["300ROKAD.bin"]
+    alguien_contract = {
+        "milagro_boss_door": bytes.fromhex(
+            "de0013011c15000e00440020") in images["344MP81.mdt"],
+        "name": b"Alguien" in alguien,
+        "death_arm": alguien[0x9A0:0x9B0] == bytes.fromhex(
+            "c60629aa00c60625aa00c6062effffc3"),
+        "death_timer": alguien[0x9B0:0x9B7] == bytes.fromhex(
+            "a029aa3c287349"),
+        "death_fx": alguien[0x9EB:0x9F0] == bytes.fromhex(
+            "c60675ff37"),
+        "completion_write": alguien[0xA00:0xA06] == bytes.fromhex(
+            "c60630ffffc3"),
+        "victory_increment": bytes.fromhex("fe06a000") in roka,
+        "raised_sword_pose": bytes.fromhex("c606e70005") in roka,
+        "crystal_launch": bytes.fromhex("c6069ca594c6069da550") in roka,
+    }
     names_ok = all(f"Cavern of {name}".encode() in images[filename]
                    for name, (filename, _expected) in cases.items())
-    ok = refs_ok and hashes_ok and maps_ok and names_ok and connector_ok
+    ok = refs_ok and hashes_ok and maps_ok and names_ok and connector_ok and \
+        alguien_shape == (70, 8, 0, 0, bytes.fromhex(
+            "9900070fff0f0e0e10c07dc20ac03bc27fc200ffffff")) and \
+        all(alguien_contract.values())
     print("fight_remaining_refs: " + ("PASS" if refs_ok else "FAIL") +
           " " + " ".join(f"{name}={value.hex()}" for name, value in refs.items()))
     for name in cases:
@@ -128,6 +168,9 @@ def main() -> int:
               f" contract={actual[name]}")
     print("fight_remaining_connector: " +
           ("PASS" if connector_ok else "FAIL") + f" contract={connector}")
+    print("fight_alguien_contract: " +
+          ("PASS" if all(alguien_contract.values()) else "FAIL") +
+          f" shape={alguien_shape} contract={alguien_contract}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM Reaccion and complete Area-8 cavern chain")
     return 0 if ok else 1
