@@ -230,6 +230,8 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/306EAI6.bin', '87e10d8c62ad709f981f3c77e48f83074439779b0542a271523ac3dc7305541e'), 'eai6.bin'],
     [verifiedMasmOutput('zelres3/334MP60.mdt', 'fb7edfcf4e17c0f9c0a7004644af603d85bcc4023c66ed34fba8a32dbb2ad766'), 'mp60.mdt'],
     [verifiedMasmOutput('zelres3/335MP61.mdt', 'b6368328e0e88ee3f4e64868a79127f30985aa5f5ab90fc461600e38ce61ac66'), 'mp61.mdt'],
+    /* MP62 is Arrugia's Lion-keyed secret treasure cavern. */
+    [verifiedMasmOutput('zelres3/336MP62.mdt', '3248ca6fc3d05ef72e42ca3db29e2d0622c20b653f5d08f9e86b5eeec7060402'), 'mp62.mdt'],
     [verifiedMasmOutput('zelres3/314LEGA.bin', '8f660070d9c78a535862ce0afb9ec8dfb0c01a766bfd2e42fe74ed28a8dc0e7c'), 'lega.bin'],
     [verifiedMasmOutput('zelres3/337MP6D.mdt', '534d5fe2dd647ba2bb6c49ba365931c2931155102cb2a0d8cb5405e6c88f01d3'), 'mp6d.mdt'],
     [verifiedMasmOutput('zelres3/361ENP6.grp', '6df8b6d5ac7ccf37d78fbea9d3928e72277356ddc1ac4736fbdfe959f6405ec7'), 'enp6.grp'],

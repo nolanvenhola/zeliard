@@ -240,6 +240,10 @@ static const char *map_for_selector(u8 selector) {
         case 0x2C: return "mp60.mdt";
         case 0x0F:
         case 0x2D: return "mp61.mdt";
+        /* MP62 is Arrugia's secret treasure cavern, reached through
+         * Tesoro's x31/y5 Lion-keyed door and exited through x62/y13. */
+        case 0x10:
+        case 0x2E: return "mp62.mdt";
         /* MP6D is Tarso's chamber.  Tesoro's x309/y41 boss door owns the
          * standard ROKA run and ENCOUNTER! wipe before dispatching LEGA. */
         case 0x11:
