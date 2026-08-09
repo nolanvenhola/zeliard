@@ -119,7 +119,20 @@ def main() -> int:
     ]
     agar = images["312ZELA.bin"]
     boss_contract = {
-        "completion_write": bytes.fromhex("c60630ffff") in agar,
+        # ZELA subtracts BX from Agar's 500-point damage word, floors an
+        # underflow to zero, and stores the result before the shared prep
+        # callback observes it.
+        "damage_word": agar[0x56C:0x578] ==
+            bytes.fromhex("a1f1a52bc3730233c0a3f1a5"),
+        # Reaching zero arms FF2E, resets the 28h-step death state, then
+        # dispatches through 200FIGHT's release shutdown callback.
+        "death_and_shutdown": agar[0x586:0x59A] ==
+            bytes.fromhex("c6062effffc6060ea600c60604a6002eff263c60"),
+        "death_timer": agar[0x59A:0x5AA] ==
+            bytes.fromhex("803e0ea6287347c6062ffffffe060ea6"),
+        "completion_write": agar[0x5E8:0x5EE] ==
+            bytes.fromhex("c60630ffffc3"),
+        "shutdown_callback": fight[0x3C:0x3E] == bytes.fromhex("db83"),
         "encounter_resource": fight[0x9BF1 - LOAD_BASE:
                                     0x9BF3 - LOAD_BASE] == bytes((2, 56)),
         # MP4D retains the parent cavern label in the authored HUD record;
