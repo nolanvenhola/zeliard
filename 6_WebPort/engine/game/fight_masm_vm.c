@@ -152,6 +152,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 4, "eai3.bin"},
     {2, 5, "eai4.bin"},
     {2, 6, "eai5.bin"},
+    {2, 7, "eai6.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
@@ -168,6 +169,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 59, "enp3.grp"},
     {2, 60, "enp4.grp"},
     {2, 61, "enp5.grp"},
+    {2, 62, "enp6.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
@@ -178,11 +180,13 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 77, "mpp3.grp"},
     {2, 78, "mpp4.grp"},
     {2, 79, "mpp5.grp"},
+    {2, 80, "mpp6.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
     {2, 88, "mus3.msd"},
     {2, 89, "mus4.msd"},
     {2, 90, "mus5.msd"},
+    {2, 91, "mus6.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
 };
@@ -230,6 +234,10 @@ static const char *map_for_selector(u8 selector) {
          * authored boss door through the standard ROKA/ENCOUNTER flow. */
         case 0x0D:
         case 0x2B: return "mp5d.mdt";
+        case 0x0E:
+        case 0x2C: return "mp60.mdt";
+        case 0x0F:
+        case 0x2D: return "mp61.mdt";
         default: return NULL;
     }
 }
