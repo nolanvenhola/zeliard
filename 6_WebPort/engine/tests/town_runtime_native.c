@@ -216,6 +216,24 @@ int main(void) {
         ((u16)segments[1][0xE203] << 8));
     const unsigned long long pristine_shield_source = fnv1a64(
         segments[1] + pristine_shield_base, 0xC0);
+    static const unsigned long long equipped_spell_oracle[7] = {
+        0x4B78EDCB41024AE4ULL, 0x38EC34BD15886153ULL,
+        0x27BE1BB89569FF7DULL, 0x084168335E2CB4F8ULL,
+        0x22C4134884DF7F89ULL, 0xAE4412E5B02DFFDBULL,
+        0xCB99E1ED8440BF12ULL,
+    };
+    static u8 equipped_spell_vga[0x10000];
+    unsigned long long equipped_spell_hashes[7];
+    for (u8 spell = 1; spell <= 7; ++spell) {
+        memset(equipped_spell_vga, 0, sizeof(equipped_spell_vga));
+        ok &= zeliard_gmmcga_draw_equipped_spell(
+            equipped_spell_vga, sizeof(equipped_spell_vga),
+            segments[1], sizeof(segments[1]), spell, 0x37A4) == 0;
+        equipped_spell_hashes[spell - 1] = frame_rect_hash(
+            equipped_spell_vga, 222, 164, 16, 16);
+        ok &= equipped_spell_hashes[spell - 1] ==
+              equipped_spell_oracle[spell - 1];
+    }
     ok &= facing_town.facing_item_position == 0x002F;
     ok &= facing_town.facing_npc_position == 0x0030;
     ok &= facing_town.facing_door_type == 0x07;
@@ -235,6 +253,12 @@ int main(void) {
            fnv1a64(segments[2] + 0x7000, 0x0520));
     printf("town_itemp_shield_source: base=%04x source=%016llx\n",
            pristine_shield_base, pristine_shield_source);
+    printf("town_itemp_spell_frames: %016llx/%016llx/%016llx/%016llx/"
+           "%016llx/%016llx/%016llx\n",
+           equipped_spell_hashes[0], equipped_spell_hashes[1],
+           equipped_spell_hashes[2], equipped_spell_hashes[3],
+           equipped_spell_hashes[4], equipped_spell_hashes[5],
+           equipped_spell_hashes[6]);
     const unsigned long long cpat_pixel_hash =
         fnv1a64(segments[1] + 0x8100, 0x2EE0);
     const unsigned long long cpat_alpha_hash =
@@ -834,6 +858,71 @@ int main(void) {
            sizeof(satono_vga));
     const zeliard_town_runtime_t satono_runtime_snapshot = *satono;
 
+    /* The same 106TOWN live pump is used by every town while an NPC speaks.
+     * Satono's flame tiles intersect the right-hand dialog panel, making it
+     * the release fixture for the required foreground compositing order. */
+    const u16 satono_npc_list = (u16)(satono_segments[0][0xC00F] |
+        ((u16)satono_segments[0][0xC010] << 8));
+    const u16 satono_talk_position = (u16)(
+        satono_segments[0][satono_npc_list] |
+        ((u16)satono_segments[0][(u16)(satono_npc_list + 1)] << 8));
+    const int satono_dialog_begin = zeliard_town_dialog_begin_live(
+        &satono->dialog, satono_segments[0], satono_segments[3],
+        satono_segments[1], sizeof(satono_segments[1]),
+        satono_segments[2], sizeof(satono_segments[2]),
+        satono_vga, sizeof(satono_vga), satono_talk_position);
+    const u16 satono_panel_x = (u16)(satono->dialog.panel_ax >> 8) * 8u;
+    const u16 satono_panel_y = (u8)satono->dialog.panel_ax;
+    const u16 satono_panel_width =
+        (u16)(satono->dialog.panel_cx >> 8) * 8u;
+    const u16 satono_panel_height = (u8)satono->dialog.panel_cx;
+    const unsigned long long satono_dialog_panel_before = frame_rect_hash(
+        satono_vga, satono_panel_x, satono_panel_y,
+        satono_panel_width, satono_panel_height);
+    const unsigned long long satono_dialog_frame_before =
+        fnv1a64(satono_vga, sizeof(satono_vga));
+    satono_segments[0][0xFF33] = 5;
+    int satono_dialog_frames = 0;
+    int satono_dialog_panel_stable = 1;
+    int satono_dialog_background_changed = 0;
+    for (unsigned frame = 0; frame < 16; ++frame) {
+        const int advanced = zeliard_town_advance_pit(
+            satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 0);
+        if (advanced < 0) {
+            satono_dialog_panel_stable = 0;
+            break;
+        }
+        satono_dialog_frames += advanced;
+        satono_dialog_panel_stable &= frame_rect_hash(
+            satono_vga, satono_panel_x, satono_panel_y,
+            satono_panel_width, satono_panel_height) ==
+            satono_dialog_panel_before;
+        satono_dialog_background_changed |=
+            fnv1a64(satono_vga, sizeof(satono_vga)) !=
+            satono_dialog_frame_before;
+    }
+    const unsigned long long satono_dialog_panel_after = frame_rect_hash(
+        satono_vga, satono_panel_x, satono_panel_y,
+        satono_panel_width, satono_panel_height);
+    const unsigned long long satono_dialog_frame_after =
+        fnv1a64(satono_vga, sizeof(satono_vga));
+    printf("town_satono_dialog_overlay: begin=%d frames=%d active=%d "
+           "panel=%016llx/%016llx frame=%016llx/%016llx\n",
+           satono_dialog_begin, satono_dialog_frames,
+           satono->dialog.active, satono_dialog_panel_before,
+           satono_dialog_panel_after, satono_dialog_frame_before,
+           satono_dialog_frame_after);
+    ok &= satono_dialog_begin == 0 && satono_dialog_frames == 16 &&
+          satono->dialog.active &&
+          satono_dialog_panel_stable &&
+          satono_dialog_panel_after == satono_dialog_panel_before &&
+          satono_dialog_background_changed;
+
+    memcpy(satono_segments, satono_snapshot, sizeof(satono_segments));
+    memcpy(satono_vga, satono_snapshot + sizeof(satono_segments),
+           sizeof(satono_vga));
+    *satono = satono_runtime_snapshot;
+
     satono_segments[0][0x0083] = 0xFF;
     const int satono_left_frames = zeliard_town_advance_pit(
         satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 0);
@@ -1010,14 +1099,152 @@ int main(void) {
            sizeof(bosque_vga));
     *bosque = bosque_runtime_snapshot;
 
-    /* crest_hero is bit 3 of the persistent special-item byte at 0012h.
-     * The BSMP event writes the sentry flags/dialog before the first draw. */
+    /* BSMP gates the sentry on cavern object-state bit 0012h/08h.  The
+     * similarly named player byte at 009Ch is not this town gate. Without
+     * the cavern bit, the sentry remains C0h/0Bh: one prompt, Left blocked,
+     * and Right retreats after dismissing the response. */
+    bosque_segments[0][0x0012] &= (u8)~0x08;
+    bosque_segments[0][0x009C] = 0xFF;
+    const int bosque_no_crest_result = zeliard_town_enter_first_frame(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga));
+    const int bosque_no_crest_actor =
+        bosque_segments[0][0xCCFA] == 0xC0 &&
+        bosque_segments[0][0xCCFB] == 0x0B;
+    bosque_segments[0][0x0080] = 0;
+    bosque_segments[0][0x0081] = 0;
+    bosque_segments[0][0x0083] = 7;
+    bosque_segments[0][0x00C2] = 1;
+    bosque_segments[0][0xFF2A] = 0x17;
+    bosque_segments[0][0xFF2B] = 0xC0;
+    const int bosque_guard_no_crest_begin = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_no_crest_world = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    const int bosque_guard_no_crest_held = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const int bosque_guard_no_crest_prompt =
+        bosque->dialog.active && bosque->dialog.prompt_active &&
+        bosque->dialog.prompt_selection == 0;
+    const int bosque_guard_no_crest_select_no = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 2);
+    const int bosque_guard_no_crest_arrow = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 40, 0);
+    const int bosque_guard_no_crest_no_selected =
+        bosque->dialog.prompt_active && bosque->dialog.prompt_selection == 1;
+    bosque_segments[0][0xFF1D] = 0xFF;
+    const int bosque_guard_no_crest_confirm = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 0);
+    const int bosque_guard_no_crest_no_response =
+        bosque->dialog.active && !bosque->dialog.prompt_active &&
+        bosque->dialog.final_wait &&
+        (u16)(bosque_segments[0][0x7C58] |
+              ((u16)bosque_segments[0][0x7C59] << 8)) == 0xCC5A;
+    const int bosque_guard_no_crest_left_open = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const int bosque_guard_no_crest_right_open = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 8);
+    const int bosque_guard_no_crest_directions_blocked =
+        bosque->dialog.active;
+    bosque_segments[0][0xFF1D] = 0xFF;
+    const int bosque_guard_no_crest_release = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 0);
+    const int bosque_guard_no_crest_left = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_no_crest_blocked = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    const int bosque_guard_no_crest_right = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 8);
+    const u16 bosque_guard_no_crest_retreat = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    const int bosque_guard_no_crest_return = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const int bosque_guard_no_crest_retry = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_no_crest_retry_world = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    ok &= bosque_no_crest_result == 0 &&
+          bosque_no_crest_actor &&
+          bosque_guard_no_crest_begin > 0 &&
+          bosque_guard_no_crest_held > 0 &&
+          bosque_guard_no_crest_prompt &&
+          bosque_guard_no_crest_select_no > 0 &&
+          bosque_guard_no_crest_arrow > 0 &&
+          bosque_guard_no_crest_no_selected &&
+          bosque_guard_no_crest_confirm > 0 &&
+          bosque_guard_no_crest_no_response &&
+          bosque_guard_no_crest_left_open > 0 &&
+          bosque_guard_no_crest_right_open > 0 &&
+          bosque_guard_no_crest_directions_blocked &&
+          bosque_guard_no_crest_release > 0 &&
+          bosque_guard_no_crest_left > 0 &&
+          bosque_guard_no_crest_right > 0 &&
+          bosque_guard_no_crest_return > 0 &&
+          bosque_guard_no_crest_retry > 0 &&
+          bosque_guard_no_crest_world == 10 &&
+          bosque->dialog.active == 0 &&
+          bosque_segments[0][0xCCFA] == 0x40 &&
+          bosque_segments[0][0xCCFB] == 0x0B &&
+          bosque_guard_no_crest_blocked == bosque_guard_no_crest_world &&
+          bosque_guard_no_crest_retreat == bosque_guard_no_crest_world + 1 &&
+          bosque_guard_no_crest_retry_world == bosque_guard_no_crest_world;
+    printf("town_bosque_guard_no_crest: actor=%d begin=%d held=%d "
+           "prompt=%d select=%d arrow=%d selected=%d confirm=%d "
+           "response=%d horizontal=%d/%d/%d close=%d\n",
+           bosque_no_crest_actor, bosque_guard_no_crest_begin,
+           bosque_guard_no_crest_held, bosque_guard_no_crest_prompt,
+           bosque_guard_no_crest_select_no, bosque_guard_no_crest_arrow,
+           bosque_guard_no_crest_no_selected,
+           bosque_guard_no_crest_confirm,
+           bosque_guard_no_crest_no_response,
+           bosque_guard_no_crest_left_open,
+           bosque_guard_no_crest_right_open,
+           bosque_guard_no_crest_directions_blocked,
+           bosque_guard_no_crest_release);
+
+    memcpy(bosque_segments, bosque_snapshot, sizeof(bosque_segments));
+    memcpy(bosque_vga, bosque_snapshot + sizeof(bosque_segments),
+           sizeof(bosque_vga));
+    *bosque = bosque_runtime_snapshot;
+
+    /* With cavern bit 0012h/08h set, process_town_event_table changes the
+     * same actor to 80h/0Eh: dialog 14, passable, still only one trigger. */
     bosque_segments[0][0x0012] |= 0x08;
+    bosque_segments[0][0x009C] = 0;
     const int bosque_crest_result = zeliard_town_enter_first_frame(
         bosque, &bosque_game, bosque_vga, sizeof(bosque_vga));
     ok &= bosque_crest_result == 0 &&
           bosque_segments[0][0xCCFA] == 0x80 &&
           bosque_segments[0][0xCCFB] == 0x0E;
+    bosque_segments[0][0x0080] = 0;
+    bosque_segments[0][0x0081] = 0;
+    bosque_segments[0][0x0083] = 7;
+    bosque_segments[0][0x00C2] = 1;
+    bosque_segments[0][0xFF2A] = 0x17;
+    bosque_segments[0][0xFF2B] = 0xC0;
+    const int bosque_guard_crest_begin = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_crest_world = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    const int bosque_guard_crest_held = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const int bosque_guard_crest_release = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 0);
+    const int bosque_guard_crest_left = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_crest_passed = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    const int bosque_guard_crest_return = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 8);
+    const int bosque_guard_crest_retry = zeliard_town_advance_pit(
+        bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
+    const u16 bosque_guard_crest_retry_world = (u16)(
+        bosque_segments[0][0x0080] + bosque_segments[0][0x0083] + 4u);
+    ok &= bosque_guard_crest_begin > 0 && bosque_guard_crest_held > 0 &&
+          bosque_guard_crest_release > 0 && bosque_guard_crest_left > 0 &&
+          bosque_guard_crest_return > 0 && bosque_guard_crest_retry > 0 &&
+          bosque_guard_crest_world == 10 && !bosque->dialog.active &&
+          bosque_guard_crest_passed == bosque_guard_crest_world - 1 &&
+          bosque_guard_crest_retry_world == bosque_guard_crest_passed;
     printf("town_bosque_entry: rc=%d frame=%016llx playfield=%016llx "
            "capture=%016llx state=%016llx npc=%016llx mpat=%016llx/%016llx "
            "mman=%016llx/%016llx music=%u sentry=%02x/%02x\n",
@@ -1027,9 +1254,16 @@ int main(void) {
            (unsigned)bosque->music_index, bosque_segments[0][0xCCFA],
            bosque_segments[0][0xCCFB]);
     printf("town_bosque_routes: pollo=%d/0085/04/ff/06 "
-           "riza=%d/00a9/09/00/05 crest=%d/%02x/%02x\n",
+           "riza=%d/00a9/09/00/05 crest=%d/%02x/%02x "
+           "guard_no_crest=%u>%u>%u>%u "
+           "guard_crest=%u>%u>%u\n",
            bosque_pollo, bosque_riza, bosque_crest_result,
-           bosque_segments[0][0xCCFA], bosque_segments[0][0xCCFB]);
+           bosque_segments[0][0xCCFA], bosque_segments[0][0xCCFB],
+           bosque_guard_no_crest_world, bosque_guard_no_crest_blocked,
+           bosque_guard_no_crest_retreat,
+           bosque_guard_no_crest_retry_world,
+           bosque_guard_crest_world, bosque_guard_crest_passed,
+           bosque_guard_crest_retry_world);
     free(bosque);
 
     /* Ticket #81: Helada's release HLMP descriptor selects UGM1, DPAT,

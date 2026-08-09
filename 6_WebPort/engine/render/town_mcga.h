@@ -92,10 +92,20 @@ int zeliard_gmmcga_draw_spell_charge(u8 *vga, size_t vga_size,
 int zeliard_gmmcga_draw_shield_hp(u8 *vga, size_t vga_size,
                                   u8 *game_seg, size_t game_size);
 
+/* GAME:A3A6 + GMMCGA:2A1C, collected Tears in the ornamental top frame. */
+int zeliard_gmmcga_draw_collected_tears(u8 *vga, size_t vga_size,
+                                         const u8 *game_seg,
+                                         size_t game_size);
+
 /* GMMCGA:254C, resident dispatch slot CS:201C. */
 int zeliard_gmmcga_draw_equipped_sword(u8 *vga, size_t vga_size,
                                        const u8 *item_seg, size_t item_size,
                                        u8 sword, u16 bx);
+
+/* GMMCGA:25E2, resident dispatch slot CS:201E. */
+int zeliard_gmmcga_draw_equipped_spell(u8 *vga, size_t vga_size,
+                                       const u8 *item_seg, size_t item_size,
+                                       u8 spell, u16 bx);
 
 /* GMMCGA:25FC, resident dispatch slot CS:2020. */
 int zeliard_gmmcga_draw_equipped_shield(u8 *vga, size_t vga_size,

@@ -397,8 +397,13 @@ int zeliard_cavern_transition_begin(zeliard_cavern_transition_t *transition,
 int zeliard_cavern_transition_begin_return(
     zeliard_cavern_transition_t *transition, u8 town_selector,
     u8 *game_seg, size_t game_size, u8 *vga, size_t vga_size) {
+    /* 200FIGHT:boss_check copies door flags bit 40h to C3h before loading
+     * the town MDT. check_c3 uses that bit to choose the forced-run side;
+     * MP10->Muralla is right-to-left, while MP10->Satono is left-to-right. */
+    const u8 direction = game_seg && game_size > PLAYER_BOSS_INTRO_FLAG &&
+                         game_seg[PLAYER_BOSS_INTRO_FLAG] ? 1 : 0;
     return cavern_transition_begin_direction(
-        transition, 1, 1, town_selector,
+        transition, direction, 1, town_selector,
         game_seg, game_size, vga, vga_size);
 }
 

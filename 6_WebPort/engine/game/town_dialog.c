@@ -133,12 +133,12 @@ static void clear_page_prompt(u8 *vga, u16 packed) {
         memset(vga + (size_t)(y + row) * 320u + x, 0, 8);
 }
 
-static void draw_prompt_cursor(u8 *vga, u16 packed, u8 row) {
+static void draw_prompt_cursor_offset(u8 *vga, u16 packed, u8 y_offset) {
     static const u8 bits[9] = {
         0x00, 0x60, 0x70, 0x78, 0x7C, 0x78, 0x70, 0x60, 0x00,
     };
     const u16 x = (u16)(((u8)(packed >> 8) + 1u) * 4u);
-    const u16 y = (u16)((u8)packed + (u16)row * 10u + 1u);
+    const u16 y = (u16)((u8)packed + y_offset + 1u);
     for (u8 glyph_row = 0; glyph_row < 9; ++glyph_row) {
         u8 mask = bits[glyph_row];
         for (u8 pixel = 0; pixel < 8; ++pixel) {
@@ -147,6 +147,17 @@ static void draw_prompt_cursor(u8 *vga, u16 packed, u8 row) {
             mask <<= 1;
         }
     }
+}
+
+static void draw_prompt_cursor(u8 *vga, u16 packed, u8 row) {
+    draw_prompt_cursor_offset(vga, packed, (u8)(row * 10u));
+}
+
+static void clear_prompt_cursor_track(u8 *vga, u16 packed) {
+    const u16 x = (u16)(((u8)(packed >> 8) + 1u) * 4u);
+    const u16 y = (u16)((u8)packed + 1u);
+    for (u16 row = 0; row < 19 && y + row < 200; ++row)
+        memset(vga + (size_t)(y + row) * 320u + x, 0, 8);
 }
 
 static int draw_prompt_string(const u8 *cs, u8 *vga, size_t vga_size,
@@ -238,6 +249,7 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
         write_u16(cs, TEXT_STR_PTR, si);
         if (ch == 0xFF) {
             dialog->waiting = dialog->final_wait = 1;
+            dialog->final_direction_released = 0;
             return 0;
         }
         if (ch == 0x2F) {
@@ -252,6 +264,7 @@ static int render_dialog_chars(zeliard_town_dialog_t *dialog, u8 *cs,
             dialog->prompt_kind = TOWN_PROMPT_YES_NO;
             dialog->prompt_selection = 0;
             dialog->prompt_direction_latch = 0;
+            dialog->final_action_only = 1;
             dialog->waiting = 1;
             return draw_yes_no_prompt(dialog, cs, vga, vga_size) ? -3 : 0;
         }
@@ -454,22 +467,27 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                                  u8 *vga, size_t vga_size) {
     if (!dialog || !dialog->active || !dialog->waiting) return 0;
     if (dialog->prompt_active) {
+        if (dialog->prompt_cursor_anim_active) return 0;
         const u8 direction = cs[GVAR_INPUT_DIRECTION] & 3u;
         if (!direction) dialog->prompt_direction_latch = 0;
         else if (!dialog->prompt_direction_latch) {
             dialog->prompt_direction_latch = direction;
-            const u8 previous = dialog->prompt_selection;
-            if (direction == 1) dialog->prompt_selection = 0;
-            else if (direction == 2) dialog->prompt_selection = 1;
-            if (previous != dialog->prompt_selection) {
-                const int draw_result =
-                    dialog->prompt_kind == TOWN_PROMPT_TAKE_NO_TAKE
-                    ? draw_take_prompt(dialog, cs, vga, vga_size)
-                    : draw_yes_no_prompt(dialog, cs, vga, vga_size);
-                if (draw_result) return -1;
+            const u8 target = direction == 1 ? 0 :
+                              direction == 2 ? 1 :
+                              dialog->prompt_selection;
+            if (target != dialog->prompt_selection) {
+                dialog->prompt_cursor_anim_active = 1;
+                dialog->prompt_cursor_anim_from = dialog->prompt_selection;
+                dialog->prompt_cursor_anim_to = target;
+                dialog->prompt_cursor_anim_step = 0;
+                dialog->prompt_cursor_anim_wait_ticks = 4;
+                return 0;
             }
         }
-        if (!cs[GVAR_SPACE] && !cs[GVAR_ENTER] && !cs[GVAR_SKIP]) return 0;
+        const u8 prompt_action = dialog->prompt_kind == TOWN_PROMPT_YES_NO
+            ? cs[GVAR_SPACE]
+            : (u8)(cs[GVAR_SPACE] || cs[GVAR_ENTER] || cs[GVAR_SKIP]);
+        if (!prompt_action) return 0;
         cs[GVAR_SPACE] = cs[GVAR_ENTER] = cs[GVAR_SKIP] = 0;
         u8 next_dialog;
         if (dialog->prompt_kind == TOWN_PROMPT_TAKE_NO_TAKE) {
@@ -489,15 +507,30 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                 }
             }
         } else {
-            /* prompt_yes_no returns carry for Yes. ctrl_81_header dispatches
-             * carry to dialog 13 and no-carry to dialog 12. */
-            next_dialog = dialog->prompt_selection ? 12 : 13;
+            /* The visible rows are 0=Yes and 1=No. Keep this explicit:
+             * Bosque dialog 12 is "Don't lie..." and belongs to No;
+             * dialog 13 is the other refusal and belongs to Yes. */
+            const int answered_no = dialog->prompt_selection == 1;
+            next_dialog = answered_no ? 12 : 13;
         }
         dialog->prompt_active = dialog->waiting = 0;
         return render_dialog(dialog, cs, vga, vga_size,
                              next_dialog, dialog->panel_ax);
     }
-    if (!cs[GVAR_SPACE] && !cs[GVAR_ENTER] && !cs[GVAR_SKIP]) return 0;
+    const u8 action = (u8)(cs[GVAR_SPACE] || cs[GVAR_ENTER] ||
+                           cs[GVAR_SKIP]);
+    if (dialog->final_wait && dialog->final_action_only && !cs[GVAR_SPACE])
+        return 0;
+    if (dialog->final_wait && !action) {
+        const u8 direction = cs[GVAR_INPUT_DIRECTION];
+        if (!dialog->final_direction_released) {
+            if (!direction) dialog->final_direction_released = 1;
+            return 0;
+        }
+        if (!direction) return 0;
+    } else if (!action) {
+        return 0;
+    }
     cs[GVAR_SPACE] = cs[GVAR_ENTER] = cs[GVAR_SKIP] = 0;
     if (dialog->control_wait_dialog) {
         const u8 next_dialog = dialog->control_wait_dialog;
@@ -523,7 +556,7 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
         cs[(u16)(dialog->npc_offset + 2)] = dialog->original_npc_direction;
     }
     cs[TEXT_DONE_FLAG] = cs[TEXT_WRAP_FLAG] = 0;
-    dialog->active = dialog->waiting = 0;
+    dialog->active = dialog->waiting = dialog->final_wait = 0;
     return 1;
 }
 
@@ -532,6 +565,23 @@ int zeliard_town_dialog_advance_pit(zeliard_town_dialog_t *dialog,
                                     u8 *vga, size_t vga_size) {
     if (!dialog || !dialog->active || !cs || !vga || vga_size < 0x10000)
         return -1;
+    if (dialog->prompt_cursor_anim_active) {
+        if (--dialog->prompt_cursor_anim_wait_ticks != 0) return 0;
+        ++dialog->prompt_cursor_anim_step;
+        const int direction = dialog->prompt_cursor_anim_to >
+                              dialog->prompt_cursor_anim_from ? 1 : -1;
+        const u8 offset = (u8)(dialog->prompt_cursor_anim_from * 10 +
+            direction * dialog->prompt_cursor_anim_step);
+        clear_prompt_cursor_track(vga, dialog->prompt_position);
+        draw_prompt_cursor_offset(vga, dialog->prompt_position, offset);
+        if (dialog->prompt_cursor_anim_step >= 10) {
+            dialog->prompt_selection = dialog->prompt_cursor_anim_to;
+            dialog->prompt_cursor_anim_active = 0;
+        } else {
+            dialog->prompt_cursor_anim_wait_ticks = 4;
+        }
+        return 1;
+    }
     if (dialog->scroll_active) {
         if (--dialog->scroll_wait_ticks != 0) return 0;
         scroll_dialog_one_row(vga, dialog->scroll_packed,

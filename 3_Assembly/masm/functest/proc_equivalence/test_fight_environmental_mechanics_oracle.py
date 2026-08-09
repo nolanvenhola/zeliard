@@ -79,6 +79,11 @@ def main() -> int:
         "corroer": "331MP50.mdt",
         "cementar": "332MP51.mdt",
         "riza": "326MP31.mdt",
+        "reaccion": "339MP71.mdt",
+        "absor": "343MP80.mdt",
+        "milagro": "344MP81.mdt",
+        "desleal": "345MP82.mdt",
+        "falter": "346MP83.mdt",
     }
     maps = {name: payload(release_path(f"zelres3/{filename}"))
             for name, filename in names.items()}
@@ -88,15 +93,19 @@ def main() -> int:
         release_path("zelres3/380MPP7.grp").read_bytes()))
     mpp5 = decode_6de1(fill_buffer_decompress(
         release_path("zelres3/378MPP5.grp").read_bytes()))
+    mpp8 = decode_6de1(fill_buffer_decompress(
+        release_path("zelres3/381MPP8.grp").read_bytes()))
     family_tables = {
         # The GRP decoder includes the four bytes stripped by the loader
         # before the image is placed at ES:8000, so VM 8024 maps to 0x20.
         "area7": mpp7[0x20:0x2C].hex(),
         "area5": mpp5[0x20:0x2C].hex(),
+        "area8": mpp8[0x20:0x2C].hex(),
     }
     family_ok = family_tables == {
         "area7": "2a0000002900000028000000",
         "area5": "000000002526000023240000",
+        "area8": "131415121a1b1c1117181900",
     }
 
     correr_components = components(
@@ -125,6 +134,21 @@ def main() -> int:
         "caliente_collapsing": [row.hex() for row in records(maps["caliente"], 6, 3)],
         "cementar_horizontal": [row.hex() for row in records(maps["cementar"], 8, 7)],
         "riza_horizontal": [row.hex() for row in records(maps["riza"], 8, 7)],
+        "reaccion_vertical": [row.hex() for row in records(maps["reaccion"], 4, 3)],
+        "reaccion_reactive": [row.hex() for row in records(maps["reaccion"], 6, 3)],
+        "reaccion_horizontal": [row.hex() for row in records(maps["reaccion"], 8, 7)],
+        "absor_vertical": [row.hex() for row in records(maps["absor"], 4, 3)],
+        "absor_reactive": [row.hex() for row in records(maps["absor"], 6, 3)],
+        "absor_horizontal": [row.hex() for row in records(maps["absor"], 8, 7)],
+        "milagro_vertical": [row.hex() for row in records(maps["milagro"], 4, 3)],
+        "milagro_reactive": [row.hex() for row in records(maps["milagro"], 6, 3)],
+        "milagro_horizontal": [row.hex() for row in records(maps["milagro"], 8, 7)],
+        "desleal_vertical": [row.hex() for row in records(maps["desleal"], 4, 3)],
+        "desleal_reactive": [row.hex() for row in records(maps["desleal"], 6, 3)],
+        "desleal_horizontal": [row.hex() for row in records(maps["desleal"], 8, 7)],
+        "falter_vertical": [row.hex() for row in records(maps["falter"], 4, 3)],
+        "falter_reactive": [row.hex() for row in records(maps["falter"], 6, 3)],
+        "falter_horizontal": [row.hex() for row in records(maps["falter"], 8, 7)],
     }
     platforms_ok = platform_contract == {
         "caliente_vertical": ["070006","0e0003","170003","1c003f","1f003f",
@@ -136,6 +160,40 @@ def main() -> int:
                                   "2b80a021003400","3740852e003f00",
                                   "70809a63007900","bd8085b600c000"],
         "riza_horizontal": ["6040aa5d006300"],
+        "reaccion_vertical": ["230009"],
+        "reaccion_reactive": ["800009","830009","8b0019","8e001a"],
+        "reaccion_horizontal": ["05809dbe001600","0540a0bf000b00",
+            "0c809107001100","2d403129003400","35809031003900",
+            "39801b35003d00","3e40b137004200","42409b40004400",
+            "4440903e004900","7d40a176008200","b3808faa00bc00",
+            "b34091aa00bc00"],
+        "absor_vertical": ["010022","7d0023","95002b","b6003c",
+            "b70016","e3000e","fa0015","fb002c"],
+        "absor_reactive": ["48001d","4b001e","4e001f","b1002b"],
+        "absor_horizontal": ["1980a116002c00","5e80b851006a00",
+            "81808f7b008700","9080b67d00a400","ca809ebd00d600",
+            "e840a5e600f000","f140b6eb00f800","f44088ee00f900"],
+        "milagro_vertical": ["180038","1c002f","3b0020","4e0035",
+            "700014","8a0039","9b003f","c60030","d10035",
+            "f70004","fa0015"],
+        "milagro_reactive": ["b5000a"],
+        "milagro_horizontal": ["10801705001c00","3840b832003f00",
+            "6b802963007500","ab400ca500b200"],
+        "desleal_vertical": ["030036","370016","500039","8d001c",
+            "9e000d","b80002","b8000d"],
+        "desleal_reactive": [],
+        "desleal_horizontal": ["0b803b07000f00","0f40340a001400",
+            "1680bb12001a00","2d803428003200","3a80b435003f00",
+            "a3802b9f00a700","a4803ba100a700","a940a6a200af00",
+            "ad80bbaa00b000","ae80abaa00b200","b9802bb500bd00"],
+        "falter_vertical": ["110018"],
+        "falter_reactive": ["07001e","32002e","35002c","38002a",
+            "410007","440008","470009","4a000a","7c0029"],
+        "falter_horizontal": ["1380af0d001800","1880840e002300",
+            "1840a312001d00","20802113003000","2580991d002c00",
+            "25409b1d002f00","3240b92b003900","36809e34003b00",
+            "3e40a03b004100","4340b93c004a00","5040264c005500",
+            "65409c61006800","6e40bd68007300","7780ba70007c00"],
     }
 
     ok = family_ok and correr_ok and corroer_ok and platforms_ok

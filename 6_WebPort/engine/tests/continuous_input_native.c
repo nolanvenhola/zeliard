@@ -102,6 +102,15 @@ int main(void) {
     ok &= word_at(mem, TIMER_COUNTER) == 0;
     printf("continuous_input:f9_speed_edge: %s\n", ok ? "PASS" : "FAIL");
 
+    actions = zel_input_key_down(&input, mem, ZEL_INPUT_KEY_F7);
+    ok &= actions == ZEL_INPUT_ACTION_RESTORE_MENU;
+    ok &= word_at(mem, TIMER_COUNTER) == 0x4000;
+    ok &= zel_input_key_down(&input, mem, ZEL_INPUT_KEY_F7) ==
+        ZEL_INPUT_ACTION_NONE;
+    zel_input_key_up(&input, mem, ZEL_INPUT_KEY_F7);
+    ok &= word_at(mem, TIMER_COUNTER) == 0;
+    printf("continuous_input:f7_restore_edge: %s\n", ok ? "PASS" : "FAIL");
+
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_LEFT);
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_SPACE);
     mem[SPACE_ACTION] = 0xFF;

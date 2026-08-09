@@ -21,6 +21,8 @@ void opening_credits_exit_release(void); /* MSC driver set gvar_enable_all */
 void opening_pause_overlay_show(void); /* stick.asm pause handler, MCGA path */
 void opening_pause_overlay_show_game(const u8 *game_seg, size_t game_size);
 void opening_pause_overlay_hide(void); /* restore saved AX=101Eh/CX=0810h region */
+void opening_restore_overlay_show_game(const u8 *game_seg, size_t game_size);
+void opening_restore_overlay_hide(void);
 void opening_speed_overlay_show_game(const u8 *game_seg, size_t game_size,
                                      u8 digit);
 void opening_speed_overlay_set_digit(u8 digit);
