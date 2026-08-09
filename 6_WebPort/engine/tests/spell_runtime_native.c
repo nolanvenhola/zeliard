@@ -52,6 +52,7 @@ typedef struct {
     u8 cues[32];
     unsigned cue_count;
     unsigned active_mask;
+    unsigned long long first_active_hash;
     unsigned long long frame_hash;
 } spell_probe_t;
 
@@ -69,6 +70,8 @@ static spell_probe_t cast_spell(u8 spell, u8 charges, u8 facing) {
         result.ok &= advance_frame(game, vga, 0);
         result.active_mask |=
             (unsigned)(game[0xFF3E] != 0) << (frame & 31u);
+        if (game[0xFF3E] && !result.first_active_hash)
+            result.first_active_hash = fnv1a64(vga, 64000);
         for (u8 cue; (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
             if (result.cue_count < 32)
                 result.cues[result.cue_count++] = cue;
@@ -94,7 +97,8 @@ static void print_probe(const char *spell, const char *name,
            result->slot_dir);
     for (unsigned i = 0; i < result->cue_count; ++i)
         printf("%02x", result->cues[i]);
-    printf(" active_mask=%08x frame=%016llx\n", result->active_mask,
+    printf(" active_mask=%08x active_frame=%016llx frame=%016llx\n",
+           result->active_mask, result->first_active_hash,
            result->frame_hash);
 }
 
@@ -114,6 +118,9 @@ int main(void) {
     const spell_probe_t fuego_right = cast_spell(3, 3, 0);
     const spell_probe_t fuego_left = cast_spell(3, 3, 1);
     const spell_probe_t fuego_empty = cast_spell(3, 0, 0);
+    const spell_probe_t lanzar_right = cast_spell(4, 3, 0);
+    const spell_probe_t lanzar_left = cast_spell(4, 3, 1);
+    const spell_probe_t lanzar_empty = cast_spell(4, 0, 0);
     print_probe("espada", "right", &right);
     print_probe("espada", "left", &left);
     print_probe("espada", "empty", &empty);
@@ -123,6 +130,9 @@ int main(void) {
     print_probe("fuego", "right", &fuego_right);
     print_probe("fuego", "left", &fuego_left);
     print_probe("fuego", "empty", &fuego_empty);
+    print_probe("lanzar", "right", &lanzar_right);
+    print_probe("lanzar", "left", &lanzar_left);
+    print_probe("lanzar", "empty", &lanzar_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -183,7 +193,28 @@ int main(void) {
         fuego_empty.slot_flags == 0 && fuego_empty.slot_frame == 0 &&
         fuego_empty.slot_dir == 0 && fuego_empty.active_mask == 0 &&
         fuego_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&fuego_empty, 0x17) && !has_cue(&fuego_empty, 0x18);
+        has_cue(&fuego_empty, 0x17) && !has_cue(&fuego_empty, 0x18) &&
+        lanzar_right.ok && lanzar_left.ok && lanzar_empty.ok &&
+        lanzar_right.charge == 2 && lanzar_right.active == 0 &&
+        lanzar_right.slot_x == 0xFFFF && lanzar_right.slot_y == 0x3B &&
+        lanzar_right.slot_flags == 1 && lanzar_right.slot_frame == 0x0A &&
+        lanzar_right.slot_dir == 0 &&
+        lanzar_right.active_mask == 0x00000FFC &&
+        lanzar_right.frame_hash == 0xE0BD8B77231AE163ULL &&
+        has_cue(&lanzar_right, 0x17) && has_cue(&lanzar_right, 0x18) &&
+        lanzar_left.charge == 2 && lanzar_left.active == 0 &&
+        lanzar_left.slot_x == 0xFFFF && lanzar_left.slot_y == 0x3B &&
+        lanzar_left.slot_flags == 0 && lanzar_left.slot_frame == 0x0A &&
+        lanzar_left.slot_dir == 0 &&
+        lanzar_left.active_mask == 0x00000FFC &&
+        lanzar_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
+        has_cue(&lanzar_left, 0x17) && has_cue(&lanzar_left, 0x18) &&
+        lanzar_empty.charge == 0 && lanzar_empty.active == 0 &&
+        lanzar_empty.slot_x == 0xFFFF && lanzar_empty.slot_y == 0 &&
+        lanzar_empty.slot_flags == 0 && lanzar_empty.slot_frame == 0 &&
+        lanzar_empty.slot_dir == 0 && lanzar_empty.active_mask == 0 &&
+        lanzar_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&lanzar_empty, 0x17) && !has_cue(&lanzar_empty, 0x18);
     printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
