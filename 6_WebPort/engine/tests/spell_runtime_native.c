@@ -111,12 +111,18 @@ int main(void) {
     const spell_probe_t saeta_right = cast_spell(2, 3, 0);
     const spell_probe_t saeta_left = cast_spell(2, 3, 1);
     const spell_probe_t saeta_empty = cast_spell(2, 0, 0);
+    const spell_probe_t fuego_right = cast_spell(3, 3, 0);
+    const spell_probe_t fuego_left = cast_spell(3, 3, 1);
+    const spell_probe_t fuego_empty = cast_spell(3, 0, 0);
     print_probe("espada", "right", &right);
     print_probe("espada", "left", &left);
     print_probe("espada", "empty", &empty);
     print_probe("saeta", "right", &saeta_right);
     print_probe("saeta", "left", &saeta_left);
     print_probe("saeta", "empty", &saeta_empty);
+    print_probe("fuego", "right", &fuego_right);
+    print_probe("fuego", "left", &fuego_left);
+    print_probe("fuego", "empty", &fuego_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -156,7 +162,28 @@ int main(void) {
         saeta_empty.slot_flags == 0 && saeta_empty.slot_frame == 0 &&
         saeta_empty.slot_dir == 0 && saeta_empty.active_mask == 0 &&
         saeta_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&saeta_empty, 0x17) && !has_cue(&saeta_empty, 0x18);
+        has_cue(&saeta_empty, 0x17) && !has_cue(&saeta_empty, 0x18) &&
+        fuego_right.ok && fuego_left.ok && fuego_empty.ok &&
+        fuego_right.charge == 2 && fuego_right.active == 0 &&
+        fuego_right.slot_x == 0xFFFF && fuego_right.slot_y == 0x3C &&
+        fuego_right.slot_flags == 1 && fuego_right.slot_frame == 0x0C &&
+        fuego_right.slot_dir == 4 &&
+        fuego_right.active_mask == 0x00003FFC &&
+        fuego_right.frame_hash == 0xE0BD8B77231AE163ULL &&
+        has_cue(&fuego_right, 0x17) && has_cue(&fuego_right, 0x18) &&
+        fuego_left.charge == 2 && fuego_left.active == 0 &&
+        fuego_left.slot_x == 0xFFFF && fuego_left.slot_y == 0x3C &&
+        fuego_left.slot_flags == 0 && fuego_left.slot_frame == 0x0C &&
+        fuego_left.slot_dir == 4 &&
+        fuego_left.active_mask == 0x00003FFC &&
+        fuego_left.frame_hash == 0xDC8D212DD0516A71ULL &&
+        has_cue(&fuego_left, 0x17) && has_cue(&fuego_left, 0x18) &&
+        fuego_empty.charge == 0 && fuego_empty.active == 0 &&
+        fuego_empty.slot_x == 0xFFFF && fuego_empty.slot_y == 0 &&
+        fuego_empty.slot_flags == 0 && fuego_empty.slot_frame == 0 &&
+        fuego_empty.slot_dir == 0 && fuego_empty.active_mask == 0 &&
+        fuego_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&fuego_empty, 0x17) && !has_cue(&fuego_empty, 0x18);
     printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
