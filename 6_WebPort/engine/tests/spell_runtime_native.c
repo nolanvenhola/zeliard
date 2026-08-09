@@ -55,11 +55,11 @@ typedef struct {
     unsigned long long frame_hash;
 } spell_probe_t;
 
-static spell_probe_t cast_espada(u8 charges, u8 facing) {
+static spell_probe_t cast_spell(u8 spell, u8 charges, u8 facing) {
     static u8 game[0x10000], vga[0x10000];
     spell_probe_t result;
     memset(&result, 0, sizeof(result));
-    prepare_player(game, 1, charges);
+    prepare_player(game, spell, charges);
     palette_set_game_mcga();
     result.ok = zeliard_fight_masm_vm_start(
         game, sizeof(game), vga, sizeof(vga));
@@ -73,7 +73,7 @@ static spell_probe_t cast_espada(u8 charges, u8 facing) {
             if (result.cue_count < 32)
                 result.cues[result.cue_count++] = cue;
     }
-    result.charge = game[0xAB];
+    result.charge = game[0xAB + spell - 1];
     result.active = game[0xFF3E];
     result.slot_x = (u16)zeliard_fight_masm_vm_peek_u16(0xEB15);
     result.slot_y = (u8)zeliard_fight_masm_vm_peek_u8(0xEB17);
@@ -85,10 +85,11 @@ static spell_probe_t cast_espada(u8 charges, u8 facing) {
     return result;
 }
 
-static void print_probe(const char *name, const spell_probe_t *result) {
-    printf("spell_espada_%s: charge=%u active=%02x "
+static void print_probe(const char *spell, const char *name,
+                        const spell_probe_t *result) {
+    printf("spell_%s_%s: charge=%u active=%02x "
            "slot=%04x/%02x/%02x/%02x/%02x cues=",
-           name, result->charge, result->active, result->slot_x,
+           spell, name, result->charge, result->active, result->slot_x,
            result->slot_y, result->slot_flags, result->slot_frame,
            result->slot_dir);
     for (unsigned i = 0; i < result->cue_count; ++i)
@@ -104,12 +105,18 @@ static int has_cue(const spell_probe_t *result, u8 expected) {
 }
 
 int main(void) {
-    const spell_probe_t right = cast_espada(3, 0);
-    const spell_probe_t left = cast_espada(3, 1);
-    const spell_probe_t empty = cast_espada(0, 0);
-    print_probe("right", &right);
-    print_probe("left", &left);
-    print_probe("empty", &empty);
+    const spell_probe_t right = cast_spell(1, 3, 0);
+    const spell_probe_t left = cast_spell(1, 3, 1);
+    const spell_probe_t empty = cast_spell(1, 0, 0);
+    const spell_probe_t saeta_right = cast_spell(2, 3, 0);
+    const spell_probe_t saeta_left = cast_spell(2, 3, 1);
+    const spell_probe_t saeta_empty = cast_spell(2, 0, 0);
+    print_probe("espada", "right", &right);
+    print_probe("espada", "left", &left);
+    print_probe("espada", "empty", &empty);
+    print_probe("saeta", "right", &saeta_right);
+    print_probe("saeta", "left", &saeta_left);
+    print_probe("saeta", "empty", &saeta_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -128,8 +135,29 @@ int main(void) {
         empty.slot_flags == 0 && empty.slot_frame == 0 &&
         empty.slot_dir == 0 && empty.active_mask == 0 &&
         empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&empty, 0x17) && !has_cue(&empty, 0x18);
-    printf("VERDICT: %s: release MASM Espada cast probes\n",
+        has_cue(&empty, 0x17) && !has_cue(&empty, 0x18) &&
+        saeta_right.ok && saeta_left.ok && saeta_empty.ok &&
+        saeta_right.charge == 2 && saeta_right.active == 0 &&
+        saeta_right.slot_x == 0xFFFF && saeta_right.slot_y == 0x3B &&
+        saeta_right.slot_flags == 1 && saeta_right.slot_frame == 0x0A &&
+        saeta_right.slot_dir == 0 &&
+        saeta_right.active_mask == 0x00000FFC &&
+        saeta_right.frame_hash == 0xE0BD8B77231AE163ULL &&
+        has_cue(&saeta_right, 0x17) && has_cue(&saeta_right, 0x18) &&
+        saeta_left.charge == 2 && saeta_left.active == 0 &&
+        saeta_left.slot_x == 0xFFFF && saeta_left.slot_y == 0x3B &&
+        saeta_left.slot_flags == 0 && saeta_left.slot_frame == 0x0A &&
+        saeta_left.slot_dir == 0 &&
+        saeta_left.active_mask == 0x00000FFC &&
+        saeta_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
+        has_cue(&saeta_left, 0x17) && has_cue(&saeta_left, 0x18) &&
+        saeta_empty.charge == 0 && saeta_empty.active == 0 &&
+        saeta_empty.slot_x == 0xFFFF && saeta_empty.slot_y == 0 &&
+        saeta_empty.slot_flags == 0 && saeta_empty.slot_frame == 0 &&
+        saeta_empty.slot_dir == 0 && saeta_empty.active_mask == 0 &&
+        saeta_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&saeta_empty, 0x17) && !has_cue(&saeta_empty, 0x18);
+    printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }
