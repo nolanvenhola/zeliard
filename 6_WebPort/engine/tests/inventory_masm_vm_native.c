@@ -70,6 +70,34 @@ int main(void) {
 
     zeliard_inventory_masm_vm_stop();
 
+    /* 201SELCT builds one wearable cursor table from A1h..A5h and keeps
+     * selected_accessory (9Eh) on the matching owned entry. Ruzeria is ID
+     * 4; the implicit leading zero is the unequipped choice. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA1] = 2;
+    game[0xA2] = 4;
+    game[0xA3] = 5;
+    game[0x9E] = 4;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const u8 wearable_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 wearable_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    const u8 wearable_none = zeliard_inventory_masm_vm_peek(0xAE0A);
+    const u8 wearable_pirika = zeliard_inventory_masm_vm_peek(0xAE0B);
+    const u8 wearable_ruzeria = zeliard_inventory_masm_vm_peek(0xAE0C);
+    const u8 wearable_cape = zeliard_inventory_masm_vm_peek(0xAE0D);
+    printf("inventory_masm_ruzeria: selected=%u count=%u cursor=%u "
+           "table=%u/%u/%u/%u\n", game[0x9E], wearable_count,
+           wearable_cursor, wearable_none, wearable_pirika,
+           wearable_ruzeria, wearable_cape);
+    ok &= game[0x9E] == 4 && wearable_count == 4 &&
+        wearable_cursor == 2 && wearable_none == 0 &&
+        wearable_pirika == 2 && wearable_ruzeria == 4 &&
+        wearable_cape == 5;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
