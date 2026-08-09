@@ -182,6 +182,87 @@ int main(void) {
     ok &= encounter_hash == 0x9F32E6CE4CA27519ULL;
     ok &= chamber_hash == 0x16FCB1BA7C156A8AULL;
 
+    /* ZELA owns Agar's 500-point damage word and its phase/death state.
+     * Verify the live release state, then drive only its documented terminal
+     * state so the original 28h-step death FSM and completion path run. */
+    printf("agar_state_probe: damage=%04x phase=%02x/%02x/%02x/%02x "
+           "death=%02x completion=%02x shutdown=%04x\n",
+           zeliard_fight_masm_vm_peek_u16(0xA5F1),
+           zeliard_fight_masm_vm_peek_u8(0xA604),
+           zeliard_fight_masm_vm_peek_u8(0xA605),
+           zeliard_fight_masm_vm_peek_u8(0xA606),
+           zeliard_fight_masm_vm_peek_u8(0xA607),
+           zeliard_fight_masm_vm_peek_u8(0xFF2E),
+           zeliard_fight_masm_vm_peek_u8(0xFF30),
+           zeliard_fight_masm_vm_peek_u16(0x603C));
+    ok &= zeliard_fight_masm_vm_peek_u16(0xA5F1) == 0x01F4;
+    ok &= zeliard_fight_masm_vm_peek_u16(0x603C) == 0x83DB;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xA5F1, 0);
+    for (u16 address = 0xA604; address <= 0xA60F; ++address)
+        ok &= zeliard_fight_masm_vm_poke_u8(address, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned agar_frames = 0, agar_completion = 0;
+    unsigned long long agar_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && agar_frames < 400 &&
+           !(boss_game[0x18] == 0xFF && boss_game[0x19] == 0xFF)) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga), 20,
+            0);
+        ++agar_frames;
+        if (!agar_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            agar_completion = agar_frames;
+            agar_completion_hash = fnv1a64(boss_vga, 64000);
+        }
+    }
+    printf("agar_death_probe: frames=%u completion=%u timer=%02x "
+           "defeated=%02x/%02x event=%02x hash=%016llx\n",
+           agar_frames, agar_completion,
+           zeliard_fight_masm_vm_peek_u8(0xA60E), boss_game[0x18],
+           boss_game[0x19], boss_game[0x1C], agar_completion_hash);
+    ok &= agar_completion == 164;
+    ok &= agar_frames == 183;
+    ok &= agar_completion_hash == 0xD1CF26A3B98EA73DULL;
+    ok &= boss_game[0x18] == 0xFF && boss_game[0x19] == 0xFF;
+
+    /* A persisted defeated word must bypass Agar's encounter when the door
+     * is revisited. The release still admits the player to the now-empty
+     * MP4D chamber, but does not load ZELA, ENCOUNTER!, or the boss score. */
+    static u8 revisit_game[0x10000], revisit_vga[0x10000];
+    prepare_player(revisit_game, 8, 224, 18);
+    revisit_game[0x98] = 1;
+    revisit_game[0x18] = revisit_game[0x19] = 0xFF;
+    revisit_game[0x1C] = 0x10;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga));
+    unsigned revisit_frames = 0, revisit_chamber = 0;
+    unsigned revisit_boss_music = 0;
+    while (zeliard_fight_masm_vm_active() && revisit_frames < 180) {
+        ok &= advance_frame(revisit_game, revisit_vga,
+                            revisit_chamber ? 0 : 1);
+        ++revisit_frames;
+        const u16 width = zeliard_fight_masm_vm_peek_u16(0xC002);
+        if (!revisit_chamber && width == 73) revisit_chamber = revisit_frames;
+        if (zeliard_fight_masm_vm_music_chunk() == 94)
+            revisit_boss_music = revisit_frames;
+    }
+    printf("agar_revisit_probe: frames=%u chamber=%u boss_music=%u "
+           "active=%d width=%u music=%02x "
+           "selector=%02x pos=%02x/%02x/%02x\n", revisit_frames,
+           revisit_chamber, revisit_boss_music,
+           zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(), revisit_game[0xC4],
+           revisit_game[0x80], revisit_game[0x82], revisit_game[0x83]);
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 73;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 89;
+    ok &= revisit_game[0xC4] == 0x0A;
+    ok &= revisit_chamber > 0;
+    ok &= revisit_boss_music == 0;
+
     printf("VERDICT: %s: Glacial exact fight VM and Agar handoff\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
