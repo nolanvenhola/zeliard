@@ -158,6 +158,25 @@ int main(void) {
         cape_none == 0 && cape_owned == 5;
     zeliard_inventory_masm_vm_stop();
 
+    /* Feruza ID 1 is also preserved as the selected, owned-only wearable. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA3] = 1;
+    game[0x9E] = 1;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const u8 feruza_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 feruza_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    const u8 feruza_none = zeliard_inventory_masm_vm_peek(0xAE0A);
+    const u8 feruza_owned = zeliard_inventory_masm_vm_peek(0xAE0B);
+    printf("inventory_masm_feruza: selected=%u count=%u cursor=%u "
+           "table=%u/%u\n", game[0x9E], feruza_count, feruza_cursor,
+           feruza_none, feruza_owned);
+    ok &= game[0x9E] == 1 && feruza_count == 2 && feruza_cursor == 1 &&
+        feruza_none == 0 && feruza_owned == 1;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
