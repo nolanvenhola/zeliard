@@ -243,6 +243,40 @@ int main(void) {
         zeliard_inventory_masm_vm_take_sound_cue() == 0;
     zeliard_inventory_masm_vm_stop();
 
+    /* The release removes the selected item before dispatch, so a Ken'ko
+     * used at full life is still consumed and still emits cue 0Eh. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 1;
+    game[0x90] = 100;
+    game[0xB2] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 full_potion_hp =
+        (u16)(game[0x90] | ((u16)game[0x91] << 8));
+    const u8 full_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 full_potion_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_potion_full: hp=%u item=%02x result=%02x "
+           "cue=%02x\n", full_potion_hp, game[0xA6], game[0xFF4B],
+           full_potion_cue);
+    ok &= full_potion_hp == 100 && game[0xA6] == 0 &&
+        game[0xFF4B] == 1 && full_select_cue == 0x0C &&
+        full_potion_cue == 0x0E &&
+        zeliard_inventory_masm_vm_take_sound_cue() == 0;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release 201SELCT item ID 5 (Magia Stone) seeds 200FIGHT's four
      * seven-byte orbiting-sprite records at EB60h. */
     memset(game, 0, 0x10000);
