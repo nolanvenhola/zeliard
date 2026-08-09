@@ -118,6 +118,26 @@ int main(void) {
         pirika_none == 0 && pirika_owned == 2;
     zeliard_inventory_masm_vm_stop();
 
+    /* The same owned-only table and selected-wearable state apply to
+     * Silkarn ID 3 without synthesizing any unavailable shoe entries. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA4] = 3;
+    game[0x9E] = 3;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const u8 silkarn_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 silkarn_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    const u8 silkarn_none = zeliard_inventory_masm_vm_peek(0xAE0A);
+    const u8 silkarn_owned = zeliard_inventory_masm_vm_peek(0xAE0B);
+    printf("inventory_masm_silkarn: selected=%u count=%u cursor=%u "
+           "table=%u/%u\n", game[0x9E], silkarn_count, silkarn_cursor,
+           silkarn_none, silkarn_owned);
+    ok &= game[0x9E] == 3 && silkarn_count == 2 && silkarn_cursor == 1 &&
+        silkarn_none == 0 && silkarn_owned == 3;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
