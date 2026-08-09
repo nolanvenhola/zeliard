@@ -238,6 +238,18 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres3/369LEGA.grp', '96b25f7bea9dd369c8088b947388bb20b2b3b79928b0f0f42700cd5f8171535e'), 'lega.grp'],
     [verifiedMasmOutput('zelres3/379MPP6.grp', '38cdd9a3442b5db1c8ef0473b82479e1cd7000ca525118d1a745ea1d5ef98a51'), 'mpp6.grp'],
     [verifiedMasmOutput('zelres3/390MUS6.msd', 'e7915cda939ede7dc3df69399cb044b0f9acf63880ed44c41e3142c0f1b81cee'), 'mus6.msd'],
+    /* Caliente and Dragon's exact Area-7 heat, encounter, and audio family. */
+    [verifiedMasmOutput('zelres3/307EAI7.bin', '40eb8d98ce4eaaed8f4c3d231bb7e369f5b5b2870b5b579e3b4a5cc61d52c21e'), 'eai7.bin'],
+    [verifiedMasmOutput('zelres3/316DRGN.bin', 'c03672dff738c3220d86c164a9520361fabc9ae3f5434bab8c07b5a200b49f86'), 'drgn.bin'],
+    [verifiedMasmOutput('zelres3/338MP70.mdt', '1d2247ca9584eb627c7c0582e60b2e44b1bfafeccdc88a26dff38dc81a497094'), 'mp70.mdt'],
+    [verifiedMasmOutput('zelres3/339MP71.mdt', 'c1ab0694efd43ef1d5c4f40be33059a81d34ba02604d0a2bb68da749446f9b61'), 'mp71.mdt'],
+    [verifiedMasmOutput('zelres3/340MP72.mdt', 'b1a78a9d6ea7dc4f4b3867b05d14622d2cef953842d03a8726d53c1e40386522'), 'mp72.mdt'],
+    [verifiedMasmOutput('zelres3/341MP73.mdt', 'a9ce3cf74e2a491ed00ee4040af0730d7e9deb4b8881b67716807228d2548686'), 'mp73.mdt'],
+    [verifiedMasmOutput('zelres3/342MP7D.mdt', '20beabad8ed3b592395a8c690ba6ef76d7e9282b7e2e9e2fc8a5899b86c07e68'), 'mp7d.mdt'],
+    [verifiedMasmOutput('zelres3/362ENP7.grp', '21cd44fff5a86165b6d2bfd66fae001fd79421471561aca836960314e6acdef1'), 'enp7.grp'],
+    [verifiedMasmOutput('zelres3/370DRGN.grp', '08cad787630482e422152df806de61f22c227f0362cbf63bc904b2ffa98b0f49'), 'drgn.grp'],
+    [verifiedMasmOutput('zelres3/380MPP7.grp', '2f8a8f2207be3deb686e520e11530d60a71fff1f0c628cb92397173217be75c9'), 'mpp7.grp'],
+    [verifiedMasmOutput('zelres3/391MUS7.msd', 'e0404d16eaad567e7ed932690f4f1c16f7246875413b463cb4be086c95213c4a'), 'mus7.msd'],
     /* Riza and its exact Pollo chamber handoff. */
     [verifiedMasmOutput('zelres3/311TORI.bin', 'a387232517b65a73853f57bf368a1c8b3a45ffe41607c38f056779267ec11aac'), 'tori.bin'],
     [verifiedMasmOutput('zelres3/326MP31.mdt', '4b54099bff4ab44ea5cae76fc554ad6c2c684a025a3d9922e330431fbe2b2ae3'), 'mp31.mdt'],
