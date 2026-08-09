@@ -205,6 +205,85 @@ int main(void) {
     ok &= encounter_hash == 0x8E1B768A0AEC4C05ULL;
     ok &= chamber_hash == 0x4E95A8CA69455F86ULL;
 
+    /* LEGA owns Tarso's 640-point damage word and all of its secondary
+     * animation state. Drive the documented terminal state, then let its
+     * release 28h-step death and completion path run unchanged. */
+    printf("tarso_state_probe: damage=%04x phase=%02x/%02x/%02x/%02x "
+           "death=%02x completion=%02x\n",
+           zeliard_fight_masm_vm_peek_u16(0xA7A3),
+           zeliard_fight_masm_vm_peek_u8(0xA7B9),
+           zeliard_fight_masm_vm_peek_u8(0xA7BD),
+           zeliard_fight_masm_vm_peek_u8(0xA7C0),
+           zeliard_fight_masm_vm_peek_u8(0xA7C2),
+           zeliard_fight_masm_vm_peek_u8(0xFF2E),
+           zeliard_fight_masm_vm_peek_u8(0xFF30));
+    ok &= zeliard_fight_masm_vm_peek_u16(0xA7A3) == 0x0280;
+    /* Keep this terminal-state fixture focused on Tarso's death path; the
+     * player-damage/death route has its own release-VM coverage. */
+    boss_game[0x90] = boss_game[0xB2] = 0xFF;
+    boss_game[0x91] = boss_game[0xB3] = 0x7F;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xA7A3, 0);
+    for (u16 address = 0xA7B8; address <= 0xA7C8; ++address)
+        ok &= zeliard_fight_masm_vm_poke_u8(address, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned tarso_frames = 0, tarso_completion = 0;
+    unsigned long long tarso_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && tarso_frames < 200 &&
+           !tarso_completion) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga), 20, 0);
+        ++tarso_frames;
+        if (!tarso_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            tarso_completion = tarso_frames;
+            tarso_completion_hash = fnv1a64(boss_vga, 64000);
+        }
+    }
+    printf("tarso_death_probe: frames=%u completion=%u timer=%02x "
+           "defeated=%02x/%02x event=%02x hash=%016llx\n",
+           tarso_frames, tarso_completion,
+           zeliard_fight_masm_vm_peek_u8(0xA7B8), boss_game[0x28],
+           boss_game[0x29], boss_game[0x2D], tarso_completion_hash);
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= tarso_completion == 87;
+    ok &= tarso_frames == 87;
+    ok &= zeliard_fight_masm_vm_peek_u8(0xA7B8) == 0x28;
+    ok &= tarso_completion_hash == 0xC659055DC800A0F6ULL;
+
+    /* Defeated Tarso revisits retain the empty MP6D room but skip LEGA,
+     * ENCOUNTER!, and the boss score, matching the release save word. */
+    static u8 revisit_game[0x10000], revisit_vga[0x10000];
+    prepare_player(revisit_game, 14, 309, 41);
+    revisit_game[0x98] = 1;
+    revisit_game[0x28] = revisit_game[0x29] = 0xFF;
+    revisit_game[0x2D] = 0x10;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga));
+    unsigned revisit_frames = 0, revisit_chamber = 0;
+    unsigned revisit_boss_music = 0;
+    while (zeliard_fight_masm_vm_active() && revisit_frames < 180) {
+        ok &= advance_frame(revisit_game, revisit_vga,
+                            revisit_chamber ? 0 : 1);
+        ++revisit_frames;
+        const u16 width = zeliard_fight_masm_vm_peek_u16(0xC002);
+        if (!revisit_chamber && width == 73) revisit_chamber = revisit_frames;
+        if (zeliard_fight_masm_vm_music_chunk() == 94)
+            revisit_boss_music = revisit_frames;
+    }
+    printf("tarso_revisit_probe: frames=%u chamber=%u boss_music=%u "
+           "active=%d width=%u music=%02x selector=%02x\n",
+           revisit_frames, revisit_chamber, revisit_boss_music,
+           zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(), revisit_game[0xC4]);
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 73;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 91;
+    ok &= revisit_game[0xC4] == 0x11;
+    ok &= revisit_chamber > 0 && revisit_boss_music == 0;
+
     printf("VERDICT: %s: Tesoro exact fight VM, persistence, and Tarso handoff\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

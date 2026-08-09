@@ -152,7 +152,22 @@ def main() -> int:
         "dorado_exit": (315, 48, 0x40, 6, 209, 255) in tesoro_doors,
         "tarso_chamber": b"Cavern of Tesoro" in chamber,
     }
+    tarso = images["314LEGA.bin"]
+    boss_contract = {
+        "damage_word": tarso[0x644:0x650] ==
+            bytes.fromhex("a1a3a72bc3730233c0a3a3a7"),
+        # LEGA resets both death animation states before arming FF2E. Unlike
+        # earlier modules it returns directly; 200FIGHT observes FF2E next.
+        "death_arm": tarso[0x65E:0x66E] ==
+            bytes.fromhex("c606b8a700c606c2a700c6062effffc3"),
+        "death_timer": tarso[0x66E:0x67E] ==
+            bytes.fromhex("803eb8a728734dc6062ffffffe06b8a7"),
+        "completion_write": tarso[0x6C2:0x6C8] ==
+            bytes.fromhex("c60630ffffc3"),
+        "tarso_name": b"Tarso" in tarso,
+    }
     ok = refs_ok and hashes_ok and all(contract.values()) and \
+        all(boss_contract.values()) and \
         links == expected_links and shape == (320, 6, 14, 45, 16, 0x1E) and \
         chamber_shape == (73, 6, 0, 0, 0, 0)
 
@@ -161,6 +176,9 @@ def main() -> int:
                            for name, value in refs.items()))
     print("fight_tesoro_topology: " +
           ("PASS" if all(contract.values()) else "FAIL") + f" {contract}")
+    print("fight_tarso_handoff: " +
+          ("PASS" if all(boss_contract.values()) else "FAIL") +
+          f" {boss_contract}")
     print("fight_tesoro_map: " + ("PASS" if hashes_ok else "FAIL") +
           f" shape={shape} chamber={chamber_shape} "
           f"doors={tesoro_doors} links={links}")
