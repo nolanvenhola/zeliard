@@ -158,6 +158,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 12, "tori.bin"},
     {2, 13, "zela.bin"},
     {2, 14, "meda.bin"},
+    {2, 15, "lega.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
@@ -175,6 +176,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 67, "tori.grp"},
     {2, 68, "zela.grp"},
     {2, 69, "meda.grp"},
+    {2, 70, "lega.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
@@ -238,6 +240,10 @@ static const char *map_for_selector(u8 selector) {
         case 0x2C: return "mp60.mdt";
         case 0x0F:
         case 0x2D: return "mp61.mdt";
+        /* MP6D is Tarso's chamber.  Tesoro's x309/y41 boss door owns the
+         * standard ROKA run and ENCOUNTER! wipe before dispatching LEGA. */
+        case 0x11:
+        case 0x2F: return "mp6d.mdt";
         default: return NULL;
     }
 }
