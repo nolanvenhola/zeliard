@@ -138,6 +138,26 @@ int main(void) {
         silkarn_none == 0 && silkarn_owned == 3;
     zeliard_inventory_masm_vm_stop();
 
+    /* Asbestos Cape is wearable ID 5 and uses the same mutually-exclusive
+     * accessory slot and exact selected state as the four shoe types. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA5] = 5;
+    game[0x9E] = 5;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const u8 cape_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 cape_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    const u8 cape_none = zeliard_inventory_masm_vm_peek(0xAE0A);
+    const u8 cape_owned = zeliard_inventory_masm_vm_peek(0xAE0B);
+    printf("inventory_masm_asbestos: selected=%u count=%u cursor=%u "
+           "table=%u/%u\n", game[0x9E], cape_count, cape_cursor,
+           cape_none, cape_owned);
+    ok &= game[0x9E] == 5 && cape_count == 2 && cape_cursor == 1 &&
+        cape_none == 0 && cape_owned == 5;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
