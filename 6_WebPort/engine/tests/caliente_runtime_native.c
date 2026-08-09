@@ -137,6 +137,87 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_peek_u8((u16)(persisted + 11)) == 0xFF;
     ok &= zeliard_fight_masm_vm_peek_u8((u16)(persisted + 12)) == 0xFF;
 
+    /* Llama route 2 enters the dedicated MP73 hut arena. Its descriptor
+     * selects ZEL2 (program index 12h) and ENP7 (sprite index 0Ch). */
+    static u8 paguro_game[0x10000], paguro_vga[0x10000];
+    prepare_player(paguro_game, 21, 27, 12);
+    paguro_game[0x83] = 13;
+    paguro_game[0xC5] = 0x87;
+    palette_set_game_mcga();
+    const int paguro_started = zeliard_fight_masm_vm_start(
+        paguro_game, sizeof(paguro_game), paguro_vga, sizeof(paguro_vga));
+    for (unsigned frame = 0; frame < 10; ++frame)
+        ok &= advance_frame(paguro_game, paguro_vga, 0);
+    printf("paguro_probe: started=%d active=%d frame=%d width=%u "
+           "level=%u music=%02x damage=%04x state=%02x/%02x/%02x "
+           "hash=%016llx\n",
+           paguro_started, zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_at_frame(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_peek_u8(0xC012),
+           zeliard_fight_masm_vm_music_chunk(),
+           zeliard_fight_masm_vm_peek_u16(0xA5E2),
+           zeliard_fight_masm_vm_peek_u8(0xA5F7),
+           zeliard_fight_masm_vm_peek_u8(0xA5F8),
+           zeliard_fight_masm_vm_peek_u8(0xA601),
+           fnv1a64(paguro_vga, 64000));
+    ok &= paguro_started && zeliard_fight_masm_vm_active() &&
+          zeliard_fight_masm_vm_peek_u16(0xC002) == 73 &&
+          zeliard_fight_masm_vm_peek_u8(0xC012) == 1 &&
+          zeliard_fight_masm_vm_peek_u16(0xA5E2) == 0x0258;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xA5E2, 0);
+    for (u16 address = 0xA5F6; address <= 0xA602; ++address)
+        ok &= zeliard_fight_masm_vm_poke_u8(address, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned paguro_frames = 0, paguro_completion = 0;
+    unsigned long long paguro_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && paguro_frames < 400 &&
+           !(paguro_game[0x30] == 0xFF && paguro_game[0x31] == 0xFF)) {
+        ok &= zeliard_fight_masm_vm_advance(
+            paguro_game, sizeof(paguro_game), paguro_vga,
+            sizeof(paguro_vga), 20, 0);
+        ++paguro_frames;
+        if (!paguro_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            paguro_completion = paguro_frames;
+            paguro_completion_hash = fnv1a64(paguro_vga, 64000);
+        }
+    }
+    printf("paguro_death_probe: frames=%u completion=%u timer=%02x "
+           "defeated=%02x/%02x almas=%u event=%02x hash=%016llx\n",
+           paguro_frames, paguro_completion,
+           zeliard_fight_masm_vm_peek_u8(0xA601), paguro_game[0x30],
+           paguro_game[0x31], read_u16(paguro_game, 0x8B),
+           paguro_game[0x34], paguro_completion_hash);
+    ok &= paguro_completion == 121 && paguro_frames == 134 &&
+          paguro_game[0x30] == 0xFF && paguro_game[0x31] == 0xFF &&
+          read_u16(paguro_game, 0x8B) == 1600;
+
+    static u8 paguro_revisit_game[0x10000], paguro_revisit_vga[0x10000];
+    prepare_player(paguro_revisit_game, 21, 27, 12);
+    paguro_revisit_game[0x83] = 13;
+    paguro_revisit_game[0x30] = paguro_revisit_game[0x31] = 0xFF;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        paguro_revisit_game, sizeof(paguro_revisit_game),
+        paguro_revisit_vga, sizeof(paguro_revisit_vga));
+    for (unsigned frame = 0; frame < 20; ++frame)
+        ok &= advance_frame(paguro_revisit_game, paguro_revisit_vga, 0);
+    const unsigned long long paguro_revisit_hash =
+        fnv1a64(paguro_revisit_vga, 64000);
+    printf("paguro_revisit_probe: active=%d width=%u music=%02x "
+           "damage=%04x completion=%02x hash=%016llx\n",
+           zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(),
+           zeliard_fight_masm_vm_peek_u16(0xA5E2),
+           zeliard_fight_masm_vm_peek_u8(0xFF30),
+           paguro_revisit_hash);
+    ok &= zeliard_fight_masm_vm_active() &&
+          zeliard_fight_masm_vm_peek_u16(0xC002) == 73 &&
+          zeliard_fight_masm_vm_peek_u8(0xFF30) == 0 &&
+          paguro_revisit_hash == 0xBB2ACCD3E056F84FULL;
+
     /* Area 7 subtracts 15 HP every 64 combat frames unless wearable 5,
      * the Asbestos Cape, is selected. */
     static u8 heat_game[0x10000], heat_vga[0x10000];
@@ -229,7 +310,8 @@ int main(void) {
     printf("caliente_hash_contract: first=%016llx moving=%016llx "
            "encounter=%016llx chamber=%016llx\n", first_frame, moving_frame,
            encounter_hash, chamber_hash);
-    printf("VERDICT: %s: Caliente exact fight VM, heat family, persistence, "
-           "routes, and Dragon handoff\n", ok ? "PASS" : "FAIL");
+    printf("VERDICT: %s: Caliente exact fight VM, Paguro hut, heat family, "
+           "persistence, routes, and Dragon handoff\n",
+           ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

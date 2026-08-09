@@ -17,6 +17,7 @@ RESOURCE_REFS = {
     "inferno_palette": (0x9C85, bytes((2, 81))),
     "inferno_ai": (0x9D40, bytes((2, 8))),
     "dragon_code": (0x9D4B, bytes((2, 17))),
+    "paguro_code": (0x9D82, bytes((2, 16))),
     "inferno_sprites": (0x9E11, bytes((2, 63))),
     "dragon_sprites": (0x9E1C, bytes((2, 71))),
     "inferno_music": (0x9EC1, bytes((2, 92))),
@@ -24,6 +25,7 @@ RESOURCE_REFS = {
 HASHES = {
     "307EAI7.bin": "40eb8d98ce4eaaed8f4c3d231bb7e369f5b5b2870b5b579e3b4a5cc61d52c21e",
     "316DRGN.bin": "c03672dff738c3220d86c164a9520361fabc9ae3f5434bab8c07b5a200b49f86",
+    "315ZEL2.bin": "71ae2d4bc7bcf3c24bfbb055099016cd4330deb5d512bbfa179ff7a45c033579",
     "338MP70.mdt": "1d2247ca9584eb627c7c0582e60b2e44b1bfafeccdc88a26dff38dc81a497094",
     "339MP71.mdt": "c1ab0694efd43ef1d5c4f40be33059a81d34ba02604d0a2bb68da749446f9b61",
     "340MP72.mdt": "b1a78a9d6ea7dc4f4b3867b05d14622d2cef953842d03a8726d53c1e40386522",
@@ -82,6 +84,7 @@ def main() -> int:
 
     caliente = images["338MP70.mdt"]
     chamber = images["342MP7D.mdt"]
+    paguro_room = images["341MP73.mdt"]
     objects = records(caliente, 0x10, 16)
     monsters = sum(bool(row[14]) for row in objects)
     items = len(objects) - monsters
@@ -112,9 +115,32 @@ def main() -> int:
              len(caliente_doors), monsters, items, families)
     chamber_shape = (struct.unpack_from("<H", chamber, 2)[0], chamber[0x12],
                      len(doors(chamber)), len(records(chamber, 0x10, 16)))
+    paguro_descriptor = struct.unpack_from("<H", paguro_room)[0] - 0xC000
+    paguro_shape = (
+        struct.unpack_from("<H", paguro_room, 2)[0],
+        len(doors(paguro_room)), len(records(paguro_room, 0x10, 16)),
+        paguro_room[paguro_descriptor:paguro_descriptor + 5],
+        paguro_room[paguro_descriptor + 16:paguro_descriptor + 20],
+    )
+    paguro = images["315ZEL2.bin"]
+    paguro_contract = {
+        "hut_name": b"In the Hut" in paguro_room,
+        "damage_floor": paguro[0x55D:0x569] ==
+            bytes.fromhex("a1e2a52bc3730233c0a3e2a5"),
+        "death_shutdown": paguro[0x577:0x58B] ==
+            bytes.fromhex("c6062effffc60601a600c606f7a5002eff263c60"),
+        "death_timer": paguro[0x58B:0x59B] ==
+            bytes.fromhex("803e01a6287347c6062ffffffe0601a6"),
+        "completion_write": paguro[0x5D9:0x5DF] ==
+            bytes.fromhex("c60630ffffc3"),
+        "name": b"aguro" in paguro,
+    }
     ok = refs_ok and hashes_ok and heat_ok and all(contract.values()) and \
         links == expected_links and shape == (208, 7, 14, 19, 10, 0x1E) and \
-        chamber_shape == (70, 7, 0, 0)
+        chamber_shape == (70, 7, 0, 0) and \
+        paguro_shape == (73, 0, 0, bytes.fromhex("99000a12ff"),
+                          bytes.fromhex("3000ffff")) and \
+        all(paguro_contract.values())
 
     print("fight_caliente_resources: " + ("PASS" if refs_ok else "FAIL") +
           " " + " ".join(f"{name}={value.hex()}" for name, value in refs.items()))
@@ -122,8 +148,11 @@ def main() -> int:
           f" gate={heat_gate.hex()}")
     print("fight_caliente_map: " + ("PASS" if hashes_ok else "FAIL") +
           f" shape={shape} chamber={chamber_shape} links={links} contract={contract}")
+    print("fight_paguro_handoff: " +
+          ("PASS" if all(paguro_contract.values()) else "FAIL") +
+          f" shape={paguro_shape} contract={paguro_contract}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
-          ": release-MASM Caliente heat, persistence, routes, and Dragon handoff")
+          ": release-MASM Caliente, Paguro hut, persistence, and Dragon handoff")
     return 0 if ok else 1
 
 

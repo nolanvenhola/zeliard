@@ -1835,9 +1835,9 @@ int main(void) {
     llama_tile = 0xC017;
     llama_segments[0][0xFF2A] = (u8)llama_tile;
     llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
-    const int llama_paguro = zeliard_town_advance_pit(
+    const int llama_caliente_reverse = zeliard_town_advance_pit(
         llama, &llama_game, llama_vga, sizeof(llama_vga), 4, 1);
-    ok &= llama_paguro > 0 && llama->cavern_exit_requested &&
+    ok &= llama_caliente_reverse > 0 && llama->cavern_exit_requested &&
           (u16)(llama_segments[0][0x0080] |
                 ((u16)llama_segments[0][0x0081] << 8)) == 0x0088 &&
           llama_segments[0][0x0082] == 0x3D &&
@@ -1854,9 +1854,9 @@ int main(void) {
     llama_tile = (u16)(0xC017 + 205 * 8);
     llama_segments[0][0xFF2A] = (u8)llama_tile;
     llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
-    const int llama_route_2 = zeliard_town_advance_pit(
+    const int llama_paguro = zeliard_town_advance_pit(
         llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
-    ok &= llama_route_2 > 0 && llama->cavern_exit_requested &&
+    ok &= llama_paguro > 0 && llama->cavern_exit_requested &&
           (u16)(llama_segments[0][0x0080] |
                 ((u16)llama_segments[0][0x0081] << 8)) == 0x000B &&
           llama_segments[0][0x0082] == 0x03 &&
@@ -1924,9 +1924,9 @@ int main(void) {
            llama_story_before[2], llama_story_after[0],
            llama_story_after[1], llama_story_after[2]);
     printf("town_llama_routes: edge=%d/fff1/0c/00/12 "
-           "paguro=%d/0088/3d/ff/12 inferno=%d/000b/03/00/15 "
+           "reverse=%d/0088/3d/ff/12 paguro=%d/000b/03/00/15 "
            "inn=%d/%d/%d bank=%d/%d/%d\n",
-           llama_route_0, llama_paguro, llama_route_2,
+           llama_route_0, llama_caliente_reverse, llama_paguro,
            llama_inn_trigger, llama_inn_fade, ZEL_ROOM_INN,
            llama_bank_trigger, llama_bank_fade, ZEL_ROOM_BANK);
     free(llama);
