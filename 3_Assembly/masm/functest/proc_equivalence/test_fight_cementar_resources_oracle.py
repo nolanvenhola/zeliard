@@ -127,7 +127,19 @@ def main() -> int:
     ]
     vista = images["313MEDA.bin"]
     boss_contract = {
-        "completion_write": bytes.fromhex("c60630ffff") in vista,
+        # MEDA subtracts BX from Vista's 700-point damage word and floors
+        # underflow to zero before publishing the result to shared combat.
+        "damage_word": vista[0x575:0x581] ==
+            bytes.fromhex("a119a72bc3730233c0a319a7"),
+        # Zero resets the death counter, arms FF2E, and dispatches through
+        # the same release 200FIGHT shutdown callback used by other bosses.
+        "death_and_shutdown": vista[0x597:0x5A6] ==
+            bytes.fromhex("c60633a700c6062effff2eff263c60"),
+        "death_timer": vista[0x5A6:0x5B6] ==
+            bytes.fromhex("803e33a7287329c6062ffffffe0633a7"),
+        "completion_write": vista[0x5D6:0x5DC] ==
+            bytes.fromhex("c60630ffffc3"),
+        "shutdown_callback": fight[0x3C:0x3E] == bytes.fromhex("db83"),
         "vista_name": b"Vista" in vista,
         "encounter_resource": fight[0x9BF1 - LOAD_BASE:
                                     0x9BF3 - LOAD_BASE] == bytes((2, 56)),

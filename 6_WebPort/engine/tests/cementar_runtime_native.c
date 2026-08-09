@@ -180,6 +180,82 @@ int main(void) {
     ok &= encounter_hash == 0x45FF2A0E6F888B11ULL;
     ok &= chamber_hash == 0xEAC3EE032BB88481ULL;
 
+    /* MEDA owns Vista's 700-point damage word and phase/death state. Drive
+     * only its documented terminal state, leaving the original 28h-step
+     * death FSM and 200FIGHT completion/persistence path intact. */
+    printf("vista_state_probe: damage=%04x phase=%02x/%02x/%02x/%02x "
+           "death=%02x completion=%02x shutdown=%04x\n",
+           zeliard_fight_masm_vm_peek_u16(0xA719),
+           zeliard_fight_masm_vm_peek_u8(0xA72F),
+           zeliard_fight_masm_vm_peek_u8(0xA734),
+           zeliard_fight_masm_vm_peek_u8(0xA735),
+           zeliard_fight_masm_vm_peek_u8(0xA736),
+           zeliard_fight_masm_vm_peek_u8(0xFF2E),
+           zeliard_fight_masm_vm_peek_u8(0xFF30),
+           zeliard_fight_masm_vm_peek_u16(0x603C));
+    ok &= zeliard_fight_masm_vm_peek_u16(0xA719) == 0x02BC;
+    ok &= zeliard_fight_masm_vm_peek_u16(0x603C) == 0x83DB;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xA719, 0);
+    for (u16 address = 0xA72F; address <= 0xA737; ++address)
+        ok &= zeliard_fight_masm_vm_poke_u8(address, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned vista_frames = 0, vista_completion = 0;
+    unsigned long long vista_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && vista_frames < 400 &&
+           !(boss_game[0x20] == 0xFF && boss_game[0x21] == 0xFF)) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga), 20, 0);
+        ++vista_frames;
+        if (!vista_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            vista_completion = vista_frames;
+            vista_completion_hash = fnv1a64(boss_vga, 64000);
+        }
+    }
+    printf("vista_death_probe: frames=%u completion=%u timer=%02x "
+           "defeated=%02x/%02x event=%02x hash=%016llx\n",
+           vista_frames, vista_completion,
+           zeliard_fight_masm_vm_peek_u8(0xA733), boss_game[0x20],
+           boss_game[0x21], boss_game[0x24], vista_completion_hash);
+    ok &= vista_completion == 295;
+    ok &= vista_frames == 317;
+    ok &= vista_completion_hash == 0x12D2EFB6554132B3ULL;
+    ok &= boss_game[0x20] == 0xFF && boss_game[0x21] == 0xFF;
+
+    /* A persisted defeated word still enters the authored empty MP5D room,
+     * while suppressing MEDA, ENCOUNTER!, and the boss music switch. */
+    static u8 revisit_game[0x10000], revisit_vga[0x10000];
+    prepare_player(revisit_game, 12, 157, 16);
+    revisit_game[0x98] = 1;
+    revisit_game[0x20] = revisit_game[0x21] = 0xFF;
+    revisit_game[0x24] = 0x04;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga));
+    unsigned revisit_frames = 0, revisit_chamber = 0;
+    unsigned revisit_boss_music = 0;
+    while (zeliard_fight_masm_vm_active() && revisit_frames < 180) {
+        ok &= advance_frame(revisit_game, revisit_vga,
+                            revisit_chamber ? 0 : 1);
+        ++revisit_frames;
+        const u16 width = zeliard_fight_masm_vm_peek_u16(0xC002);
+        if (!revisit_chamber && width == 73) revisit_chamber = revisit_frames;
+        if (zeliard_fight_masm_vm_music_chunk() == 94)
+            revisit_boss_music = revisit_frames;
+    }
+    printf("vista_revisit_probe: frames=%u chamber=%u boss_music=%u "
+           "active=%d width=%u music=%02x selector=%02x\n",
+           revisit_frames, revisit_chamber, revisit_boss_music,
+           zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(), revisit_game[0xC4]);
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 73;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 90;
+    ok &= revisit_game[0xC4] == 0x0D;
+    ok &= revisit_chamber > 0 && revisit_boss_music == 0;
+
     printf("VERDICT: %s: Cementar exact fight VM and Vista handoff\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
