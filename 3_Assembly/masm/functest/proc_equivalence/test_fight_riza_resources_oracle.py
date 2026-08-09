@@ -123,7 +123,20 @@ def main() -> int:
     tori = images["311TORI.bin"]
     boss_contract = {
         "hero_crest_location": riza[0x13:0x16] == bytes.fromhex("bc0015"),
-        "completion_write": bytes.fromhex("c60630ffff") in tori,
+        # TORI applies BX damage to its 16-bit 500-point health word,
+        # floors underflow to zero, then calls the release 200FIGHT
+        # shutdown callback through DS:603Ch when death is armed.
+        "damage_word": tori[0x5BA:0x5C6] ==
+            bytes.fromhex("a176a72bc3730233c0a376a7"),
+        "death_and_shutdown": tori[0x5D4:0x5DE] ==
+            bytes.fromhex("c6062effff2eff163c60"),
+        # The death animation increments A794 through exactly 0x28 states
+        # before publishing the shared FF30 completion byte.
+        "death_timer": tori[0x60A:0x614] ==
+            bytes.fromhex("a094a73c287336c6062f"),
+        "completion_write": tori[0x647:0x64D] ==
+            bytes.fromhex("c60630ffffc3"),
+        "shutdown_callback": fight[0x3C:0x3E] == bytes.fromhex("db83"),
         "pollo_name": b"\x05Pollo" in tori,
     }
     ok = refs_ok and hashes_ok and all(topology.values()) and \

@@ -226,6 +226,82 @@ int main(void) {
     ok &= hashes[3] == 0xFA684D7C2FDF3441ULL;
     ok &= hashes[4] == 0xFA684D7C2FDF3441ULL;
 
+    /* TORI's release module owns Pollo's 500-point damage word and all
+     * flight/turn/dive state. Verify live state, then drive only its
+     * documented terminal state so the original death FSM runs unchanged. */
+    printf("pollo_state_probe: hp=%02x damage=%04x phase=%02x/%02x/%02x "
+           "death=%02x completion=%02x shutdown=%04x\n",
+           zeliard_fight_masm_vm_peek_u8(0xA773),
+           zeliard_fight_masm_vm_peek_u16(0xA776),
+           zeliard_fight_masm_vm_peek_u8(0xA791),
+           zeliard_fight_masm_vm_peek_u8(0xA793),
+           zeliard_fight_masm_vm_peek_u8(0xA79A),
+           zeliard_fight_masm_vm_peek_u8(0xFF2E),
+           zeliard_fight_masm_vm_peek_u8(0xFF30),
+           zeliard_fight_masm_vm_peek_u16(0x603C));
+    ok &= zeliard_fight_masm_vm_peek_u16(0xA776) == 0x01F4;
+    ok &= zeliard_fight_masm_vm_peek_u16(0x603C) == 0x83DB;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xA776, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA78C, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA78D, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA78E, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA794, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA797, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA798, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xA79A, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned pollo_frames = 0, pollo_completion = 0;
+    unsigned long long pollo_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && pollo_frames < 400 &&
+           !(boss_game[0x10] == 0xFF && boss_game[0x11] == 0xFF)) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga), 20, 0);
+        ++pollo_frames;
+        if (!pollo_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            pollo_completion = pollo_frames;
+            pollo_completion_hash = fnv1a64(boss_vga, 64000);
+        }
+    }
+    printf("pollo_death_probe: frames=%u completion=%u timer=%02x "
+           "defeated=%02x/%02x event=%02x hash=%016llx\n",
+           pollo_frames, pollo_completion,
+           zeliard_fight_masm_vm_peek_u8(0xA794), boss_game[0x10],
+           boss_game[0x11], boss_game[0x13], pollo_completion_hash);
+    ok &= pollo_completion == 123;
+    ok &= pollo_completion_hash == 0xFA684D7C2FDF3441ULL;
+    ok &= boss_game[0x10] == 0xFF && boss_game[0x11] == 0xFF;
+    ok &= (boss_game[0x13] & 0x08u) != 0;
+
+    /* A persisted defeated word must bypass the Pollo chamber on revisit. */
+    static u8 revisit_game[0x10000];
+    static u8 revisit_vga[0x10000];
+    prepare_player(revisit_game, 6, 188, 20);
+    revisit_game[0x00C3] = 0;
+    revisit_game[0x0098] = 1;
+    revisit_game[0x10] = revisit_game[0x11] = 0xFF;
+    revisit_game[0x13] = 0x0A;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga));
+    unsigned revisit_frames = 0;
+    while (zeliard_fight_masm_vm_active() && revisit_frames < 180) {
+        ok &= advance_frame(
+            revisit_game, revisit_vga, revisit_frames < 16 ? 1 : 0);
+        ++revisit_frames;
+    }
+    printf("pollo_revisit_probe: frames=%u active=%d width=%u music=%02x "
+           "selector=%02x pos=%02x/%02x/%02x\n", revisit_frames,
+           zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_music_chunk(), revisit_game[0xC4],
+           revisit_game[0x80], revisit_game[0x82], revisit_game[0x83]);
+    ok &= zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 204;
+    ok &= zeliard_fight_masm_vm_music_chunk() == 88;
+    ok &= revisit_game[0xC4] == 6;
+
     /* The authored town warp preserves the high-bit selector contract used
      * by main.c to restore Bosque rather than treating it as MP21. */
     static u8 bosque_game[0x10000];
