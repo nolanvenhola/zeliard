@@ -98,6 +98,26 @@ int main(void) {
         wearable_cape == 5;
     zeliard_inventory_masm_vm_stop();
 
+    /* Pirika alone remains a compact, owned choice at cursor one and the
+     * selected wearable survives the exact 201SELCT entry path unchanged. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0xA1] = 2;
+    game[0x9E] = 2;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const u8 pirika_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 pirika_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    const u8 pirika_none = zeliard_inventory_masm_vm_peek(0xAE0A);
+    const u8 pirika_owned = zeliard_inventory_masm_vm_peek(0xAE0B);
+    printf("inventory_masm_pirika: selected=%u count=%u cursor=%u "
+           "table=%u/%u\n", game[0x9E], pirika_count, pirika_cursor,
+           pirika_none, pirika_owned);
+    ok &= game[0x9E] == 2 && pirika_count == 2 && pirika_cursor == 1 &&
+        pirika_none == 0 && pirika_owned == 2;
+    zeliard_inventory_masm_vm_stop();
+
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
