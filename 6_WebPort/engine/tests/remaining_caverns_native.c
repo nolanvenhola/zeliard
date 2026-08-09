@@ -231,6 +231,41 @@ static int run_alguien_case(void) {
     return ok;
 }
 
+static int run_jashiin_case(void) {
+    static u8 game[0x10000], vga[0x10000];
+    prepare_player(game, 0x1E);
+    game[0x98] = 1;
+    game[0xA0] = 8;
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    const u16 position = zeliard_fight_masm_vm_peek_u16(0xAC06);
+    const unsigned long long first_hash = fnv1a64(vga, 64000);
+    ok &= zeliard_fight_masm_vm_poke_u16(0xAC06, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xAC20, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned frames = 0, completion = 0;
+    unsigned long long completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && frames < 300 && !completion) {
+        ok &= zeliard_fight_masm_vm_advance(
+            game, sizeof(game), vga, sizeof(vga), 20, 0);
+        ++frames;
+        if (zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            completion = frames;
+            completion_hash = fnv1a64(vga, 64000);
+        }
+    }
+    printf("jashiin_final_probe: position=%04x frames=%u completion=%u/%02x "
+           "tears=%02x hash=%016llx/%016llx\n", position, frames,
+           completion, zeliard_fight_masm_vm_peek_u8(0xFF30), game[0xA0],
+           first_hash, completion_hash);
+    ok &= position == 0x0320;
+    ok &= completion == 121;
+    ok &= first_hash == 0x23D025DB28E274EBULL;
+    ok &= completion_hash == 0xBAC3070BD3942E86ULL;
+    return ok;
+}
+
 int main(void) {
     static const cavern_case_t cases[] = {
         {"Reaccion", "mp71.mdt", 0x13, 196, 7, 92, 25, 10, 0x1E,
@@ -256,6 +291,7 @@ int main(void) {
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i)
         ok &= run_case(&cases[i]);
     ok &= run_alguien_case();
+    ok &= run_jashiin_case();
     ok &= run_reaccion_connector_case();
     ok &= run_persistence_case("Reaccion", 0x13, 9, 0x35, 0x10);
     ok &= run_persistence_case("Absor", 0x17, 24, 0x42, 0x10);

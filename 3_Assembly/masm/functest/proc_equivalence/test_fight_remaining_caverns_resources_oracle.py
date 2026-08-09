@@ -28,6 +28,11 @@ RESOURCE_REFS = {
     "boss_music": (0x9ED7, bytes((2, 94))),
     "boss_victory_overlay": (0x9C1E, bytes((2, 1))),
     "boss_encounter_art": (0x9BF1, bytes((2, 56))),
+    "jashiin_phase_one": (0x9D6C, bytes((2, 19))),
+    "jashiin_phase_two": (0x9D77, bytes((2, 20))),
+    "jashiin_phase_one_sprites": (0x9E3D, bytes((2, 73))),
+    "jashiin_phase_two_sprites": (0x9E48, bytes((2, 74))),
+    "jashiin_music": (0x9EE2, bytes((2, 96))),
 }
 HASHES = {
     "308EAI8.bin": "dd014b53e0108527bcf55b5514f23601063086dc73aabe81b80fc3134965ee7a",
@@ -47,6 +52,11 @@ HASHES = {
     "355ENCNT.grp": "fd9fd239d60cca4418d042a5785f2f8924685f4edd03ae4768209e4ae0be1e5b",
     "371AKMA.grp": "6fa2640e7f506bf4e834dad8c32e41b1addb0efacacbae3e67d5b2cd5592d014",
     "394MFAN.msd": "87b5ec7f3ee8ea5f4086a3198076fc06e1de28d05811159eb8e9f5a829a80dff",
+    "318MAO1.bin": "262bc8f20064f1a7aa055d90bb0618b6895b5d034dd9db2ef975432790e894af",
+    "319MAO2.bin": "edebfb70b4a98d59dd3cf0ccc99342682320afa3fb73d0e2fbf89a0cb9acdabb",
+    "372MAO1.grp": "6ac1fb19a5a8e5a24ce46796b302001494808b9cd9bdc64eaba97cbb97630808",
+    "373MAO2.grp": "91775c0257e207fe398ef3655ace55c1aed1c4817a9bad162433a43b995530cf",
+    "395MMAO.msd": "bc05bb7ffac4a2a5641973aa2c2c2c1ae0d74118e2916b4f9a22c738dc146d8b",
 }
 
 
@@ -154,12 +164,30 @@ def main() -> int:
         "raised_sword_pose": bytes.fromhex("c606e70005") in roka,
         "crystal_launch": bytes.fromhex("c6069ca594c6069da550") in roka,
     }
+    mao1 = images["318MAO1.bin"]
+    mao2 = images["319MAO2.bin"]
+    jashiin_contract = {
+        "phase_one_taunt": all(text in mao1 for text in (
+            b"Finally, you reached me.", b"I enjoyed your show.",
+            b"Come on!  I\\ll kill you.", b"Jashiin")),
+        "phase_transition_request": bytes.fromhex("c60675ff38") in mao1,
+        "phase_two_name": b"Jashiin" in mao2,
+        "phase_two_death_arm": mao2[0xB73:0xB88] == bytes.fromhex(
+            "c60620ac00c60628ac00c6062dac00c6062effffc3"),
+        "phase_two_damage_floor": mao2[0xB88:0xB91] == bytes.fromhex(
+            "813e06ac20037501c3"),
+        "phase_two_death_timer": mao2[0xBC4:0xBCB] == bytes.fromhex(
+            "a020ac3c287328"),
+        "phase_two_completion": mao2[0xBF3:0xBF9] == bytes.fromhex(
+            "c60630ffffc3"),
+        "final_reward_increment": bytes.fromhex("fe06a000") in roka,
+    }
     names_ok = all(f"Cavern of {name}".encode() in images[filename]
                    for name, (filename, _expected) in cases.items())
     ok = refs_ok and hashes_ok and maps_ok and names_ok and connector_ok and \
         alguien_shape == (70, 8, 0, 0, bytes.fromhex(
             "9900070fff0f0e0e10c07dc20ac03bc27fc200ffffff")) and \
-        all(alguien_contract.values())
+        all(alguien_contract.values()) and all(jashiin_contract.values())
     print("fight_remaining_refs: " + ("PASS" if refs_ok else "FAIL") +
           " " + " ".join(f"{name}={value.hex()}" for name, value in refs.items()))
     for name in cases:
@@ -171,6 +199,9 @@ def main() -> int:
     print("fight_alguien_contract: " +
           ("PASS" if all(alguien_contract.values()) else "FAIL") +
           f" shape={alguien_shape} contract={alguien_contract}")
+    print("fight_jashiin_contract: " +
+          ("PASS" if all(jashiin_contract.values()) else "FAIL") +
+          f" contract={jashiin_contract}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM Reaccion and complete Area-8 cavern chain")
     return 0 if ok else 1
