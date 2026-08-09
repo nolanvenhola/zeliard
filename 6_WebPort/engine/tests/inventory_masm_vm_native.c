@@ -277,6 +277,36 @@ int main(void) {
         zeliard_inventory_masm_vm_take_sound_cue() == 0;
     zeliard_inventory_masm_vm_stop();
 
+    /* Juu-en Fruit is item ID 2 and assigns maximum life directly. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 2;
+    game[0x90] = 10;
+    game[0xB2] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 fruit_hp = (u16)(game[0x90] | ((u16)game[0x91] << 8));
+    const u8 fruit_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 fruit_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_juuen: hp=%u item=%02x result=%02x cue=%02x\n",
+           fruit_hp, game[0xA6], game[0xFF4B], fruit_cue);
+    ok &= fruit_hp == 100 && game[0xA6] == 0 && game[0xFF4B] == 2 &&
+        fruit_select_cue == 0x0C && fruit_cue == 0x0E &&
+        zeliard_inventory_masm_vm_take_sound_cue() == 0;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release 201SELCT item ID 5 (Magia Stone) seeds 200FIGHT's four
      * seven-byte orbiting-sprite records at EB60h. */
     memset(game, 0, 0x10000);
