@@ -307,6 +307,67 @@ int main(void) {
     ok &= encounter_hash == 0x04A9FCB661F00001ULL;
     ok &= chamber_hash == 0x1591CDB47E031B7AULL;
 
+    /* Restart directly in MP7D for the deterministic death fixture, as the
+     * release test does for Pulpo. Entrance timing remains covered by the
+     * routed fixture above; this isolates DRGN's death FSM and persistence
+     * patch from player damage accumulated while sampling the entrance. */
+    prepare_player(boss_game, 22, 20, 30);
+    boss_game[0x98] = 1;
+    boss_game[0xA0] = 6;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga));
+    printf("dragon_state_probe: damage=%04x death=%02x step=%02x "
+           "phase=%02x/%02x completion=%02x shutdown=%04x captured=%02x "
+           "item=%02x\n",
+           zeliard_fight_masm_vm_peek_u16(0xAA3F),
+           zeliard_fight_masm_vm_peek_u8(0xFF2E),
+           zeliard_fight_masm_vm_peek_u8(0xAA58),
+           zeliard_fight_masm_vm_peek_u8(0xAA5B),
+           zeliard_fight_masm_vm_peek_u8(0xAA5C),
+           zeliard_fight_masm_vm_peek_u8(0xFF30),
+           zeliard_fight_masm_vm_peek_u16(0x603C), boss_game[0x49],
+           boss_game[0xFF4B]);
+    ok &= zeliard_fight_masm_vm_peek_u16(0xAA3F) == 0x0320;
+    boss_game[0x90] = boss_game[0xB2] = 0xFF;
+    boss_game[0x91] = boss_game[0xB3] = 0x7F;
+    ok &= zeliard_fight_masm_vm_poke_u16(0xAA3F, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xAA58, 0);
+    ok &= zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    unsigned dragon_frames = 0, dragon_completion = 0;
+    unsigned long long dragon_completion_hash = 0;
+    while (zeliard_fight_masm_vm_active() && dragon_frames < 300 &&
+           !dragon_completion) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga),
+            20, 0);
+        ++dragon_frames;
+        if (!dragon_completion &&
+            zeliard_fight_masm_vm_peek_u8(0xFF30) == 0xFF) {
+            dragon_completion = dragon_frames;
+            dragon_completion_hash = fnv1a64(boss_vga, 64000);
+        }
+    }
+    unsigned dragon_persistence = 0;
+    while (zeliard_fight_masm_vm_active() && dragon_frames < 1200 &&
+           !(boss_game[0x32] == 0xFF && boss_game[0x33] == 0xFF)) {
+        ok &= zeliard_fight_masm_vm_advance(
+            boss_game, sizeof(boss_game), boss_vga, sizeof(boss_vga),
+            20, 0);
+        ++dragon_frames;
+        if (boss_game[0x32] == 0xFF && boss_game[0x33] == 0xFF)
+            dragon_persistence = dragon_frames;
+    }
+    printf("dragon_death_probe: frames=%u completion=%u/%02x "
+           "persistence=%u defeated=%02x/%02x hash=%016llx\n", dragon_frames,
+           dragon_completion, zeliard_fight_masm_vm_peek_u8(0xFF30),
+           dragon_persistence, boss_game[0x32], boss_game[0x33],
+           dragon_completion_hash);
+    ok &= dragon_completion == 122;
+    ok &= dragon_completion_hash == 0xC75B95AA49A4D649ULL;
+    ok &= dragon_persistence > dragon_completion;
+    ok &= boss_game[0x32] == 0xFF && boss_game[0x33] == 0xFF;
+
     printf("caliente_hash_contract: first=%016llx moving=%016llx "
            "encounter=%016llx chamber=%016llx\n", first_frame, moving_frame,
            encounter_hash, chamber_hash);

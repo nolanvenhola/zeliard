@@ -21,6 +21,8 @@ RESOURCE_REFS = {
     "inferno_sprites": (0x9E11, bytes((2, 63))),
     "dragon_sprites": (0x9E1C, bytes((2, 71))),
     "inferno_music": (0x9EC1, bytes((2, 92))),
+    "boss_victory_overlay": (0x9C1E, bytes((2, 1))),
+    "boss_encounter_art": (0x9BF1, bytes((2, 56))),
 }
 HASHES = {
     "307EAI7.bin": "40eb8d98ce4eaaed8f4c3d231bb7e369f5b5b2870b5b579e3b4a5cc61d52c21e",
@@ -35,6 +37,10 @@ HASHES = {
     "370DRGN.grp": "08cad787630482e422152df806de61f22c227f0362cbf63bc904b2ffa98b0f49",
     "380MPP7.grp": "2f8a8f2207be3deb686e520e11530d60a71fff1f0c628cb92397173217be75c9",
     "391MUS7.msd": "e0404d16eaad567e7ed932690f4f1c16f7246875413b463cb4be086c95213c4a",
+    "300ROKAD.bin": "07236ac426e926d2bf73eccf750101614fb1f04fdc80745dc1a2982cc05ca500",
+    "353DMAN.grp": "687faa9cc9ee9dc7217caf9709c343f28453e4bcbe602418b581b5f8698e8a9e",
+    "355ENCNT.grp": "fd9fd239d60cca4418d042a5785f2f8924685f4edd03ae4768209e4ae0be1e5b",
+    "394MFAN.msd": "87b5ec7f3ee8ea5f4086a3198076fc06e1de28d05811159eb8e9f5a829a80dff",
 }
 
 
@@ -115,6 +121,9 @@ def main() -> int:
              len(caliente_doors), monsters, items, families)
     chamber_shape = (struct.unpack_from("<H", chamber, 2)[0], chamber[0x12],
                      len(doors(chamber)), len(records(chamber, 0x10, 16)))
+    dragon_descriptor = struct.unpack_from("<H", chamber)[0] - 0xC000
+    dragon_shape = chamber[
+        dragon_descriptor:dragon_descriptor + 24]
     paguro_descriptor = struct.unpack_from("<H", paguro_room)[0] - 0xC000
     paguro_shape = (
         struct.unpack_from("<H", paguro_room, 2)[0],
@@ -123,6 +132,7 @@ def main() -> int:
         paguro_room[paguro_descriptor + 16:paguro_descriptor + 20],
     )
     paguro = images["315ZEL2.bin"]
+    dragon = images["316DRGN.bin"]
     paguro_contract = {
         "hut_name": b"In the Hut" in paguro_room,
         "damage_floor": paguro[0x55D:0x569] ==
@@ -135,12 +145,31 @@ def main() -> int:
             bytes.fromhex("c60630ffffc3"),
         "name": b"aguro" in paguro,
     }
+    dragon_contract = {
+        "death_arm": dragon[0x9CE:0x9D8] ==
+            bytes.fromhex("c60658aa00c6062effff"),
+        "death_timer": dragon[0x9F2:0x9F8] ==
+            bytes.fromhex("803e58aa2873"),
+        "death_fx": dragon[0xA21:0xA26] ==
+            bytes.fromhex("c60675ff37"),
+        "completion_write": dragon[0xA36:0xA3C] ==
+            bytes.fromhex("c60630ffffc3"),
+        "victory_increment": bytes.fromhex("fe06a000") in
+            images["300ROKAD.bin"],
+        "raised_sword_pose": bytes.fromhex("c606e70005") in
+            images["300ROKAD.bin"],
+        "crystal_launch": bytes.fromhex("c6069ca594c6069da550") in
+            images["300ROKAD.bin"],
+    }
     ok = refs_ok and hashes_ok and heat_ok and all(contract.values()) and \
         links == expected_links and shape == (208, 7, 14, 19, 10, 0x1E) and \
         chamber_shape == (70, 7, 0, 0) and \
         paguro_shape == (73, 0, 0, bytes.fromhex("99000a12ff"),
                           bytes.fromhex("3000ffff")) and \
-        all(paguro_contract.values())
+        all(paguro_contract.values()) and \
+        dragon_shape == bytes.fromhex(
+            "9900060dff0d0c0c10c0ccc20ac06ec23200ffffffffffff") and \
+        all(dragon_contract.values())
 
     print("fight_caliente_resources: " + ("PASS" if refs_ok else "FAIL") +
           " " + " ".join(f"{name}={value.hex()}" for name, value in refs.items()))
@@ -151,6 +180,9 @@ def main() -> int:
     print("fight_paguro_handoff: " +
           ("PASS" if all(paguro_contract.values()) else "FAIL") +
           f" shape={paguro_shape} contract={paguro_contract}")
+    print("fight_dragon_contract: " +
+          ("PASS" if all(dragon_contract.values()) else "FAIL") +
+          f" shape={dragon_shape.hex()} contract={dragon_contract}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM Caliente, Paguro hut, persistence, and Dragon handoff")
     return 0 if ok else 1
