@@ -224,6 +224,13 @@ TEST_CORRER_RUNTIME_SRC := \
 	load/fill_buffer.c \
 	render/palette.c \
 	platform/platform_sdl.c
+TEST_SPELL_RUNTIME_SRC := \
+	tests/spell_runtime_native.c \
+	game/fight_masm_vm.c \
+	third_party/8086tiny/fight_8086tiny.c \
+	load/fill_buffer.c \
+	render/palette.c \
+	platform/platform_sdl.c
 TEST_REMAINING_CAVERNS_SRC := \
 	tests/remaining_caverns_native.c \
 	game/fight_masm_vm.c \
@@ -683,6 +690,10 @@ build/caliente-runtime-native: $(TEST_CALIENTE_RUNTIME_SRC) Makefile
 build/correr-runtime-native: $(TEST_CORRER_RUNTIME_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_CORRER_RUNTIME_SRC)
+
+build/spell-runtime-native: $(TEST_SPELL_RUNTIME_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_SPELL_RUNTIME_SRC)
 
 build/remaining-caverns-native: $(TEST_REMAINING_CAVERNS_SRC) Makefile
 	@mkdir -p build
