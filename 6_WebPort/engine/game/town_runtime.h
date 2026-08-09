@@ -87,6 +87,11 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
 int zeliard_town_prepare_level_start(u8 *game_seg, size_t game_size,
                                      u8 area_id);
 
+/* 200FIGHT:boss_check loader-1 return followed by compute_scroll_pos. */
+int zeliard_town_prepare_cavern_door_return(
+    u8 *game_seg, size_t game_size, u8 area_id,
+    u16 scroll_count, u8 scroll_dir, u8 player_y);
+
 int zeliard_town_area_supported(u8 area_id);
 
 int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,

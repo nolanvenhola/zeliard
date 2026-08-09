@@ -39,10 +39,13 @@ typedef struct {
     u8 palette_component;
     u8 exit_operation;
     u8 exit_selector;
+    u8 exit_scroll_dir;
+    u8 exit_player_y;
     u8 music_chunk;
     u8 bootstrap_clock;
     u8 authored_wait_sequence;
     u16 exit_dispatch_slot;
+    u16 exit_scroll_count;
     u32 instructions;
     u32 frame_pit_ticks;
     u16 trace[32];
@@ -154,13 +157,18 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 6, "eai5.bin"},
     {2, 7, "eai6.bin"},
     {2, 8, "eai7.bin"},
+    {2, 9, "eai8.bin"},
     {2, 10, "crab.bin"},
     {2, 11, "tako.bin"},
     {2, 12, "tori.bin"},
     {2, 13, "zela.bin"},
     {2, 14, "meda.bin"},
     {2, 15, "lega.bin"},
+    {2, 16, "zel2.bin"},
     {2, 17, "drgn.bin"},
+    {2, 18, "akma.bin"},
+    {2, 19, "mao1.bin"},
+    {2, 20, "mao2.bin"},
     {2, 21, "mp10.mdt"},
     {2, 52, "fman.grp"},
     {2, 53, "roka.grp"},
@@ -174,6 +182,7 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 61, "enp5.grp"},
     {2, 62, "enp6.grp"},
     {2, 63, "enp7.grp"},
+    {2, 64, "enp8.grp"},
     {2, 65, "crab.grp"},
     {2, 66, "tako.grp"},
     {2, 67, "tori.grp"},
@@ -181,6 +190,9 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 69, "meda.grp"},
     {2, 70, "lega.grp"},
     {2, 71, "drgn.grp"},
+    {2, 72, "akma.grp"},
+    {2, 73, "mao1.grp"},
+    {2, 74, "mao2.grp"},
     {2, 75, "mpp1.grp"},
     {2, 76, "mpp2.grp"},
     {2, 77, "mpp3.grp"},
@@ -188,6 +200,10 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 79, "mpp5.grp"},
     {2, 80, "mpp6.grp"},
     {2, 81, "mpp7.grp"},
+    {2, 82, "mpp8.grp"},
+    {2, 83, "mpp9.grp"},
+    {2, 84, "mppa.grp"},
+    {2, 85, "mppb.grp"},
     {2, 86, "mus1.msd"},
     {2, 87, "mus2.msd"},
     {2, 88, "mus3.msd"},
@@ -195,8 +211,10 @@ static const fight_asset_ref_t FIGHT_ASSETS[] = {
     {2, 90, "mus5.msd"},
     {2, 91, "mus6.msd"},
     {2, 92, "mus7.msd"},
+    {2, 93, "mus8.msd"},
     {2, 94, "mbos.msd"},
     {2, 95, "mfan.msd"},
+    {2, 96, "mmao.msd"},
 };
 
 static const char *asset_for_ref(u8 archive, u8 chunk) {
@@ -209,66 +227,56 @@ static const char *asset_for_ref(u8 archive, u8 chunk) {
 
 static const char *map_for_selector(u8 selector) {
     switch (selector) {
-        case 0x00:
-        case 0x1E: return "mp10.mdt";
-        case 0x01:
-        case 0x1F: return "mp1d.mdt";
-        case 0x02:
-        case 0x20: return "mp20.mdt";
-        case 0x03:
-        case 0x21: return "mp21.mdt";
-        case 0x04:
-        case 0x22: return "mp2d.mdt";
-        case 0x05:
-        case 0x23: return "mp30.mdt";
-        case 0x06:
-        case 0x24: return "mp31.mdt";
-        case 0x07:
-        case 0x25: return "mp3d.mdt";
-        case 0x08:
-        case 0x26: return "mp40.mdt";
-        case 0x09:
-        case 0x27: return "mp41.mdt";
+        case 0x00: return "mp10.mdt";
+        case 0x01: return "mp1d.mdt";
+        case 0x02: return "mp20.mdt";
+        case 0x03: return "mp21.mdt";
+        case 0x04: return "mp2d.mdt";
+        case 0x05: return "mp30.mdt";
+        case 0x06: return "mp31.mdt";
+        case 0x07: return "mp3d.mdt";
+        case 0x08: return "mp40.mdt";
+        case 0x09: return "mp41.mdt";
         /* MP4D is Agar's chamber.  The release engine reaches it through
          * MP40's x224/y18 door, then owns the directional ROKA run and the
          * complete ENCOUNTER! wipe before dispatching ZELA. */
-        case 0x0A:
-        case 0x28: return "mp4d.mdt";
-        case 0x0B:
-        case 0x29: return "mp50.mdt";
-        case 0x0C:
-        case 0x2A: return "mp51.mdt";
+        case 0x0A: return "mp4d.mdt";
+        case 0x0B: return "mp50.mdt";
+        case 0x0C: return "mp51.mdt";
         /* MP5D is Vista's chamber, reached from Cementar's x157/y16
          * authored boss door through the standard ROKA/ENCOUNTER flow. */
-        case 0x0D:
-        case 0x2B: return "mp5d.mdt";
-        case 0x0E:
-        case 0x2C: return "mp60.mdt";
-        case 0x0F:
-        case 0x2D: return "mp61.mdt";
+        case 0x0D: return "mp5d.mdt";
+        case 0x0E: return "mp60.mdt";
+        case 0x0F: return "mp61.mdt";
         /* MP62 is Arrugia's secret treasure cavern, reached through
          * Tesoro's x31/y5 Lion-keyed door and exited through x62/y13. */
-        case 0x10:
-        case 0x2E: return "mp62.mdt";
+        case 0x10: return "mp62.mdt";
         /* MP6D is Tarso's chamber.  Tesoro's x309/y41 boss door owns the
          * standard ROKA run and ENCOUNTER! wipe before dispatching LEGA. */
-        case 0x11:
-        case 0x2F: return "mp6d.mdt";
+        case 0x11: return "mp6d.mdt";
         /* MP70 is Caliente's heat-damage map.  The release frame loop
          * applies its periodic Area-7 damage unless accessory 5 (the
          * Asbestos Cape) is selected. */
-        case 0x12:
-        case 0x30: return "mp70.mdt";
-        case 0x13:
-        case 0x31: return "mp71.mdt";
-        case 0x14:
-        case 0x32: return "mp72.mdt";
-        case 0x15:
-        case 0x33: return "mp73.mdt";
+        case 0x12: return "mp70.mdt";
+        case 0x13: return "mp71.mdt";
+        case 0x14: return "mp72.mdt";
+        case 0x15: return "mp73.mdt";
         /* MP7D is Dragon's chamber.  Caliente's x199/y33 boss door owns
          * the directional ROKA run and ENCOUNTER! wipe before DRGN. */
-        case 0x16:
-        case 0x34: return "mp7d.mdt";
+        case 0x16: return "mp7d.mdt";
+        /* Area 8 is the complete late-game chain: Absor, Milagro,
+         * Desleal, Falter, Final, then Alguien's chamber and the first
+         * final-boss chamber. MPA0 is selector 1Eh: scene_transition in
+         * release 200FIGHT loads it explicitly after MAO1 requests the
+         * second final-boss phase. */
+        case 0x17: return "mp80.mdt";
+        case 0x18: return "mp81.mdt";
+        case 0x19: return "mp82.mdt";
+        case 0x1A: return "mp83.mdt";
+        case 0x1B: return "mp84.mdt";
+        case 0x1C: return "mp8d.mdt";
+        case 0x1D: return "mp90.mdt";
+        case 0x1E: return "mpa0.mdt";
         default: return NULL;
     }
 }
@@ -370,6 +378,14 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         } else if (operation == 1 && !asset) {
             state->exit_operation = operation;
             state->exit_selector = selector;
+            /* boss_check has already copied the selected door's arrival
+             * coordinates into 9F1Ah/9F1Ch. The town MDT loader normally
+             * returns and compute_scroll_pos consumes them; the host VM
+             * yields at this loader boundary, so retain that handoff. */
+            state->exit_scroll_count = read_u16(
+                memory, linear(FIGHT_SEG, 0x9F1A));
+            state->exit_scroll_dir = memory[linear(FIGHT_SEG, 0x9F1C)];
+            state->exit_player_y = memory[linear(FIGHT_SEG, 0xC016)];
             state->active = 0;
             return 1;
         } else if (operation == 4) {
@@ -600,6 +616,15 @@ u8 zeliard_fight_masm_vm_exit_selector(void) {
 }
 u16 zeliard_fight_masm_vm_exit_dispatch_slot(void) {
     return g_fight_vm.exit_dispatch_slot;
+}
+u16 zeliard_fight_masm_vm_exit_scroll_count(void) {
+    return g_fight_vm.exit_scroll_count;
+}
+u8 zeliard_fight_masm_vm_exit_scroll_dir(void) {
+    return g_fight_vm.exit_scroll_dir;
+}
+u8 zeliard_fight_masm_vm_exit_player_y(void) {
+    return g_fight_vm.exit_player_y;
 }
 u8 zeliard_fight_masm_vm_music_chunk(void) {
     return g_fight_vm.music_chunk;

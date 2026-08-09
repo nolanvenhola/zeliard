@@ -8,6 +8,7 @@ typedef struct {
     u8 waiting;
     u8 page_wait;
     u8 final_wait;
+    u8 final_direction_released;
     u8 pending_sound_cue;
     u8 scroll_active;
     u8 scroll_resume_pending;
@@ -17,6 +18,12 @@ typedef struct {
     u8 prompt_kind;
     u8 prompt_selection;
     u8 prompt_direction_latch;
+    u8 prompt_cursor_anim_active;
+    u8 prompt_cursor_anim_from;
+    u8 prompt_cursor_anim_to;
+    u8 prompt_cursor_anim_step;
+    u8 prompt_cursor_anim_wait_ticks;
+    u8 final_action_only;
     u8 control_wait_dialog;
     u8 scripted;
     u8 original_npc_direction;

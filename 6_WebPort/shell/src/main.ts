@@ -29,6 +29,8 @@ type EngineExports = {
     _zeliard_music_attenuation(): number;
     _zeliard_paused(): number;
     _zeliard_speed_menu_active(): number;
+    _zeliard_restore_menu_active(): number;
+    _zeliard_load_request_serial(): number;
     _zeliard_game_speed_digit(): number;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
@@ -227,6 +229,7 @@ async function boot() {
     let lastPaused = false;
     let lastTerminated = false;
     let lastSaveSerial = Module._zeliard_save_serial();
+    let lastLoadRequestSerial = Module._zeliard_load_request_serial();
 
     const listSaves = () => Object.keys(localStorage)
         .filter((key) => key.startsWith('zeliard.save.'))
@@ -463,6 +466,7 @@ async function boot() {
             Escape: 27,
             F1: 112,
             F2: 113,
+            F7: 118,
             F9: 120,
         };
         const keycode = keycodes[e.key];
@@ -472,6 +476,11 @@ async function boot() {
                 e.preventDefault();
                 Module._zeliard_text_key(e.key === 'Backspace'
                     ? 8 : e.key.toUpperCase().charCodeAt(0));
+                const loadRequestSerial = Module._zeliard_load_request_serial();
+                if (loadRequestSerial !== lastLoadRequestSerial) {
+                    lastLoadRequestSerial = loadRequestSerial;
+                    openSaveEl.click();
+                }
             }
             return;
         }
@@ -500,6 +509,7 @@ async function boot() {
             Escape: 27,
             F1: 112,
             F2: 113,
+            F7: 118,
             F9: 120,
         };
         const keycode = keycodes[e.key];

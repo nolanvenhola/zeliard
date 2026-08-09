@@ -1,5 +1,6 @@
 #include "inventory_masm_vm.h"
 
+#include "../core/player_state.h"
 #include "../load/fill_buffer.h"
 #include "../platform/platform.h"
 #include "../third_party/8086tiny/8086tiny.h"
@@ -68,6 +69,24 @@ static u16 read_u16(const u8 *memory, size_t address) {
 static void write_u16(u8 *memory, size_t address, u16 value) {
     memory[address] = (u8)value;
     memory[address + 1] = (u8)(value >> 8);
+}
+
+static void normalize_selected_spell(u8 *game_seg) {
+    const u8 selected = game_seg[ZEL_PLAYER_SELECTED_SPELL];
+    u8 last_learned = 0;
+    for (u8 spell = 1; spell <= 7; ++spell) {
+        if (game_seg[ZEL_PLAYER_SPELL_KNOWN + spell - 1] == 0) continue;
+        last_learned = spell;
+        if (spell == selected) return;
+    }
+
+    /* 201SELCT:draw_spell_panel searches selected_spell in the compact
+     * spell_idx_tbl, while its input loop limits spell_cursor to
+     * spell_count-1. Release saves maintain the invariant that the selected
+     * ID is learned; imported/edited saves may not. Clamp such a selection
+     * to the compact table's final populated slot (or zero when empty), so
+     * the exact MASM cursor can never be drawn over an empty entry. */
+    game_seg[ZEL_PLAYER_SELECTED_SPELL] = last_learned;
 }
 
 static int load_raw_to(u8 *memory, size_t destination, const char *name) {
@@ -182,6 +201,7 @@ int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
     const size_t game = linear(GAME_SEG, 0);
     const size_t itemp = linear(ITEMP_SEG, 0);
     const size_t asset2 = linear(ASSET_SEG_2, 0);
+    normalize_selected_spell(game_seg);
     memcpy(memory + game, game_seg, 0x10000);
     memcpy(memory + linear(VGA_SEG, 0), vga, 0x10000);
     size_t font_size = 0;

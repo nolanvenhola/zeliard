@@ -14,6 +14,9 @@ u16 zeliard_fight_masm_vm_ip(void);
 u8 zeliard_fight_masm_vm_exit_operation(void);
 u8 zeliard_fight_masm_vm_exit_selector(void);
 u16 zeliard_fight_masm_vm_exit_dispatch_slot(void);
+u16 zeliard_fight_masm_vm_exit_scroll_count(void);
+u8 zeliard_fight_masm_vm_exit_scroll_dir(void);
+u8 zeliard_fight_masm_vm_exit_player_y(void);
 u8 zeliard_fight_masm_vm_music_chunk(void);
 /* One entry per executed 200FIGHT write to gvar_volume_b (FF75h). */
 u8 zeliard_fight_masm_vm_take_sound_cue(void);

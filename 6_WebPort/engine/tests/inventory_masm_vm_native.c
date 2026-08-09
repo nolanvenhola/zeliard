@@ -233,30 +233,44 @@ int main(void) {
     game[0x90] = 100;
     game[0xBB] = 1;
     game[0xBC] = 1;
+    /* Imported save mismatch: Guerra selected, but only Espada and Saeta
+     * are learned. The MASM overlay must start on the last populated slot. */
+    game[0x9D] = 7;
     ok &= zeliard_inventory_masm_vm_start(
         game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
     const unsigned long long populated_entry = fnv1a64(vga, 64000);
     const u8 populated_cursor_before =
         zeliard_inventory_masm_vm_peek(0xADFB);
     zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const unsigned long long populated_right_bound = fnv1a64(vga, 64000);
+    const u8 populated_cursor_at_bound =
+        zeliard_inventory_masm_vm_peek(0xADFB);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
                                       1, 4, 0, 0);
     zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
                                       100, 0, 0, 0);
     const unsigned long long populated_left = fnv1a64(vga, 64000);
-    printf("inventory_masm_populated_left: active=%d poll=%d ip=%04x "
-           "entry=%016llx left=%016llx spell=%02x count=%02x cursor=%02x/%02x\n",
+    printf("inventory_masm_populated_bounds: active=%d poll=%d ip=%04x "
+           "entry=%016llx right=%016llx left=%016llx spell=%02x "
+           "count=%02x cursor=%02x/%02x/%02x\n",
            zeliard_inventory_masm_vm_active(),
            zeliard_inventory_masm_vm_at_input_poll(),
-           zeliard_inventory_masm_vm_ip(), populated_entry, populated_left,
+           zeliard_inventory_masm_vm_ip(), populated_entry,
+           populated_right_bound, populated_left,
            game[0x9D], zeliard_inventory_masm_vm_peek(0xADFA),
-           populated_cursor_before,
+           populated_cursor_before, populated_cursor_at_bound,
            zeliard_inventory_masm_vm_peek(0xADFB));
     ok &= zeliard_inventory_masm_vm_active() &&
         zeliard_inventory_masm_vm_at_input_poll() &&
-        populated_entry == 0x6916dc254fa0ff29ULL &&
-        populated_left == 0x9300d8c22f08091eULL &&
-        game[0x9D] == 2 && populated_cursor_before == 2 &&
-        zeliard_inventory_masm_vm_peek(0xADFB) == 1;
+        populated_entry == 0x49B2E39AB40708FEULL &&
+        populated_right_bound == populated_entry &&
+        populated_left == 0x211BFDDAAF3182C8ULL &&
+        game[0x9D] == 1 && populated_cursor_before == 1 &&
+        populated_cursor_at_bound == 1 &&
+        zeliard_inventory_masm_vm_peek(0xADFB) == 0;
     zeliard_inventory_masm_vm_stop();
 
     memset(game, 0, 0x10000);

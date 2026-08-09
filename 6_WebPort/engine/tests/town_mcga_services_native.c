@@ -135,6 +135,22 @@ int main(void) {
 
     memset(life_seg, 0, sizeof(life_seg));
     for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 13 + 5);
+    life_seg[0x00A0] = 2;
+    ok &= zeliard_gmmcga_draw_collected_tears(vga, 0x10000, life_seg,
+                                               sizeof(life_seg)) == 0;
+    const unsigned long long two_tears_hash = fnv1a64(vga, 0x10000);
+    ok &= two_tears_hash == 0x78CE592EA8B5637DULL;
+    for (size_t i = 0; i < 0x10000; ++i)
+        vga[i] = (u8)(i * 13 + 5);
+    life_seg[0x00A0] = 9;
+    ok &= zeliard_gmmcga_draw_collected_tears(vga, 0x10000, life_seg,
+                                               sizeof(life_seg)) == 0;
+    const unsigned long long nine_tears_hash = fnv1a64(vga, 0x10000);
+    ok &= nine_tears_hash == 0xED19D671A07BBED3ULL;
+
+    memset(life_seg, 0, sizeof(life_seg));
+    for (size_t i = 0; i < 0x10000; ++i)
         vga[i] = (u8)(i * 7 + 3);
     life_seg[0xF502] = 0x00;
     life_seg[0xF503] = 0x80;
@@ -209,12 +225,15 @@ int main(void) {
     life_seg[0x0090] = 0x45; life_seg[0x0091] = 0x02;
     life_seg[0x0093] = 0x03; life_seg[0x0094] = 0xE1; life_seg[0x0095] = 0x10;
     life_seg[0x009D] = 0x03; life_seg[0x00AD] = 0x4D;
+    life_seg[0x00A0] = 2;
     life_seg[0x00B2] = 0x20; life_seg[0x00B3] = 0x03;
     for (size_t i = 0; i < 0x10000; ++i)
         vga[i] = (u8)(i * 13 + 5);
     ok &= zeliard_gmmcga_draw_first_frame_hud(vga, 0x10000, life_seg,
                                                sizeof(life_seg), 0x9800) == 0;
-    ok &= fnv1a64(vga, 0x10000) == 0x760C14598E9E15D6ULL;
+    const unsigned long long first_frame_tears_hash = fnv1a64(vga, 0x10000);
+    const unsigned long long first_frame_tears_top_hash = fnv1a64(vga, 13 * 320);
+    ok &= first_frame_tears_hash == 0x177E8F5730DF0B32ULL;
     /* 106TOWN BX=C61C/CH=17 shield-strength bevel. */
     for (size_t x = 246; x < 270; ++x)
         ok &= vga[186 * 320 + x] == 0x00;
@@ -230,6 +249,7 @@ int main(void) {
 
     life_seg[0x0093] = 0;
     life_seg[0x009D] = 0;
+    life_seg[0x00A0] = 0;
     for (size_t i = 0; i < 0x10000; ++i)
         vga[i] = (u8)(i * 13 + 5);
     ok &= zeliard_gmmcga_draw_first_frame_hud(vga, 0x10000, life_seg,
@@ -267,6 +287,10 @@ int main(void) {
            fnv1a64(game_seg + 0xA000, 0x1500));
     printf("town_mcga_scroll: left=%016llx right=%016llx\n",
            scroll_left_hash, scroll_right_hash);
+    printf("town_mcga_tears: count2=%016llx count9=%016llx\n",
+           two_tears_hash, nine_tears_hash);
+    printf("town_mcga_first_frame_tears: %016llx top=%016llx\n",
+           first_frame_tears_hash, first_frame_tears_top_hash);
     printf("town_mcga_first_frame_no_spell: %016llx\n", no_spell_hud_hash);
     printf("VERDICT: %s: town MCGA services match MASM oracles\n",
            ok ? "PASS" : "FAIL");

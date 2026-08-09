@@ -838,6 +838,7 @@ static u8             g_speed_rgb_backup[SPEED_W * SPEED_H * 3];
 static int            g_speed_rgb_active;
 static int            g_speed_overlay_active;
 static u8             g_speed_text_color;
+static int            g_restore_overlay_active;
 static palette_color_t g_opening_palette[256];
 static palette_color_t g_title_card_palette[256];
 static u32            g_elapsed   = 0;
@@ -6396,6 +6397,7 @@ static void render_destiny_story(u32 elapsed_ms) {
 void opening_init(void) {
     g_pause_overlay_active = 0;
     g_speed_overlay_active = 0;
+    g_restore_overlay_active = 0;
     g_pause_rgb_active = 0;
     memset(g_images, 0, sizeof(g_images));
     memset(&g_hou_overlay, 0, sizeof(g_hou_overlay));
@@ -6721,6 +6723,47 @@ static void speed_overlay_draw_text(int x, int y, const char *text,
         speed_overlay_draw_char(x + (int)i * 8, y, (u8)text[i], color);
 }
 
+void opening_restore_overlay_show_game(const u8 *game_seg, size_t game_size) {
+    if (g_restore_overlay_active || g_speed_overlay_active || !game_seg ||
+        game_size < 0x10000)
+        return;
+    g_speed_rgb_active = g_rgb_framebuf_active;
+    for (int row = 0; row < SPEED_H; ++row) {
+        const size_t src = (size_t)(SPEED_Y + row) * ZELIARD_WIDTH + SPEED_X;
+        const size_t dst = (size_t)row * SPEED_W;
+        memcpy(g_speed_indexed_backup + dst, g_framebuf + src, SPEED_W);
+        memcpy(g_speed_rgb_backup + dst * 3u, g_rgb_framebuf + src * 3u,
+               SPEED_W * 3u);
+    }
+    const int cinematic = game_seg[0xFF77] != 0;
+    const u8 border = cinematic ? 0xFF : 0x09;
+    g_speed_text_color = cinematic ? 0x77 : game_seg[0x24EB];
+    for (int row = 0; row < SPEED_H; ++row)
+        for (int col = 0; col < SPEED_W; ++col)
+            pause_overlay_set_pixel(SPEED_X + col, SPEED_Y + row,
+                (row < 2 || row >= SPEED_H - 2 || col < 2 ||
+                 col >= SPEED_W - 2) ? border : 0u);
+    /* stick.asm:restore_game_confirm_dlg uses the same AX=0C46h,
+     * CX=1028h box as F9, then draws its CR-delimited text at BX=0074h. */
+    speed_overlay_draw_text(116, 82, "Restore Game", g_speed_text_color);
+    speed_overlay_draw_text(116, 90, " Sure?(Y/N)", g_speed_text_color);
+    g_restore_overlay_active = 1;
+}
+
+void opening_restore_overlay_hide(void) {
+    if (!g_restore_overlay_active)
+        return;
+    for (int row = 0; row < SPEED_H; ++row) {
+        const size_t dst = (size_t)(SPEED_Y + row) * ZELIARD_WIDTH + SPEED_X;
+        const size_t src = (size_t)row * SPEED_W;
+        memcpy(g_framebuf + dst, g_speed_indexed_backup + src, SPEED_W);
+        memcpy(g_rgb_framebuf + dst * 3u, g_speed_rgb_backup + src * 3u,
+               SPEED_W * 3u);
+    }
+    g_rgb_framebuf_active = g_speed_rgb_active;
+    g_restore_overlay_active = 0;
+}
+
 void opening_speed_overlay_set_digit(u8 digit) {
     if (!g_speed_overlay_active || digit > 9u)
         return;
@@ -6733,7 +6776,8 @@ void opening_speed_overlay_set_digit(u8 digit) {
 
 void opening_speed_overlay_show_game(const u8 *game_seg, size_t game_size,
                                      u8 digit) {
-    if (g_speed_overlay_active || !game_seg || game_size < 0x10000)
+    if (g_speed_overlay_active || g_restore_overlay_active || !game_seg ||
+        game_size < 0x10000)
         return;
     g_speed_rgb_active = g_rgb_framebuf_active;
     for (int row = 0; row < SPEED_H; ++row) {

@@ -154,7 +154,12 @@ static int test_muralla_multipage_dialog(void) {
     return ok;
 }
 
-static int test_bosque_sentry_prompt(void) {
+static int run_bosque_sentry_answer(int choose_no,
+                                    unsigned long long *prompt_hash,
+                                    unsigned long long *response_hash,
+                                    u16 *response_end,
+                                    u8 *guard_flags,
+                                    int *repeat_begin) {
     u8 segment[0x10000] = {0};
     u8 scratch[0x10000] = {0};
     u8 vga[0x10000] = {0};
@@ -183,29 +188,83 @@ static int test_bosque_sentry_prompt(void) {
                 &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
         }
     }
-    const unsigned long long prompt_hash = fnv1a64(vga, sizeof(vga));
-    ok &= dialog.prompt_active && dialog.prompt_selection == 0;
+    *prompt_hash = fnv1a64(vga, sizeof(vga));
+    ok &= dialog.prompt_active && dialog.prompt_selection == 0 &&
+          memcmp(segment + 0x7513, "Yes", 4) == 0 &&
+          memcmp(segment + 0x7517, "No", 3) == 0;
 
-    /* Down selects No; confirmation dispatches BSMP dialog 12 exactly as
-     * ctrl_81_header's no-carry path does. */
-    segment[0xFF17] = 2;
+    /* Explicitly select both visible rows. The Bosque No response is
+     * dialog 12 ("Don't lie"). */
+    segment[0xFF17] = choose_no ? 2 : 1;
     ok &= zeliard_town_dialog_continue(
         &dialog, segment, scratch, vga, sizeof(vga)) == 0;
-    ok &= dialog.prompt_selection == 1;
+    if (choose_no) {
+        ok &= dialog.prompt_cursor_anim_active &&
+              dialog.prompt_selection == 0;
+        for (unsigned tick = 0; tick < 20; ++tick)
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        ok &= dialog.prompt_cursor_anim_active &&
+              dialog.prompt_cursor_anim_step == 5 &&
+              dialog.prompt_selection == 0;
+        for (unsigned tick = 0; tick < 20; ++tick)
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        ok &= !dialog.prompt_cursor_anim_active &&
+              dialog.prompt_cursor_anim_step == 10;
+    }
+    ok &= dialog.prompt_selection == (u8)choose_no;
     segment[0xFF17] = 0;
     segment[0xFF1D] = 0xFF;
     ok &= zeliard_town_dialog_continue(
         &dialog, segment, scratch, vga, sizeof(vga)) == 0;
-    const u16 denied_pc = (u16)(segment[0x7C58] |
-                                ((u16)segment[0x7C59] << 8));
-    const unsigned long long denied_hash = fnv1a64(vga, sizeof(vga));
+    *response_end = (u16)(segment[0x7C58] |
+                          ((u16)segment[0x7C59] << 8));
+    *response_hash = fnv1a64(vga, sizeof(vga));
     ok &= dialog.active && !dialog.prompt_active && dialog.final_wait;
-    ok &= prompt_hash == 0x26F8F2DC2A165E3FULL &&
-          denied_hash == 0xDCD72C80F7676981ULL && denied_pc == 0xCC5A;
-    printf("town_bosque_sentry_prompt: %s prompt=%016llx no=%016llx "
-           "selection=%u pc=%04x glyphs=%u\n",
-           ok ? "PASS" : "FAIL", prompt_hash, denied_hash,
-           dialog.prompt_selection, denied_pc, dialog.glyph_count);
+    segment[0xFF17] = 4;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    ok &= dialog.active;
+    segment[0xFF17] = 8;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 0;
+    ok &= dialog.active;
+    segment[0xFF17] = 0;
+    segment[0xFF1D] = 0xFF;
+    ok &= zeliard_town_dialog_continue(
+        &dialog, segment, scratch, vga, sizeof(vga)) == 1;
+    *guard_flags = segment[0xCCFA];
+    *repeat_begin = zeliard_town_dialog_begin_facing(
+        &dialog, segment, scratch, NULL, 0, NULL, 0,
+        vga, sizeof(vga), 0x0009);
+    return ok;
+}
+
+static int test_bosque_sentry_prompt(void) {
+    unsigned long long yes_prompt = 0, yes_response = 0;
+    unsigned long long no_prompt = 0, no_response = 0;
+    u16 yes_end = 0, no_end = 0;
+    u8 yes_flags = 0, no_flags = 0;
+    int yes_repeat = 0, no_repeat = 0;
+    int ok = run_bosque_sentry_answer(
+        0, &yes_prompt, &yes_response, &yes_end,
+        &yes_flags, &yes_repeat);
+    ok &= run_bosque_sentry_answer(
+        1, &no_prompt, &no_response, &no_end,
+        &no_flags, &no_repeat);
+    ok &= yes_prompt == 0x26F8F2DC2A165E3FULL &&
+          no_prompt == yes_prompt &&
+          yes_response != no_response &&
+          yes_end == 0xCCB5 && no_end == 0xCC5A &&
+          yes_flags == 0x40 && no_flags == 0x40 &&
+          yes_repeat == -2 && no_repeat == -2;
+    printf("town_bosque_sentry_prompt: %s prompt=%016llx "
+           "yes=%016llx/%04x no=%016llx/%04x "
+           "flags=%02x/%02x repeat=%d/%d\n",
+           ok ? "PASS" : "FAIL", yes_prompt,
+           yes_response, yes_end, no_response, no_end,
+           yes_flags, no_flags, yes_repeat, no_repeat);
     return ok;
 }
 

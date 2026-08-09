@@ -49,6 +49,7 @@ typedef struct {
     u8 host_space_latched;
     u8 host_enter_latched;
     u8 host_direction_latched;
+    u8 text_release_guard;
     u16 bank_query_yield;
     u8 pending_sound_cue;
     u8 pending_ascii;
@@ -333,6 +334,26 @@ static int room_step(void *context, u16 cs, u16 ip) {
         return 1;
     }
     if (cs == GAME_SEG && ip == TOWN_TEXT_WAIT_INPUT) {
+        const size_t base = linear(GAME_SEG, 0);
+        const u8 raw_text_action = (u8)(
+            (memory[base + 0xFF16] & 3u) != 0 ||
+            (read_u16(memory, base + 0xFF18) & 1u) != 0);
+        if (state->kind == ZEL_ROOM_SAGE &&
+            ((!state->at_input_poll && raw_text_action) ||
+             state->text_release_guard)) {
+            /* KENJPRO enters its farewell wait directly from the menu that
+             * selected "Go outside".  MASM requires that selection key to
+             * be released before the new text wait can be acknowledged. */
+            state->text_release_guard = raw_text_action;
+            state->allow_poll_once = 0;
+            state->pending_space = 0;
+            state->pending_enter = 0;
+            memory[base + 0xFF1D] = 0;
+            memory[base + 0xFF1E] = 0;
+            state->at_input_poll = 1;
+            state->input_kind = ZEL_ROOM_VM_INPUT_TEXT;
+            return 1;
+        }
         if (state->allow_poll_once) {
             state->allow_poll_once = 0;
             state->skip_text_repeat_once = 1;
@@ -419,6 +440,7 @@ static int room_masm_vm_start_impl(zeliard_room_kind_t kind,
         !load_payload_to(memory, base + 0x3000, "gtmcga.bin") ||
         !load_payload_to(memory, base + 0x6000, "town.bin") ||
         !load_payload_to(memory, base + 0xA000, program) ||
+        !load_fill_to(memory, linear(DATA_SEG, 0x0000), "magic.grp") ||
         !load_fill_to(memory, linear(DATA_SEG, 0xE200), "itemp.grp") ||
         base + 0xF500 + font_size > zel_room86_memory_size()) {
         free(font); return 0;
@@ -495,8 +517,20 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
     memcpy(memory + base + 0x02BC, game_seg + 0x02BC, 9);
     memcpy(memory + base + 0x05C1, game_seg + 0x05C1, 5);
     memcpy(memory + base + 0xFF16, game_seg + 0xFF16, 4);
-    memory[base + 0xFF17] = direction;
-    g_room_vm.direction = direction;
+    /* KENJPRO's opening speech owns the room loop until its menu poll is
+     * active.  Do not carry an early town direction edge through that text
+     * phase: it can otherwise reach menu_show_list with "Go outside" still
+     * selected and make a Down press leave the hut before the menu appears.
+     * A direction that remains physically held is sampled normally as soon
+     * as the sage menu (or name-entry selector) takes ownership. */
+    const u8 accepts_direction = (u8)(
+        g_room_vm.kind != ZEL_ROOM_SAGE ||
+        (g_room_vm.at_input_poll &&
+         (g_room_vm.input_kind == ZEL_ROOM_VM_INPUT_MENU ||
+          g_room_vm.input_kind == ZEL_ROOM_VM_INPUT_NAME)));
+    const u8 room_direction = accepts_direction ? direction : 0;
+    memory[base + 0xFF17] = room_direction;
+    g_room_vm.direction = room_direction;
     /* FF16 bit 0 and FF18 bit 0 are stick.asm's physical key masks; FF1D
      * and FF29 are sampled action latches. Reset edge ownership on raw
      * key-up, not when a room proc happens to clear an action byte. */
@@ -516,7 +550,7 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                                !g_room_vm.host_space_latched);
     const u8 enter_edge = (u8)(enter && raw_enter_down &&
                                !g_room_vm.host_enter_latched);
-    const u8 direction_edge = (u8)(direction &&
+    const u8 direction_edge = (u8)(room_direction &&
                                    !g_room_vm.host_direction_latched);
     if (space_edge) g_room_vm.host_space_latched = 1;
     if (enter_edge) g_room_vm.host_enter_latched = 1;
@@ -584,6 +618,12 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
             restore_frame_rect(frame, g_room_vm.drug_description_backdrop,
                                156, 34, 112, 45);
     }
+    /* A room script can consume FF1D/FF1E while advancing from a menu into
+     * its next text wait.  Keep ownership of the host make edge until the
+     * physical key is released; otherwise the same held selection key can
+     * immediately acknowledge KENJPRO's exit farewell on the next tick. */
+    if (space && raw_space_down) g_room_vm.host_space_latched = 1;
+    if (enter && raw_enter_down) g_room_vm.host_enter_latched = 1;
     memcpy(game_seg, memory + base, 0x10000);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
     return 1;

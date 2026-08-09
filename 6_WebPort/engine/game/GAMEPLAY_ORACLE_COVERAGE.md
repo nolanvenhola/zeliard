@@ -115,6 +115,7 @@ Town MCGA dispatch coverage:
 | `zeliard_gmmcga_draw_town_text_record` | Oracle-backed | `proc_equivalence/test_gmmcga_town_text_record_oracle.py`; `22CD` record and color-state hash |
 | `zeliard_gmmcga_draw_almas` / `draw_gold` / `draw_spell_charge` / `draw_shield_hp` | Oracle-backed | `proc_equivalence/test_gmmcga_town_numeric_hud_oracle.py`; staged decimal-state and VGA hashes |
 | `zeliard_gmmcga_draw_first_frame_hud` | Oracle-backed | `proc_equivalence/test_gmmcga_town_first_frame_hud_oracle.py`; exact initial `frame_update` HUD order and combined state/VGA hash |
+| `zeliard_gmmcga_draw_collected_tears` | Oracle-backed | `proc_equivalence/test_gmmcga_collected_tears_oracle.py`; exact GAME:A3A6 slot order plus GMMCGA:2A1C normal/final sprites for 2- and 9-Tear saves |
 | `zeliard_gtmcga_encode_tile_block` | Oracle-backed | `proc_equivalence/test_gtmcga_encode_tile_block_oracle.py`; packed source, alpha masks, and scratch hashes |
 | `zeliard_gtmcga_capture_playfield` | Oracle-backed | `proc_equivalence/test_gtmcga_capture_playfield_oracle.py`; captured segment and exit registers |
 | `zeliard_gtmcga_scroll_view_left` / `scroll_view_right` | Oracle-backed | `proc_equivalence/test_gtmcga_town_scroll.py`; full 64K VGA hashes from release `111GTMCA.bin` |

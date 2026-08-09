@@ -24,6 +24,7 @@ int zeliard_test_restart_fight(int selector, int start_position,
 int zeliard_test_game_set_u8(unsigned offset, unsigned value);
 int zeliard_test_redraw_town(void);
 int zeliard_fight_active(void);
+int zeliard_fight_map_width(void);
 int zeliard_cavern_transition_active(void);
 int zeliard_cavern_transition_step(void);
 int zeliard_inventory_active(void);
@@ -37,6 +38,8 @@ u32 zeliard_audio_opl_write_count(void);
 u32 zeliard_audio_cue_serial(void);
 int zeliard_paused(void);
 int zeliard_speed_menu_active(void);
+int zeliard_restore_menu_active(void);
+u32 zeliard_load_request_serial(void);
 int zeliard_game_speed_digit(void);
 int zeliard_music_track(void);
 void zeliard_music_complete(int track);
@@ -248,6 +251,44 @@ int main(void) {
            speed_menu_opened, speed_selected, speed_menu_closed,
            speed_selected ? 9 : zeliard_game_speed_digit(),
            speed_selected ? 1 : zeliard_test_game_u8(0xFF33));
+    u8 before_restore_menu[ZELIARD_FB_SIZE];
+    memcpy(before_restore_menu, g_framebuf, sizeof(before_restore_menu));
+    const u32 load_serial_before = zeliard_load_request_serial();
+    zeliard_key(118);
+    const int restore_opened = zeliard_paused() &&
+        zeliard_restore_menu_active() && zeliard_sound_cue() == 2 &&
+        g_framebuf[70 * ZELIARD_WIDTH + 104] == 0x09;
+    const int restore_music_before = zeliard_music_enabled();
+    zeliard_key(27);
+    zeliard_key(32);
+    zeliard_key(112);
+    zeliard_text_key('A');
+    const int restore_ignored_other_keys = zeliard_paused() &&
+        zeliard_restore_menu_active() &&
+        zeliard_music_enabled() == restore_music_before;
+    zeliard_text_key('N');
+    const int restore_declined = !zeliard_paused() &&
+        !zeliard_restore_menu_active() &&
+        zeliard_load_request_serial() == load_serial_before &&
+        memcmp(before_restore_menu, g_framebuf,
+               sizeof(before_restore_menu)) == 0;
+    zeliard_key(118);
+    zeliard_text_key('Y');
+    const int restore_confirmed = !zeliard_paused() &&
+        !zeliard_restore_menu_active() &&
+        zeliard_load_request_serial() == load_serial_before + 1 &&
+        memcmp(before_restore_menu, g_framebuf,
+               sizeof(before_restore_menu)) == 0;
+    ok &= restore_opened && restore_ignored_other_keys && restore_declined &&
+        restore_confirmed;
+    printf("main_controls:f7_restore_menu: %s opened=%d exclusive=%d no=%d "
+           "yes=%d serial=%u\n",
+           restore_opened && restore_ignored_other_keys && restore_declined &&
+               restore_confirmed ?
+               "PASS" : "FAIL",
+           restore_opened, restore_ignored_other_keys, restore_declined,
+           restore_confirmed,
+           (unsigned)zeliard_load_request_serial());
     zeliard_key_down(39);
     zeliard_tick(90);
     zeliard_key_up(39);
@@ -329,6 +370,9 @@ int main(void) {
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
     record[0x9D] = 3;          /* selected spell */
+    record[0xAB] = 24;         /* Espada charge */
+    record[0xAD] = 8;          /* Fuego charge */
+    record[0xBB] = 0xFF;       /* Espada learned */
     record[0xBD] = 0xFF;       /* Fuego learned */
     record[0xC4] = 0x81;       /* saved at Muralla's Sage */
     record[0xE5] = 0xE0;       /* first three sages spoken */
@@ -358,30 +402,83 @@ int main(void) {
         frame_rect_hash(250, 164, 16, 16);
     const unsigned long long restored_sword =
         frame_rect_hash(192, 171, 20, 18);
+    const unsigned long long restored_spell =
+        frame_rect_hash(222, 164, 16, 16);
+    const unsigned long long restored_spell_charge =
+        frame_rect_hash(220, 187, 16, 8);
     const unsigned long long muralla_clean_side_frame =
         side_frame_hash(g_framebuf);
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/muralla-before-cavern.ppm", g_framebuf);
     const int restored_muralla_frame =
-        restored_frame == 0x5C41303FE892B99FULL;
+        restored_frame == 0x5FE83C6BB1013B40ULL;
     const int restored_shield_icon =
         restored_shield == 0x18FDBA10EBC3FCC6ULL;
     const int restored_sword_icon =
         restored_sword == 0x077A65ACB967926DULL;
+    const int restored_spell_hud =
+        restored_spell == 0x27BE1BB89569FF7DULL &&
+        restored_spell_charge == 0x3AE76BA0C22B9071ULL;
     ok &= restored_muralla_frame && restored_shield_icon &&
-        restored_sword_icon;
+        restored_sword_icon && restored_spell_hud;
     ok &= restored;
     printf("main_controls:save_restore_bootstrap: %s invalid=%d level=%d "
            "spell=%d sages=%02x area=%d frame=%016llx sword=%016llx "
-           "shield=%016llx "
+           "shield=%016llx magic=%016llx/%016llx "
            "cumulative=%d\n",
            restored && restored_muralla_frame && restored_shield_icon &&
-               restored_sword_icon ?
+               restored_sword_icon && restored_spell_hud ?
                "PASS" : "FAIL",
            invalid_rejected,
            zeliard_test_game_u8(0x8D), zeliard_test_game_u8(0x9D),
            zeliard_test_game_u8(0xE5), zeliard_town_area(), restored_frame,
-           restored_sword, restored_shield, ok);
+           restored_sword, restored_shield, restored_spell,
+           restored_spell_charge, ok);
+
+    /* 201SELCT initializes its cursor from selected_spell. With Espada and
+     * Fuego known, one Left from Fuego selects Espada. Closing must retain
+     * DS:009Dh and redraw both the frame and ABh charge over the town HUD. */
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    const int spell_inventory_opened = zeliard_inventory_active();
+    zeliard_key_down(37);
+    zeliard_tick(90);
+    zeliard_key_up(37);
+    zeliard_tick(90);
+    const int spell_selected_in_inventory =
+        zeliard_test_game_u8(0x9D) == 1;
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    const int spell_inventory_closed = !zeliard_inventory_active();
+    zeliard_key_up(13);
+    zeliard_tick(16);
+    const unsigned long long selected_spell_frame =
+        frame_rect_hash(222, 164, 16, 16);
+    const unsigned long long selected_spell_charge =
+        frame_rect_hash(220, 187, 16, 8);
+    const int selected_spell_border =
+        g_framebuf[186u * 320u + 222u] == 0x00 &&
+        g_framebuf[190u * 320u + 218u] == 0x00 &&
+        g_framebuf[195u * 320u + 222u] == 0x2D;
+    const int town_spell_selection_retained = spell_inventory_opened &&
+        spell_selected_in_inventory && spell_inventory_closed &&
+        zeliard_test_game_u8(0x9D) == 1 &&
+        selected_spell_frame == 0x4B78EDCB41024AE4ULL &&
+        selected_spell_charge == 0x5269F8EB4520CFB1ULL &&
+        selected_spell_border;
+    ok &= town_spell_selection_retained;
+    printf("main_controls:town_spell_inventory_return: %s "
+           "opened=%d selected=%d closed=%d spell=%d "
+           "frame=%016llx charge=%016llx border=%d\n",
+           town_spell_selection_retained ? "PASS" : "FAIL",
+           spell_inventory_opened, spell_selected_in_inventory,
+           spell_inventory_closed, zeliard_test_game_u8(0x9D),
+           selected_spell_frame, selected_spell_charge,
+           selected_spell_border);
+    /* Restore the suite's Fuego fixture for the following cavern tests. */
+    ok &= zeliard_load_record(record, sizeof(record));
 
     ok &= zeliard_test_begin_malicia_transition();
     unsigned forward_ticks = 0;
@@ -629,7 +726,7 @@ int main(void) {
     const int death_hud_clean =
         death_clean_side_frame == muralla_clean_side_frame &&
         side_frame_hash(g_framebuf) == muralla_clean_side_frame &&
-        death_hud_hash == 0x57A39DADB7D771A7ULL &&
+        death_hud_hash == 0xAB8BC464C621F0FCULL &&
         memcmp(g_palette, death_clean_palette,
                sizeof(death_clean_palette)) == 0;
     if (getenv("ZELIARD_DUMP"))
@@ -712,9 +809,6 @@ int main(void) {
 
     record[0xC4] = 0x81;
     ok &= zeliard_load_record(record, sizeof(record));
-    const int return_start = zeliard_test_game_u8(0x80);
-    const int return_scroll = zeliard_test_game_u8(0x82);
-    const int return_column = zeliard_test_game_u8(0x83);
     u8 reverse_reference_frame[ZELIARD_FB_SIZE];
     memcpy(reverse_reference_frame, g_framebuf,
            sizeof(reverse_reference_frame));
@@ -775,13 +869,13 @@ int main(void) {
         reverse_fade_peak == 64 && zeliard_music_track() == 3 &&
         !zeliard_fight_active() && !zeliard_cavern_transition_active() &&
         zeliard_town_area() == 1 && zeliard_test_game_u8(0xC4) == 0x81 &&
-        zeliard_test_game_u8(0x80) == return_start &&
-        zeliard_test_game_u8(0x82) == return_scroll &&
-        zeliard_test_game_u8(0x83) == return_column &&
+        zeliard_test_game_u8(0x80) == 0xBD &&
+        zeliard_test_game_u8(0x82) == 0x36 &&
+        zeliard_test_game_u8(0x83) == 0x0C &&
         zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x0A) == 0x05 &&
         zeliard_test_game_u16(0x90) == 0x0040 &&
-        reverse_return_life == 0x814E303D8C7E90BDULL &&
+        reverse_return_life == 0xBDB83C5FCD36CAF8ULL &&
         reverse_return_life != reverse_reference_life &&
         reverse_return_sword == reverse_reference_sword &&
         reverse_restore_differences > 0 &&
@@ -854,6 +948,110 @@ int main(void) {
            satono_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), satono_playfield);
+
+    /* 106TOWN always calls 201SELCT through its A00Bh entry, regardless of
+     * which town asset set is resident. Prove Satono cannot inherit the
+     * cavern A001h item-use path: a real right/confirm attempt must leave
+     * the potion, HP, and item-result byte unchanged. */
+    for (unsigned offset = 0xA1; offset <= 0xC1; ++offset)
+        zeliard_test_game_set_u8(offset, 0);
+    zeliard_test_game_set_u8(0xA6, 1);
+    zeliard_test_game_set_u8(0x90, 10);
+    zeliard_test_game_set_u8(0x91, 0);
+    zeliard_test_game_set_u8(0xB2, 100);
+    zeliard_test_game_set_u8(0xB3, 0);
+    zeliard_test_game_set_u8(0xFF4B, 0);
+    zeliard_key_down(13);
+    const int satono_inventory_opened = zeliard_inventory_active();
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    zeliard_key_down(39);
+    zeliard_tick(90);
+    zeliard_key_up(39);
+    zeliard_tick(90);
+    zeliard_key_down(32);
+    zeliard_tick(90);
+    zeliard_key_up(32);
+    zeliard_tick(90);
+    const int satono_item_use_blocked = satono_inventory_opened &&
+        zeliard_inventory_active() && zeliard_test_game_u16(0x90) == 10 &&
+        zeliard_test_game_u8(0xA6) == 1 &&
+        zeliard_test_game_u8(0xFF4B) == 0;
+    zeliard_key_down(13);
+    zeliard_tick(90);
+    zeliard_key_up(13);
+    zeliard_tick(90);
+    ok &= satono_item_use_blocked && !zeliard_inventory_active();
+    printf("main_controls:satono_inventory_no_use: %s opened=%d "
+           "hp=%04x item=%02x result=%02x closed=%d\n",
+           satono_item_use_blocked && !zeliard_inventory_active()
+               ? "PASS" : "FAIL",
+           satono_inventory_opened, zeliard_test_game_u16(0x90),
+           zeliard_test_game_u8(0xA6), zeliard_test_game_u8(0xFF4B),
+           !zeliard_inventory_active());
+
+    /* Full authored round trip: Satono's left boundary enters MP10 with
+     * C3=FF (right-to-left). MP10 door 4 returns to STMP with flags 00,
+     * so check_c3 must run left-to-right and compute fresh town coordinates
+     * instead of restoring the boundary that initiated the trip. */
+    zeliard_test_game_set_u8(0x83, 0xFF);
+    zeliard_tick(90);
+    const int satono_departure_started =
+        zeliard_cavern_transition_active() &&
+        (zeliard_test_game_u8(0xC2) & 1);
+    unsigned satono_departure_ticks = 0;
+    while (zeliard_cavern_transition_active() &&
+           satono_departure_ticks++ < 1000)
+        zeliard_tick(16);
+    if (!zeliard_fight_active()) zeliard_tick(16);
+    const int malicia_entered = zeliard_fight_active() &&
+        zeliard_fight_map_width() == 240;
+
+    zeliard_test_game_set_u8(0x98, 1);
+    const int satono_door_staged = zeliard_test_restart_fight(
+        0, 128 - 16, (32 - 9) & 0x3F, 0);
+    zeliard_key_down(38);
+    unsigned satono_door_ticks = 0;
+    while (!zeliard_cavern_transition_active() &&
+           satono_door_ticks++ < 100)
+        zeliard_tick(16);
+    zeliard_key_up(38);
+    const int satono_return_transition =
+        zeliard_cavern_transition_active() &&
+        !(zeliard_test_game_u8(0xC2) & 1) &&
+        zeliard_test_game_u8(0xC4) == 0x82;
+    unsigned satono_return_ticks = 0;
+    while ((zeliard_fight_active() ||
+            zeliard_cavern_transition_active()) &&
+           satono_return_ticks++ < 1000)
+        zeliard_tick(16);
+    zeliard_tick(16);
+    const int satono_returned = !zeliard_fight_active() &&
+        !zeliard_cavern_transition_active() && zeliard_town_area() == 2 &&
+        zeliard_test_game_u8(0xC4) == 0x82 &&
+        zeliard_test_game_u8(0x83) != 0xFF &&
+        zeliard_test_game_u8(0x83) != 0x1C &&
+        !(zeliard_test_game_u8(0xC2) & 1);
+    for (unsigned settle = 0; settle < 10; ++settle) zeliard_tick(16);
+    const int satono_return_stable = satono_returned &&
+        !zeliard_fight_active() && !zeliard_cavern_transition_active() &&
+        zeliard_town_area() == 2;
+    ok &= satono_departure_started && malicia_entered &&
+        satono_door_staged && satono_return_transition &&
+        satono_return_stable;
+    printf("main_controls:satono_malicia_round_trip: %s depart=%d/%u "
+           "malicia=%d door=%d/%u reverse=%d return=%d/%u "
+           "area=%d pos=%02x/%02x/%02x facing=%02x stable=%d\n",
+           satono_departure_started && malicia_entered &&
+               satono_door_staged && satono_return_transition &&
+               satono_return_stable ? "PASS" : "FAIL",
+           satono_departure_started, satono_departure_ticks,
+           malicia_entered, satono_door_staged, satono_door_ticks,
+           satono_return_transition, satono_returned, satono_return_ticks,
+           zeliard_town_area(), zeliard_test_game_u8(0x80),
+           zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
+           zeliard_test_game_u8(0xC2), satono_return_stable);
 
     /* Riza's town handoff and a Bosque .USR restore must select BSMP,
      * MPAT/MMAN, and MGT2 as one transaction. */

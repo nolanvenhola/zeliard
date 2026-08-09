@@ -561,7 +561,7 @@ class SaveEditorApp:
 
     def _render_one_bitmap(self, parent, name: str, base_off: int, desc: str):
         """Render a single 8-byte cavern bitmap as 8 rows, each with:
-            offset | hex byte | [b7][b6][b5][b4][b3][b2][b1][b0] | [00] [FF]
+            offset | hex byte | labeled bit controls | [set 00] [set FF]
         byte_var is the single source of truth for each byte.  Editing any
         of (hex entry, bit checkboxes, all/clear buttons) calls
         _set_byte_value() which then fans the new value out to every other
@@ -581,10 +581,19 @@ class SaveEditorApp:
         ttk.Label(frame, text='hex',    foreground='gray', width=4).grid(row=1, column=1, sticky=tk.W)
         ttk.Label(frame, text='bits / TCRF labels', foreground='gray').grid(
             row=1, column=2, columnspan=10, sticky=tk.W, padx=(8, 0))
+        ttk.Label(frame, text='actions', foreground='gray').grid(
+            row=1, column=12, columnspan=2, sticky=tk.W, padx=(8, 0))
 
         byte_vars = []
         bit_vars_2d = []     # bit_vars_2d[byte_idx][bit_idx 0..7] = IntVar
         string_vars = []     # one StringVar per byte (the hex entry display)
+        whole_checks = {}    # byte_idx -> (checkbox IntVar, byte span)
+
+        def _sync_whole_checks(values):
+            """Refresh whole-byte/word checkboxes after a suppressed load."""
+            for byte_idx, (check_var, span) in whole_checks.items():
+                check_var.set(1 if all(values[byte_idx + i] == 0xFF
+                                       for i in range(span)) else 0)
 
         # Per-byte propagation: writing one of (byte_var, string_var, bit_vars)
         # fans out to the other two via trace callbacks.  _suppress_trace breaks
@@ -599,6 +608,7 @@ class SaveEditorApp:
                 string_vars[byte_idx].set(f'{value:02X}')
                 for b in range(8):
                     bit_vars_2d[byte_idx][b].set((value >> b) & 1)
+                _sync_whole_checks([bv.get() for bv in byte_vars])
             finally:
                 self._suppress_trace = False
             self._refresh_hex(self._safe_compose())
@@ -616,6 +626,7 @@ class SaveEditorApp:
                     string_vars[i].set(f'{value:02X}')
                     for b in range(8):
                         bit_vars_2d[i][b].set((value >> b) & 1)
+                _sync_whole_checks([bv.get() for bv in byte_vars])
             finally:
                 self._suppress_trace = False
             self._refresh_hex(self._safe_compose())
@@ -715,6 +726,7 @@ class SaveEditorApp:
                         # _set_word_bool is no-op when value already matches.
                         cv.set(desired)
                 byte_var.trace_add('write', _on_byte_change)
+                whole_checks[byte_idx] = (chk_var, 2)
 
                 prev_was_word_bool = True
 
@@ -737,6 +749,7 @@ class SaveEditorApp:
                     if cv.get() != desired:
                         cv.set(desired)
                 byte_var.trace_add('write', _on_byte_change)
+                whole_checks[byte_idx] = (chk_var, 1)
 
             elif isinstance(tcrf, list):
                 # Named bitfield: render labeled checkboxes for documented
@@ -784,10 +797,10 @@ class SaveEditorApp:
             # Per-byte quick-set buttons (skipped for word_bool — binary
             # toggle).
             if not is_word_bool:
-                ttk.Button(frame, text='00', width=3,
+                ttk.Button(frame, text='set 00', width=6,
                            command=lambda byte_idx=byte_idx: _set_byte(byte_idx, 0x00)
                            ).grid(row=row, column=12, sticky=tk.W, padx=(8, 1))
-                ttk.Button(frame, text='FF', width=3,
+                ttk.Button(frame, text='set FF', width=6,
                            command=lambda byte_idx=byte_idx: _set_byte(byte_idx, 0xFF)
                            ).grid(row=row, column=13, sticky=tk.W, padx=1)
 
@@ -797,16 +810,17 @@ class SaveEditorApp:
         ttk.Label(actions, text='whole field:', foreground='gray45').pack(side=tk.LEFT, padx=(0, 6))
 
         def _fill_all(value: int):
-            for i in range(8):
-                # Use _set_byte equivalent inline (each byte has its own closure)
-                self._suppress_trace = True
-                try:
+            # Use _set_byte equivalent inline while keeping the update atomic.
+            self._suppress_trace = True
+            try:
+                for i in range(8):
                     byte_vars[i].set(value)
                     string_vars[i].set(f'{value:02X}')
                     for b in range(8):
                         bit_vars_2d[i][b].set((value >> b) & 1)
-                finally:
-                    self._suppress_trace = False
+                _sync_whole_checks([value] * 8)
+            finally:
+                self._suppress_trace = False
             self._refresh_hex(self._safe_compose())
 
         ttk.Button(actions, text='clear (all 00)',  command=lambda: _fill_all(0x00)).pack(side=tk.LEFT, padx=2)
@@ -817,7 +831,8 @@ class SaveEditorApp:
         # bytes; string_vars and bit_vars_2d are display-side mirrors that
         # _populate_fields / _revert_field must also keep in sync.
         self.field_vars[name] = (byte_vars, ('bitmap8', base_off),
-                                 {'strings': string_vars, 'bits': bit_vars_2d})
+                                 {'strings': string_vars, 'bits': bit_vars_2d,
+                                  'whole_checks': whole_checks})
 
     def _render_bitfield_byte(self, section, name: str, row: int, bits: list):
         """Render a single byte as: [hex entry] + N named bit checkboxes
@@ -1055,6 +1070,11 @@ class SaveEditorApp:
                         choices['strings'][i].set(f'{v:02X}')
                         for b in range(8):
                             choices['bits'][i][b].set((v >> b) & 1)
+                    for byte_idx, (check_var, span) in \
+                            choices.get('whole_checks', {}).items():
+                        check_var.set(1 if all(
+                            data[base + byte_idx + i] == 0xFF
+                            for i in range(span)) else 0)
                 finally:
                     self._suppress_trace = False
                 continue
@@ -1174,6 +1194,11 @@ class SaveEditorApp:
                     choices['strings'][i].set(f'{v:02X}')
                     for b in range(8):
                         choices['bits'][i][b].set((v >> b) & 1)
+                for byte_idx, (check_var, span) in \
+                        choices.get('whole_checks', {}).items():
+                    check_var.set(1 if all(
+                        self.original_data[base + byte_idx + i] == 0xFF
+                        for i in range(span)) else 0)
             finally:
                 self._suppress_trace = False
             self._refresh_hex(self._safe_compose())

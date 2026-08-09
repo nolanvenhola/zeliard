@@ -37,10 +37,18 @@ typedef enum {
     SCENE_GAME = 2
 } game_scene_t;
 
+typedef enum {
+    GAMEPLAY_LOCATION_TOWN = 0,
+    GAMEPLAY_LOCATION_CAVERN = 1,
+} gameplay_location_t;
+
 static game_scene_t g_scene = SCENE_OPENING;
+static gameplay_location_t g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
 static int g_paused;
 static int g_speed_menu_active;
 static int g_speed_menu_selected;
+static int g_restore_menu_active;
+static u32 g_load_request_serial;
 static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
@@ -216,6 +224,13 @@ static zel_music_track_t current_town_music(void) {
 
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
+    const u8 selector = g_cavern_transition.return_selector;
+    const u8 transition_direction = g_cavern_transition.direction;
+    const u8 fight_screen_position = cs[ZEL_PLAYER_SCREEN_POSITION];
+    const u16 exit_scroll_count =
+        zeliard_fight_masm_vm_exit_scroll_count();
+    const u8 exit_scroll_dir = zeliard_fight_masm_vm_exit_scroll_dir();
+    const u8 exit_player_y = zeliard_fight_masm_vm_exit_player_y();
     u8 cavern_object_state[ZEL_PLAYER_CAVERN_OBJECT_STATE_END];
     u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
     u8 cavern_progress_b[ZEL_PLAYER_FACING_DIRECTION - ZEL_PLAYER_TEARS];
@@ -241,22 +256,14 @@ static void finish_cavern_return_to_town(void) {
         memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
                sizeof(cavern_progress_b));
     }
-    const u8 selector = g_cavern_town_origin.valid
-        ? g_cavern_town_origin.area_id
-        : g_cavern_transition.return_selector;
     cs[ZEL_PLAYER_SAVE_SAGE] = selector;
-    if (g_cavern_town_origin.valid) {
-        cs[ZEL_PLAYER_START_POSITION] =
-            (u8)g_cavern_town_origin.start_position;
-        cs[ZEL_PLAYER_START_POSITION + 1] =
-            (u8)(g_cavern_town_origin.start_position >> 8);
-        cs[ZEL_PLAYER_MAP_SCROLL_ROW] =
-            g_cavern_town_origin.map_scroll_row;
-        cs[ZEL_PLAYER_SCREEN_POSITION] =
-            g_cavern_town_origin.screen_position;
-    }
-    /* The reverse ROKA walk faces left, away from the cavern entrance. */
-    cs[ZEL_PLAYER_FACING_DIRECTION] |= 1;
+    cs[ZEL_PLAYER_SCREEN_POSITION] = fight_screen_position;
+    if (transition_direction) cs[ZEL_PLAYER_FACING_DIRECTION] |= 1;
+    else cs[ZEL_PLAYER_FACING_DIRECTION] &= 0xFE;
+    if (zeliard_town_prepare_cavern_door_return(
+            cs, sizeof(g_game_segments[0]), selector,
+            exit_scroll_count, exit_scroll_dir, exit_player_y) != 0)
+        platform_log("200FIGHT: town-door return position failed");
     /* Direct selector 04 is the deterministic post-entrance Pulpo fixture.
        Authored MP20 door routes still begin with the flag clear and let
        200FIGHT copy the door entity's direction bit into C3h. */
@@ -268,19 +275,26 @@ static void finish_cavern_return_to_town(void) {
     zel_input_init(&g_input, cs);
     g_cavern_transition.complete = 0;
     g_cavern_transition.return_to_town = 0;
+    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     g_cavern_town_origin.valid = 0;
     g_fight_connector_music_fade = 0;
     g_town_runtime.cavern_exit_requested = 0;
     g_town_runtime.facing_door_type = 0xFF;
     g_town_runtime.facing_item_position = 0xFFFF;
     g_town_runtime.facing_npc_position = 0xFFFF;
-    memcpy(g_game_vga, g_cavern_town_vga, sizeof(g_game_vga));
-    /* Loader mode 1 resumes 106TOWN with the combat-updated player record.
-     * Rebuild its HUD/equipment calls over the suspended scenery instead of
-     * exposing the pre-cavern HP pixels or cached icon-slot scratch. */
-    if (!redraw_cavern_return_hud(
-            g_game_vga, sizeof(g_game_vga), cs))
-        platform_log("200FIGHT: return-town HUD reconstruction failed");
+    /* Loader mode 1 selects the town encoded by the cavern door, which may
+     * differ from the town where the cavern journey began. Re-enter 106TOWN
+     * after applying compute_scroll_pos so the destination scenery, actors,
+     * HUD, and player placement all agree. */
+    if (zeliard_town_enter_first_frame(
+            &g_town_runtime, &g_game_exec, g_game_vga,
+            sizeof(g_game_vga)) != 0) {
+        platform_log("200FIGHT: return-town first frame failed");
+        memcpy(g_game_vga, g_cavern_town_vga, sizeof(g_game_vga));
+        if (!redraw_cavern_return_hud(
+                g_game_vga, sizeof(g_game_vga), cs))
+            platform_log("200FIGHT: return-town HUD fallback failed");
+    }
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
     zel_audio_play_music(current_town_music());
 }
@@ -328,6 +342,7 @@ static int finish_cavern_death_to_sage(void) {
 
     g_cavern_transition.complete = 0;
     g_cavern_transition.return_to_town = 0;
+    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     g_cavern_town_origin.valid = 0;
     g_fight_connector_music_fade = 0;
     g_fight_death_pending = 0;
@@ -429,7 +444,12 @@ static int inventory_can_open(void) {
 
 static void inventory_open(void) {
     if (!inventory_can_open()) return;
-    g_inventory_return_to_fight = zeliard_fight_masm_vm_active() != 0;
+    const zeliard_inventory_context_t inventory_context =
+        g_gameplay_location == GAMEPLAY_LOCATION_CAVERN
+            ? ZEL_INVENTORY_CONTEXT_CAVERN
+            : ZEL_INVENTORY_CONTEXT_TOWN;
+    g_inventory_return_to_fight =
+        inventory_context == ZEL_INVENTORY_CONTEXT_CAVERN;
     memcpy(g_inventory_player_before, g_game_segments[0],
            sizeof(g_inventory_player_before));
     /* 200FIGHT remains resident while 201SELCT runs, exactly like the DOS
@@ -450,8 +470,7 @@ static void inventory_open(void) {
     if (!zeliard_inventory_masm_vm_start(
             g_game_segments[0], sizeof(g_game_segments[0]),
             g_game_vga, sizeof(g_game_vga),
-            zeliard_fight_masm_vm_active() ? ZEL_INVENTORY_CONTEXT_CAVERN
-                                          : ZEL_INVENTORY_CONTEXT_TOWN)) {
+            inventory_context)) {
         platform_log("201SELCT: exact inventory overlay start failed");
         return;
     }
@@ -507,6 +526,7 @@ static void game_memory_init(void) {
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
     g_death_sage_chrome_active = 0;
+    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     g_inventory_return_to_fight = 0;
     g_inventory_fight_hud_override = 0;
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
@@ -534,6 +554,10 @@ static void consume_opening_advance(void) {
 }
 
 static void apply_input_actions(u32 actions) {
+    /* restore_dlg_wait_input is a blocking MASM loop: only the Y/N timer
+     * bits are observed until its saved background has been restored. */
+    if (g_restore_menu_active)
+        return;
     if (actions & ZEL_INPUT_ACTION_TOGGLE_MUSIC)
         zel_opening_audio_toggle_music();
     if (actions & ZEL_INPUT_ACTION_TOGGLE_SOUND)
@@ -577,6 +601,15 @@ static void apply_input_actions(u32 actions) {
         zel_opening_audio_write_cue(2);
         g_speed_menu_active = 1;
         g_speed_menu_selected = 0;
+        g_paused = 1;
+        return;
+    }
+    if ((actions & ZEL_INPUT_ACTION_RESTORE_MENU) && !g_paused &&
+        g_scene == SCENE_GAME && !zeliard_inventory_masm_vm_active()) {
+        opening_restore_overlay_show_game(g_game_segments[0], 0x10000);
+        g_game_segments[0][0xFF75] = 2;
+        zel_opening_audio_write_cue(2);
+        g_restore_menu_active = 1;
         g_paused = 1;
         return;
     }
@@ -645,6 +678,7 @@ static bool enter_game_scene(void) {
         platform_log("game bootstrap: first 106TOWN castle frame failed");
         return false;
     }
+    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
     /* game.asm:A1E0 resolves CMAP's descriptor byte 00 to record 0 at
      * A363 (MGT1.MSD). 106TOWN:60A9 starts that game_seg:3000 score with
@@ -668,6 +702,7 @@ EXPORT void zeliard_init(void) {
     g_paused = 0;
     g_speed_menu_active = 0;
     g_speed_menu_selected = 0;
+    g_restore_menu_active = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
     zel_opening_audio_init();
@@ -729,6 +764,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 platform_log("200FIGHT: exact cavern runtime start failed");
             } else {
                 g_fight_started = 1;
+                g_gameplay_location = GAMEPLAY_LOCATION_CAVERN;
                 g_inventory_fight_hud_override = 0;
                 g_fight_death_pending = 0;
                 g_fight_death_return_pending = 0;
@@ -780,6 +816,24 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 } else {
                     memcpy(g_game_vga, g_inventory_return_vga,
                            sizeof(g_inventory_return_vga));
+                    /* 201SELCT changes DS:009Dh in place. The DOS caller's
+                     * GMMCGA path redraws the selected spell frame and
+                     * 106TOWN charge after returning; replay those writes
+                     * over the restored town framebuffer. */
+                    const u8 spell = g_game_segments[0]
+                        [ZEL_PLAYER_SELECTED_SPELL];
+                    if (spell) {
+                        zeliard_gmmcga_draw_equipped_spell(
+                            g_game_vga, sizeof(g_game_vga),
+                            g_game_segments[1], sizeof(g_game_segments[1]),
+                            spell, 0x37A4);
+                        zeliard_gmmcga_draw_status_line(
+                            g_game_vga, sizeof(g_game_vga), 0,
+                            0xAA1C, 0x1700);
+                        zeliard_gmmcga_draw_spell_charge(
+                            g_game_vga, sizeof(g_game_vga),
+                            g_game_segments[0], sizeof(g_game_segments[0]));
+                    }
                     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
                     framebuf_rgb_disable();
                     zel_opening_audio_write_cue(0x0B);
@@ -900,6 +954,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                         return;
                     }
                     g_fight_death_pending = 0;
+                    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
                     if (!zeliard_town_area_supported(
                             g_game_segments[0][0x00C4])) {
                         const u8 saved_area = g_game_segments[0][0x00C5];
@@ -1052,6 +1107,20 @@ EXPORT void zeliard_key_up(int keycode) {
 
 EXPORT void zeliard_text_key(int ascii) {
     if (g_session_terminated) return;
+    if (g_restore_menu_active) {
+        if (ascii >= 'a' && ascii <= 'z') ascii -= 'a' - 'A';
+        if (ascii != 'Y' && ascii != 'N') return;
+        /* stick.asm waits for timer bits 20h (Y) or 40h (N), restores the
+         * saved box, and returns carry only for Y. */
+        opening_restore_overlay_hide();
+        g_game_segments[0][0xFF17] = 0;
+        g_game_segments[0][0xFF1D] = 0;
+        g_game_segments[0][0xFF1E] = 0;
+        g_restore_menu_active = 0;
+        g_paused = 0;
+        if (ascii == 'Y') ++g_load_request_serial;
+        return;
+    }
     if (g_speed_menu_active && ascii >= '0' && ascii <= '9') {
         const u8 digit = (u8)(ascii - '0');
         const u8 speed = (u8)(10u - digit);
@@ -1105,6 +1174,8 @@ EXPORT void             zeliard_music_complete(int track) { zel_opening_audio_mu
 EXPORT int              zeliard_music_attenuation(void) { return zel_opening_audio_attenuation(); }
 EXPORT int              zeliard_paused(void) { return g_paused; }
 EXPORT int              zeliard_speed_menu_active(void) { return g_speed_menu_active; }
+EXPORT int              zeliard_restore_menu_active(void) { return g_restore_menu_active; }
+EXPORT u32              zeliard_load_request_serial(void) { return g_load_request_serial; }
 EXPORT int              zeliard_game_speed_digit(void) {
     const u8 speed = g_game_segments[0][0xFF33];
     return speed >= 1u && speed <= 10u ? 10 - speed : 5;
@@ -1163,6 +1234,7 @@ static int test_begin_malicia_at(u16 hp, u16 start_position,
     memset(&g_cavern_transition, 0, sizeof(g_cavern_transition));
     g_cavern_transition.complete = 1;
     g_fight_started = 1;
+    g_gameplay_location = GAMEPLAY_LOCATION_CAVERN;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
@@ -1231,6 +1303,7 @@ int zeliard_test_redraw_town(void) {
                                        sizeof(g_game_vga)) != 0)
         return 0;
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     return 1;
 }
 #endif
@@ -1263,6 +1336,7 @@ EXPORT int              zeliard_load_record(const u8 *record, int size) {
     game_memory_init();
     memcpy(g_game_segments[0], snapshot, sizeof(snapshot));
     g_paused = 0;
+    g_restore_menu_active = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
     if (!enter_game_scene()) return 0;
@@ -1309,6 +1383,7 @@ EXPORT int              zeliard_test_restart_fight(
     cs[ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
     cs[0xFF33] = 5;
     g_fight_started = 1;
+    g_gameplay_location = GAMEPLAY_LOCATION_CAVERN;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;

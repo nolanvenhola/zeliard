@@ -207,6 +207,7 @@ static void process_town_event_table(u8 *cs) {
             if (active) cs[destination] = value;
         }
     }
+
 }
 
 static int tile_is_passable(const u8 *game_data, u8 tile) {
@@ -307,6 +308,28 @@ int zeliard_town_prepare_level_start(u8 *cs, size_t game_size, u8 area_id) {
     }
     write_u16(cs, TOWN_START_POSITION, ax);
     cs[TOWN_PLAYER_COLUMN] = bl;
+    return 0;
+}
+
+int zeliard_town_prepare_cavern_door_return(
+    u8 *cs, size_t game_size, u8 area_id,
+    u16 scroll_count, u8 scroll_dir, u8 player_y) {
+    if (!cs || game_size < 0x10000) return -1;
+    const town_area_asset_t *assets = town_assets_for_area_id(area_id);
+    if (!assets || !load_raw_chunk(assets->map_asset,
+                                    cs + TOWN_DESCRIPTOR,
+                                    game_size - TOWN_DESCRIPTOR, NULL))
+        return -2;
+
+    /* 200FIGHT:compute_scroll_pos runs immediately after loader mode 1
+     * installs the town MDT. AX wraps against the destination map width;
+     * the vertical row is derived from the door's scroll_dir and player_y. */
+    u16 start = (u16)(scroll_count - 0x10u);
+    if ((int16_t)start < 0)
+        start = (u16)(start + read_u16(cs, 0xC002));
+    write_u16(cs, TOWN_START_POSITION, start);
+    cs[ZEL_PLAYER_MAP_SCROLL_ROW] =
+        (u8)((scroll_dir + 1u - player_y) & 0x3Fu);
     return 0;
 }
 
@@ -433,6 +456,14 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
     if (shield != 0 &&
         zeliard_gmmcga_draw_equipped_shield(vga, vga_size, cs_1000, 0x10000,
                                              shield, 0x3EA4))
+        return -5;
+    /* game.asm:gfx_init_after_font calls GMMCGA:25E2h through slot 201Eh
+     * with BX=37A4h whenever selected_spell is nonzero. */
+    const u8 spell = zeliard_player_read_u8(
+        &player, ZEL_PLAYER_SELECTED_SPELL);
+    if (spell != 0 &&
+        zeliard_gmmcga_draw_equipped_spell(vga, vga_size, cs_1000, 0x10000,
+                                            spell, 0x37A4))
         return -5;
     if (zeliard_gmmcga_clear_playfield(vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
@@ -794,6 +825,8 @@ static int try_town_boundary_transition(zeliard_town_runtime_t *town,
 static int run_live_frame(zeliard_town_runtime_t *town,
                           zeliard_game_exec_state_t *game,
                           u8 *vga, size_t vga_size, u8 input_direction) {
+    /* Largest 106TOWN speech panel: 22 character cells by 88 rows. */
+    static u8 dialog_overlay[22u * 8u * 88u];
     u8 *cs = game->segment[0];
     u8 *game_data = game->segment[1];
     u8 *mask_data = game->segment[2];
@@ -817,9 +850,14 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     if (town->dialog.active) {
+        if (zeliard_gmmcga_save_rect(
+                vga, vga_size, dialog_overlay, sizeof(dialog_overlay),
+                town->dialog.panel_ax, town->dialog.panel_cx, 0))
+            return -1;
         /* 106TOWN's dialog wait loops call tick_npcs_then_pump. That entry
          * advances every normal NPC, falls through to render_town_actors,
-         * commits the frame, and only then samples the continue key. The
+         * commits the frame, restores the foreground text page, and only
+         * then samples the continue key. The
          * speaking NPC remains stationary because begin_dialog temporarily
          * changes its dispatch type to 7. */
         zeliard_town_tick_npcs(cs);
@@ -832,6 +870,10 @@ static int run_live_frame(zeliard_town_runtime_t *town,
                 cs, 0x10000, game_data, 0x10000,
                 mask_data, 0x10000, vga, vga_size))
             return -2;
+        if (zeliard_gmmcga_restore_rect(
+                vga, vga_size, dialog_overlay, sizeof(dialog_overlay),
+                town->dialog.panel_ax, town->dialog.panel_cx, 0))
+            return -2;
         const int continued = zeliard_town_dialog_continue(
             &town->dialog, cs, game->segment[3], vga, vga_size);
         if (continued < 0) return -3;
@@ -843,11 +885,17 @@ static int run_live_frame(zeliard_town_runtime_t *town,
             town->building_transition_pass = 0;
             town->building_transition_ticks = 0;
         }
+        if (continued > 0 && !town->dialog.active &&
+            town->building_transition == ZEL_TOWN_BUILDING_TRANSITION_NONE) {
+            /* 106TOWN:text_end_seq returns to the same main-loop iteration.
+             * Its following INT 61h sample therefore uses the direction that
+             * dismissed the text to attempt the guarded step immediately. */
+            move_player(cs, game_data, vga, vga_size, input_direction);
+        }
         cs[GVAR_FRAME_TIMER] = 0;
         town->frame_count++;
         return 0;
     }
-    process_town_event_table(cs);
     zeliard_town_tick_npcs(cs);
     if (zeliard_gtmcga_render_town_actors(cs, 0x10000, game_data, 0x10000,
                                           mask_data, 0x10000, vga, vga_size))
@@ -1031,7 +1079,8 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
         write_u16(cs, 0xFF1B, (u16)(read_u16(cs, 0xFF1B) + 1));
         write_u16(cs, 0xFF50, (u16)(read_u16(cs, 0xFF50) + 1));
         if (town->dialog.active &&
-            (town->dialog.scroll_active ||
+            (town->dialog.prompt_cursor_anim_active ||
+             town->dialog.scroll_active ||
              town->dialog.scroll_resume_pending)) {
             const int result = zeliard_town_dialog_advance_pit(
                 &town->dialog, cs, vga, vga_size);
