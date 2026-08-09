@@ -142,6 +142,9 @@ int main(void) {
     const spell_probe_t agua_right = cast_spell(6, 3, 0);
     const spell_probe_t agua_left = cast_spell(6, 3, 1);
     const spell_probe_t agua_empty = cast_spell(6, 0, 0);
+    const spell_probe_t guerra_right = cast_spell(7, 3, 0);
+    const spell_probe_t guerra_left = cast_spell(7, 3, 1);
+    const spell_probe_t guerra_empty = cast_spell(7, 0, 0);
     print_probe("espada", "right", &right);
     print_probe("espada", "left", &left);
     print_probe("espada", "empty", &empty);
@@ -160,6 +163,9 @@ int main(void) {
     print_probe("agua", "right", &agua_right);
     print_probe("agua", "left", &agua_left);
     print_probe("agua", "empty", &agua_empty);
+    print_probe("guerra", "right", &guerra_right);
+    print_probe("guerra", "left", &guerra_left);
+    print_probe("guerra", "empty", &guerra_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -317,7 +323,32 @@ int main(void) {
         agua_empty.slot_dir == 0 && agua_empty.active_mask == 0 &&
         agua_empty.first_active_hash == 0 &&
         agua_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&agua_empty, 0x17) && !has_cue(&agua_empty, 0x18);
+        has_cue(&agua_empty, 0x17) && !has_cue(&agua_empty, 0x18) &&
+        guerra_right.ok && guerra_left.ok && guerra_empty.ok &&
+        guerra_right.charge == 2 && guerra_right.active == 0 &&
+        guerra_right.slot_x == 0xFFFF && guerra_right.slot_y == 0 &&
+        guerra_right.slot_flags == 0 && guerra_right.slot_frame == 0 &&
+        guerra_right.slot_dir == 0 && guerra_right.active_mask == 0 &&
+        guerra_right.first_active_hash == 0 &&
+        guerra_right.frame_hash == 0xAF7A8AD6C19F9D55ULL &&
+        has_cue(&guerra_right, 0x17) && has_cue(&guerra_right, 0x18) &&
+        has_cue(&guerra_right, 0x19) &&
+        guerra_left.charge == 2 && guerra_left.active == 0 &&
+        guerra_left.slot_x == 0xFFFF && guerra_left.slot_y == 0 &&
+        guerra_left.slot_flags == 0 && guerra_left.slot_frame == 0 &&
+        guerra_left.slot_dir == 0 && guerra_left.active_mask == 0 &&
+        guerra_left.first_active_hash == 0 &&
+        guerra_left.frame_hash == 0xC1D7D64C10842A5BULL &&
+        has_cue(&guerra_left, 0x17) && has_cue(&guerra_left, 0x18) &&
+        has_cue(&guerra_left, 0x19) &&
+        guerra_empty.charge == 0 && guerra_empty.active == 0 &&
+        guerra_empty.slot_x == 0xFFFF && guerra_empty.slot_y == 0 &&
+        guerra_empty.slot_flags == 0 && guerra_empty.slot_frame == 0 &&
+        guerra_empty.slot_dir == 0 && guerra_empty.active_mask == 0 &&
+        guerra_empty.first_active_hash == 0 &&
+        guerra_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&guerra_empty, 0x17) && !has_cue(&guerra_empty, 0x18) &&
+        !has_cue(&guerra_empty, 0x19);
     printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
