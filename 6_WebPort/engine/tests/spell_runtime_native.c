@@ -49,6 +49,8 @@ typedef struct {
     u8 slot_flags;
     u8 slot_frame;
     u8 slot_dir;
+    u16 initial_slot_x[4];
+    u8 initial_slot_y[4];
     u8 cues[32];
     unsigned cue_count;
     unsigned active_mask;
@@ -70,8 +72,16 @@ static spell_probe_t cast_spell(u8 spell, u8 charges, u8 facing) {
         result.ok &= advance_frame(game, vga, 0);
         result.active_mask |=
             (unsigned)(game[0xFF3E] != 0) << (frame & 31u);
-        if (game[0xFF3E] && !result.first_active_hash)
+        if (game[0xFF3E] && !result.first_active_hash) {
             result.first_active_hash = fnv1a64(vga, 64000);
+            for (unsigned slot = 0; slot < 4; ++slot) {
+                const u16 at = (u16)(0xEB15 + slot * 0x10);
+                result.initial_slot_x[slot] =
+                    (u16)zeliard_fight_masm_vm_peek_u16(at);
+                result.initial_slot_y[slot] =
+                    (u8)zeliard_fight_masm_vm_peek_u8((u16)(at + 2));
+            }
+        }
         for (u8 cue; (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
             if (result.cue_count < 32)
                 result.cues[result.cue_count++] = cue;
@@ -97,7 +107,12 @@ static void print_probe(const char *spell, const char *name,
            result->slot_dir);
     for (unsigned i = 0; i < result->cue_count; ++i)
         printf("%02x", result->cues[i]);
-    printf(" active_mask=%08x active_frame=%016llx frame=%016llx\n",
+    printf(" init=%04x/%02x,%04x/%02x,%04x/%02x,%04x/%02x "
+           "active_mask=%08x active_frame=%016llx frame=%016llx\n",
+           result->initial_slot_x[0], result->initial_slot_y[0],
+           result->initial_slot_x[1], result->initial_slot_y[1],
+           result->initial_slot_x[2], result->initial_slot_y[2],
+           result->initial_slot_x[3], result->initial_slot_y[3],
            result->active_mask, result->first_active_hash,
            result->frame_hash);
 }
@@ -121,6 +136,9 @@ int main(void) {
     const spell_probe_t lanzar_right = cast_spell(4, 3, 0);
     const spell_probe_t lanzar_left = cast_spell(4, 3, 1);
     const spell_probe_t lanzar_empty = cast_spell(4, 0, 0);
+    const spell_probe_t rascar_right = cast_spell(5, 3, 0);
+    const spell_probe_t rascar_left = cast_spell(5, 3, 1);
+    const spell_probe_t rascar_empty = cast_spell(5, 0, 0);
     print_probe("espada", "right", &right);
     print_probe("espada", "left", &left);
     print_probe("espada", "empty", &empty);
@@ -133,6 +151,9 @@ int main(void) {
     print_probe("lanzar", "right", &lanzar_right);
     print_probe("lanzar", "left", &lanzar_left);
     print_probe("lanzar", "empty", &lanzar_empty);
+    print_probe("rascar", "right", &rascar_right);
+    print_probe("rascar", "left", &rascar_left);
+    print_probe("rascar", "empty", &rascar_empty);
     const int ok = right.ok && left.ok && empty.ok &&
         right.charge == 2 && right.active == 0 &&
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
@@ -214,7 +235,47 @@ int main(void) {
         lanzar_empty.slot_flags == 0 && lanzar_empty.slot_frame == 0 &&
         lanzar_empty.slot_dir == 0 && lanzar_empty.active_mask == 0 &&
         lanzar_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
-        has_cue(&lanzar_empty, 0x17) && !has_cue(&lanzar_empty, 0x18);
+        has_cue(&lanzar_empty, 0x17) && !has_cue(&lanzar_empty, 0x18) &&
+        rascar_right.ok && rascar_left.ok && rascar_empty.ok &&
+        rascar_right.charge == 2 && rascar_right.active == 0 &&
+        rascar_right.slot_x == 0xFFFF && rascar_right.slot_y == 0x03 &&
+        rascar_right.slot_flags == 0 && rascar_right.slot_frame == 0x0C &&
+        rascar_right.slot_dir == 0 &&
+        rascar_right.initial_slot_x[0] == 0x001A &&
+        rascar_right.initial_slot_y[0] == 0x2D &&
+        rascar_right.initial_slot_x[1] == 0x0014 &&
+        rascar_right.initial_slot_y[1] == 0x2C &&
+        rascar_right.initial_slot_x[2] == 0x000E &&
+        rascar_right.initial_slot_y[2] == 0x2B &&
+        rascar_right.initial_slot_x[3] == 0x0008 &&
+        rascar_right.initial_slot_y[3] == 0x2E &&
+        rascar_right.active_mask == 0x00003FFC &&
+        rascar_right.first_active_hash == 0xD3AFD2C23E6E42A8ULL &&
+        rascar_right.frame_hash == 0x8C006929B120236FULL &&
+        has_cue(&rascar_right, 0x17) && has_cue(&rascar_right, 0x18) &&
+        rascar_left.charge == 2 && rascar_left.active == 0 &&
+        rascar_left.slot_x == 0xFFFF && rascar_left.slot_y == 0x03 &&
+        rascar_left.slot_flags == 0 && rascar_left.slot_frame == 0x0C &&
+        rascar_left.slot_dir == 0 &&
+        rascar_left.initial_slot_x[0] == 0x001A &&
+        rascar_left.initial_slot_y[0] == 0x2D &&
+        rascar_left.initial_slot_x[1] == 0x0014 &&
+        rascar_left.initial_slot_y[1] == 0x2C &&
+        rascar_left.initial_slot_x[2] == 0x000E &&
+        rascar_left.initial_slot_y[2] == 0x2B &&
+        rascar_left.initial_slot_x[3] == 0x0008 &&
+        rascar_left.initial_slot_y[3] == 0x2E &&
+        rascar_left.active_mask == 0x00003FFC &&
+        rascar_left.first_active_hash == 0x23C9300FB7F284BBULL &&
+        rascar_left.frame_hash == 0x6AE6CDAA425881C4ULL &&
+        has_cue(&rascar_left, 0x17) && has_cue(&rascar_left, 0x18) &&
+        rascar_empty.charge == 0 && rascar_empty.active == 0 &&
+        rascar_empty.slot_x == 0xFFFF && rascar_empty.slot_y == 0 &&
+        rascar_empty.slot_flags == 0 && rascar_empty.slot_frame == 0 &&
+        rascar_empty.slot_dir == 0 && rascar_empty.active_mask == 0 &&
+        rascar_empty.first_active_hash == 0 &&
+        rascar_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
+        has_cue(&rascar_empty, 0x17) && !has_cue(&rascar_empty, 0x18);
     printf("VERDICT: %s: release MASM spell cast probes\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
