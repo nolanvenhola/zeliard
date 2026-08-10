@@ -19,8 +19,7 @@ Canonical player-record coverage:
 | `zeliard_gold_add` | Oracle-backed | `proc_equivalence/test_town_dispatch_slot_600C.py` |
 | `zeliard_gold_insufficient` | Oracle-backed | `proc_equivalence/test_town_dispatch_slot_600A.py` |
 | `zeliard_bank_add` | Oracle-backed | `regression/test_arithmetic_24bit_and_word.py` |
-| `zeliard_town_walk_right_col` | Oracle-backed partial | `placeholder_id/test_town_player_col_X83.py`; legacy bounded-column wrapper |
-| `zeliard_town_walk_right_col_full` | Oracle-backed | `proc_equivalence/test_town_walk_right_col.py` |
+| `zeliard_town_walk_right_col_full` | Oracle-backed | `proc_equivalence/test_town_walk_right_col.py`; sole gameplay-state primitive for inside-screen movement, far-edge clamping, and map/tile-pointer scrolling; live collision and dialog-dismissal integration is exercised by `town_runtime_native` |
 | `zeliard_town_walk_left_col` | Oracle-backed | `proc_equivalence/test_town_walk_left_col.py` |
 | `zeliard_town_frame_clear_stat_x9f` | Oracle-backed | `placeholder_id/test_stdply_stat_X9F.py` |
 | `zeliard_entity_success_mark_stat_x9c` | Oracle-backed | `proc_equivalence/test_hero_crest_oracle.py`, `placeholder_id/test_stdply_stat_X9C.py`; exact MP30 object 40 link, 200FIGHT acquisition write/message, and 201SELCT Hero's Crest render slot |

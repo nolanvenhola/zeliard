@@ -50,14 +50,6 @@ void zeliard_bank_add(zeliard_player_state_t *state, u16 amount_lo, u8 amount_hi
         zeliard_player_read_u24(state, ZEL_PLAYER_BANK_GOLD) + amount);
 }
 
-bool zeliard_town_walk_right_col(u8 *town_player_col) {
-    if (*town_player_col >= 0x10u) {
-        return false;
-    }
-    ++(*town_player_col);
-    return true;
-}
-
 zeliard_town_walk_right_result_t zeliard_town_walk_right_col_full(
     u8 *town_player_col, u16 *starting_position, u16 *tile_ptr, u16 map_width) {
     if (*town_player_col < 0x10u) {

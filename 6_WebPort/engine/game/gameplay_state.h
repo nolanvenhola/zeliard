@@ -256,7 +256,6 @@ void zeliard_gold_add(zeliard_player_state_t *state, u16 amount_lo, u8 amount_hi
 bool zeliard_gold_insufficient(const zeliard_player_state_t *state,
                                u16 amount_lo, u8 amount_hi);
 void zeliard_bank_add(zeliard_player_state_t *state, u16 amount_lo, u8 amount_hi);
-bool zeliard_town_walk_right_col(u8 *town_player_col);
 zeliard_town_walk_right_result_t zeliard_town_walk_right_col_full(
     u8 *town_player_col, u16 *starting_position, u16 *tile_ptr, u16 map_width);
 zeliard_town_walk_left_result_t zeliard_town_walk_left_col(

@@ -184,24 +184,9 @@ static int run_gold_bank_cases(void) {
 
 static int run_town_state_cases(void) {
     int ok = 1;
-    u8 town_col = 0x05;
-    ok &= expect_bool("town_walk_right_col:inside:moved",
-                      zeliard_town_walk_right_col(&town_col), true);
-    ok &= expect_u8("town_walk_right_col:inside:col", town_col, 0x06);
-
-    town_col = 0x0F;
-    ok &= expect_bool("town_walk_right_col:one_before_bound:moved",
-                      zeliard_town_walk_right_col(&town_col), true);
-    ok &= expect_u8("town_walk_right_col:one_before_bound:col", town_col, 0x10);
-
-    town_col = 0x10;
-    ok &= expect_bool("town_walk_right_col:at_bound:moved",
-                      zeliard_town_walk_right_col(&town_col), false);
-    ok &= expect_u8("town_walk_right_col:at_bound:col", town_col, 0x10);
-
     u16 start = 0x0020;
     u16 tile_ptr = 0x1234;
-    town_col = 0x0F;
+    u8 town_col = 0x0F;
     zeliard_town_walk_right_result_t right =
         zeliard_town_walk_right_col_full(&town_col, &start, &tile_ptr, 0x0064);
     ok &= expect_bool("town_walk_right_col_full:inside:changed", right.column_changed, true);
