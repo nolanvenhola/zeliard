@@ -11,6 +11,7 @@
     "opening:compare": "node run_opening_parity_capture.mjs",
     "opening:audio-test": "node test_opening_audio_browser.mjs",
     "castle:audio-test": "node test_castle_audio_browser.mjs",
+    "mt32:audio-test": "node test_mt32_audio_browser.mjs",
     "audio-worklet:test": "node test_audio_worklet.mjs",
     "castle:inventory-test": "node test_castle_inventory_browser.mjs",
     "rooms:browser-test": "node test_felishika_rooms_browser.mjs",

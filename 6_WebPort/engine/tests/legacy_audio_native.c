@@ -90,7 +90,34 @@ int main(void) {
             zel_mscadlib_vm_global(vm, 0xFF25),
             zel_mscadlib_vm_global(vm, 0xFF26));
         ok &= fade_match;
-        if (c > 0) {
+        if (c == 0) {
+            /* MT-32 music still uses the release SNDADLIB effects driver.
+             * This path was previously omitted from the cue matrix, allowing
+             * working OPL writes to be mixed below audibility in the host. */
+            for (size_t q = 0; q < sizeof(cues); ++q) {
+                case_ok = zel_mscadlib_vm_init_variant(vm, music, music_n,
+                    bios, bios_n, 1) &&
+                    zel_mscadlib_vm_load_sfx_driver(vm, sfx, sfx_n);
+                zel_mscadlib_vm_set_global(vm, 0xFF27, 0);
+                case_ok &= zel_mscadlib_vm_tick(vm);
+                (void)zel_mscadlib_vm_take_port_writes(vm, writes, 16384);
+                zel_mscadlib_vm_set_global(vm, 0xFF75, cues[q]);
+                for (unsigned tick = 0; case_ok && tick < 256; ++tick)
+                    case_ok &= zel_mscadlib_vm_tick(vm);
+                count = zel_mscadlib_vm_take_port_writes(vm, writes, 16384);
+                size_t opl_writes = 0;
+                for (size_t w = 0; w < count; ++w)
+                    opl_writes += writes[w].port == 0x388 ||
+                                  writes[w].port == 0x389;
+                int cue_match = case_ok && opl_writes > 0 &&
+                    zel_mscadlib_vm_global(vm, 0xFF75) == 0;
+                printf("legacy_audio:mt32:cue_%02x: %s opl_writes=%zu "
+                       "mailbox=%02x\n", cues[q],
+                       cue_match ? "PASS" : "FAIL", opl_writes,
+                       zel_mscadlib_vm_global(vm, 0xFF75));
+                ok &= cue_match;
+            }
+        } else {
             for (size_t q = 0; q < sizeof(cues); ++q) {
                 case_ok = zel_mscadlib_vm_init_variant(vm, music, music_n,
                     bios, bios_n, 0) &&

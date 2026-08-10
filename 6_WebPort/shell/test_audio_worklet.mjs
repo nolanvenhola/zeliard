@@ -39,11 +39,19 @@ if (!live || live.deliveredFrames !== 4096 || live.underrunFrames !== 0 ||
     live.bufferedFrames !== 0 || live.deliveredPeak !== 5095)
   throw new Error(`worklet stream mismatch: ${JSON.stringify(live)}`);
 
+const fadeLeft = new Float32Array(128);
+const fadeRight = new Float32Array(128);
+processor.process([], [[fadeLeft, fadeRight]]);
+if (fadeLeft[0] === 0 || fadeRight[0] === 0 || fadeLeft[63] !== 0 ||
+    fadeRight[63] !== 0 || fadeLeft.slice(64).some(Boolean) ||
+    fadeRight.slice(64).some(Boolean))
+  throw new Error('empty worklet did not ramp cleanly to silence');
+
 const silentLeft = new Float32Array(128);
 const silentRight = new Float32Array(128);
 processor.process([], [[silentLeft, silentRight]]);
 if (silentLeft.some(Boolean) || silentRight.some(Boolean))
-  throw new Error('empty worklet did not emit silence');
+  throw new Error('post-ramp worklet did not remain silent');
 
 processor.port.onmessage({ data: { type: 'reset' } });
 if (processor.bufferedFrames !== 0 || processor.primed)

@@ -5,6 +5,9 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
         this.chunkOffset = 0;
         this.bufferedFrames = 0;
         this.primed = false;
+        this.lastLeft = 0;
+        this.lastRight = 0;
+        this.fadeInFrames = 0;
         this.callbacksSinceStats = 0;
         this.stats = {
             callbacks: 0,
@@ -21,6 +24,9 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
                 this.chunkOffset = 0;
                 this.bufferedFrames = 0;
                 this.primed = false;
+                this.lastLeft = 0;
+                this.lastRight = 0;
+                this.fadeInFrames = 0;
                 this.callbacksSinceStats = 0;
                 for (const key of Object.keys(this.stats)) this.stats[key] = 0;
                 return;
@@ -60,7 +66,10 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
         /* The fight VM can occupy the browser main thread for longer than a
          * town frame.  Keep ~85 ms at 48 kHz queued on the audio thread so
          * combat SFX do not underrun and repeatedly hard-restart as fuzz. */
-        if (!this.primed && this.bufferedFrames >= 4096) this.primed = true;
+        if (!this.primed && this.bufferedFrames >= 4096) {
+            this.primed = true;
+            this.fadeInFrames = 64;
+        }
         if (this.primed && this.bufferedFrames < left.length) this.primed = false;
 
         let delivered = 0;
@@ -68,13 +77,30 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
             for (let i = 0; i < left.length; ++i) {
                 const frame = this.readFrame();
                 if (!frame) break;
-                left[i] = frame[0] / 32768;
-                right[i] = frame[1] / 32768;
+                const gain = this.fadeInFrames > 0
+                    ? (65 - this.fadeInFrames) / 64 : 1;
+                left[i] = frame[0] / 32768 * gain;
+                right[i] = frame[1] / 32768 * gain;
+                if (this.fadeInFrames > 0) this.fadeInFrames--;
+                this.lastLeft = left[i];
+                this.lastRight = right[i];
                 const peak = Math.max(Math.abs(frame[0]), Math.abs(frame[1]));
                 this.stats.deliveredPeak = Math.max(this.stats.deliveredPeak, peak);
                 this.stats.deliveredNonzero += frame[0] !== 0 || frame[1] !== 0 ? 1 : 0;
                 delivered++;
             }
+        } else if (this.lastLeft !== 0 || this.lastRight !== 0) {
+            /* A delayed main-thread frame used to turn the final non-zero
+             * sample directly into silence, producing an audible click or
+             * short burst of static. Ramp the last sample to zero over half
+             * an AudioWorklet block; re-priming is faded in above. */
+            for (let i = 0; i < Math.min(64, left.length); ++i) {
+                const gain = (63 - i) / 64;
+                left[i] = this.lastLeft * gain;
+                right[i] = this.lastRight * gain;
+            }
+            this.lastLeft = 0;
+            this.lastRight = 0;
         }
         this.stats.callbacks++;
         this.stats.requestedFrames += left.length;

@@ -230,7 +230,9 @@ static void generate_pcm_ms(void) {
             if (g_backend == ZEL_AUDIO_MT32) {
                 short opl_left, opl_right;
                 opalSample(&g_opl, &opl_left, &opl_right);
-                sample = ((double)opl_left + opl_right) / 65536.0;
+                const double sfx_sample =
+                    ((double)opl_left + opl_right) / 65536.0;
+                double music_sample = 0.0;
                 unsigned voices = 0;
                 for (unsigned v = 0; v < 32; ++v) {
                     legacy_voice_t *voice = &g_legacy_voice[v];
@@ -238,11 +240,15 @@ static void generate_pcm_ms(void) {
                         continue;
                     voice->phase += voice->frequency / g_audio_rate;
                     if (voice->phase >= 1.0) voice->phase -= 1.0;
-                    sample += (voice->phase < 0.5 ? 1.0 : -1.0) *
-                              voice->volume / 127.0;
+                    music_sample += (voice->phase < 0.5 ? 1.0 : -1.0) *
+                                    voice->volume / 127.0;
                     voices++;
                 }
-                if (voices) sample /= (voices > 1 ? voices : 1);
+                if (voices) music_sample /= voices;
+                /* SNDADLIB remains the canonical effects driver with MT-32
+                 * music. Mix it independently: averaging OPL into the MIDI
+                 * voice count previously buried effects under busy scores. */
+                sample = music_sample * 0.72 + sfx_sample * 0.82;
             } else if (g_backend == ZEL_AUDIO_PCJR) {
                 for (unsigned v = 0; v < 3; ++v) {
                     u16 divisor = g_pcjr_tone[v] ? g_pcjr_tone[v] : 1;

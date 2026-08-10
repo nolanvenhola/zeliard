@@ -51,5 +51,13 @@ mailbox consumption, non-zero PCM production, and fixed 256-tick MT-32 port
 stream hashes for all 14 music-bearing score resources. Existing MSCADLIB/SNDADLIB
 write hashes remain unchanged in `mscadlib_vm_native.c`.
 
+The MT-32 configuration intentionally retains `sndadlib.drv` for effects, as
+the original loader does. Its OPL stream is mixed independently from the MIDI
+voice average so busy music cannot suppress effects. The native PCM fixture
+renders identical MT-32 score windows with and without cue `1Eh` and requires
+an audible sample difference. The browser worklet ramps the last sample down
+on an underrun and fades re-primed PCM in over 64 frames, avoiding hard edges
+that previously presented as occasional static.
+
 The UI defaults to AdLib. A requested backend whose release driver cannot be
 loaded or initialized falls back to AdLib and reports that fallback in the UI.
