@@ -279,7 +279,6 @@ EXACT_ORACLE_PROCS = {
 MODE_EXCLUDED_PROCS = {
     '207MOLE': {
         'mcga_pixel_unpack', 'mono_scan_loop', 'extract_bits',
-        'write_dma_port_then_pad',
     },
     '208YMPD': {
         'ega_mtn_blit_88_rows', 'pixel_expand_cga', 'copy_28b_ega',

@@ -262,6 +262,21 @@
       ]
     },
     {
+      "chunk": "207MOLE",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mole_ympd_helper_procedure_oracle.py",
+      "scope": "procedure/register-flags-memory-framebuffer-loop-bounds",
+      "procedures": ["mcga_pixel_unpack", "mono_scan_loop", "extract_bits"]
+    },
+    {
+      "chunk": "208YMPD",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mole_ympd_helper_procedure_oracle.py",
+      "scope": "procedure/register-flags-memory-framebuffer-loop-bounds",
+      "procedures": [
+        "ega_mtn_blit_88_rows", "pixel_expand_cga", "copy_28b_ega",
+        "pixel_expand_cgaalt"
+      ]
+    },
+    {
       "chunk": "101GDEGA",
       "source": "3_Assembly/masm/functest/proc_equivalence/test_ega_display_procedure_oracle.py",
       "scope": "procedure/register-flags-memory-framebuffer-io-trace",

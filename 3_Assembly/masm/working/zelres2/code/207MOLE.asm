@@ -1944,7 +1944,7 @@ db	88h			; Data table (indexed access)
 ; Kept as mnemonics because TASM re-encodes them to the same bytes via the
 ; misdec_* and mole_sprite_chunk_128A EQUs. This section is truly sprite pixel data.
 
-write_dma_port_then_pad		proc	near
+write_dma_port_then_pad		label	byte	; data boundary, not an executable procedure
 		out	dx,al			; port 1, DMA-1 bas&cnt ch 0
 		db	82h, 0A0h, 0A8h, 3Ah, 0A8h	; and byte ptr [bx+si+3AA8h],0A8h (alt encoding: 82/4 not 80/4)
 		sub	ch,byte ptr mole_sprite_chunk_128A
@@ -1954,8 +1954,6 @@ write_dma_port_then_pad		proc	near
 		mov	al,ds:[misdec_822A]
 		adc	ss:[misdec_41A2][bp+si],cx
 		jmp	short $+0Ch
-
-write_dma_port_then_pad		endp
 
 ; --- Sprite data continues at 0x1B5A (Sourcer decoded it as fake mnemonics) ---
 ;* No entry point to code -- data block (pixel runs)
