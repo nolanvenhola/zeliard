@@ -119,6 +119,8 @@ def main() -> int:
     ap.add_argument('--filter', help='glob filter on test path (e.g. "*gold*")')
     ap.add_argument('--ci', action='store_true',
                     help='terse one-line-per-test output; nonzero exit on FAIL')
+    ap.add_argument('--strict', action='store_true',
+                    help='exit nonzero unless every selected test passes')
     ap.add_argument('--verbose', '-v', action='store_true',
                     help='print stdout for each test')
     args = ap.parse_args()
@@ -153,7 +155,7 @@ def main() -> int:
         print(f'\nStatus table written to {status_path.relative_to(HERE.parent)}')
 
     # Exit code
-    bad = {'FAIL'}
+    bad = {'FAIL'} if not args.strict else {'FAIL', 'REFUTED', 'INCONCLUSIVE'}
     n_bad = sum(1 for r in results if r['verdict'] in bad)
     n_pass = sum(1 for r in results if r['verdict'] == 'PASS')
     n_other = len(results) - n_bad - n_pass

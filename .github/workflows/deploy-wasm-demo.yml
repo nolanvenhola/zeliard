@@ -82,7 +82,7 @@ jobs:
       - name: Run exact procedure oracles
         run: |
           python -m pip install --disable-pip-version-check unicorn==2.1.4
-          python 3_Assembly/masm/functest/run.py --ci --filter '*display_procedure_oracle.py'
+          python 3_Assembly/masm/functest/run.py --ci --strict --filter '*display_procedure_oracle.py'
           python 3_Assembly/masm/functest/proc_equivalence/test_stick_remaining_procedure_oracle.py
           python 3_Assembly/masm/functest/proc_equivalence/test_mole_ympd_helper_procedure_oracle.py
           python 3_Assembly/masm/functest/proc_equivalence/test_data_only_module_boundaries.py

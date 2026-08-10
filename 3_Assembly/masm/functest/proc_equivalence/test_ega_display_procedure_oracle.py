@@ -19,6 +19,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -72,6 +73,7 @@ OVERLAYS = {
     "202GFEGA": MASM_ROOT / "bin" / "zelres2" / "202GFEGA.bin",
 }
 CHUNKS = {BASE_CHUNK, *OVERLAYS}
+ORIGINAL_GAME = MASM_ROOT.parents[1] / "1_OriginalGame"
 
 EXPECTED_BINARY_SHA256 = {
     "gmega": "631d531060464c2e7d8139d63f11628715de6ba8d5ad49e07dad96db4c7cce0b",
@@ -201,6 +203,23 @@ EXPECTED_PROCEDURE_FINGERPRINTS: dict[str, str] = {
     "gmega:render_tilemap_small": "d47c19c8b59d705e3e4fa90b3d495e6e227112933cf791ab1773917f445dd794",
     "gmega:run_gmega_main": "7f5bd5be89996b9845bc06e51f23adb014e8d8dfaa8d027127210323202eecf2",
 }
+
+
+def release_image(chunk: str, generated: Path) -> bytes:
+    """Load an exact image in both local-build and clean-checkout contexts."""
+    if generated.exists():
+        return generated.read_bytes()
+    if chunk.startswith(("gmcga", "gmega", "gmhgc", "gmtga")):
+        return (ORIGINAL_GAME / f"{chunk}.bin").read_bytes()
+    archive = int(chunk[0])
+    index = int(chunk[1:3])
+    sar = (ORIGINAL_GAME / f"zelres{archive}.sar").read_bytes()
+    start = struct.unpack_from("<I", sar, index * 4)[0]
+    size = struct.unpack_from("<I", sar, start)[0]
+    image = sar[start:start + 4 + size]
+    if len(image) != 4 + size:
+        raise AssertionError(f"short release image for {chunk}")
+    return image
 
 REGISTERS = {
     "ax": UC_X86_REG_AX,
@@ -345,9 +364,9 @@ def procedure_fingerprint(row: dict[str, str], base_image: bytes,
 def main() -> int:
     emit = "--emit" in sys.argv[1:]
     failures: list[str] = []
-    base_image = BASE_BIN.read_bytes()
+    base_image = release_image(BASE_CHUNK, BASE_BIN)
     images = {BASE_CHUNK: base_image, **{
-        chunk: path.read_bytes() for chunk, path in OVERLAYS.items()
+        chunk: release_image(chunk, path) for chunk, path in OVERLAYS.items()
     }}
     for chunk, expected in EXPECTED_BINARY_SHA256.items():
         actual = hashlib.sha256(images[chunk]).hexdigest()
