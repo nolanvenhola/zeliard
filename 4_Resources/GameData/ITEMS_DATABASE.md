@@ -221,7 +221,13 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Use**: Exchange for Gold at bank
 
 ### Keys
-- **Regular Keys**: Found in caverns, unlock specific doors
+- **Regular Keys**: Shared count at player/USR byte `0x98`; six persistent pickups exist across Corroer, Plata, Tesoro, and Absor
+  - Every regular key is interchangeable and opens any of the 22 authored regular locked doors; keys are not bound to particular doors
+  - Acquisition displays "You get a Key.", increments the byte count once, and permanently removes that pickup through its map event bit
+  - A closed regular door with count zero remains closed and does not mutate state
+  - A valid unlock consumes exactly one key, plays cue `0x15`, sets the door's open flag, and writes its persistent map-event mask
+  - Revisiting a persisted open door does not consume another key; free and Lion Head's Key doors do not consume regular keys
+  - The count and every pickup/door event survive inventory, transitions, death/Sage recovery, and byte-compatible USR save/load
 - **Lion Head's Key**: Special key
   - Given to woman in Pureza by Spirits
   - Stolen by Jashiin's underlings

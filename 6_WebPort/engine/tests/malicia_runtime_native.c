@@ -161,6 +161,7 @@ int main(void) {
            first_frame, first_palette, moving_frame,
            moving_x, moving_row, monsters, items, family_mask,
            zeliard_fight_masm_vm_ip());
+
     static u8 exit_game[0x10000];
     static u8 exit_vga[0x10000];
     exit_game[0x0080] = 0x2D;
@@ -470,6 +471,73 @@ int main(void) {
            zeliard_fight_masm_vm_exit_operation(),
            zeliard_fight_masm_vm_exit_selector(), boss_frame,
            boss_game[0x80], boss_game[0x82], zeliard_fight_masm_vm_ip());
+
+    /* MP10 door 0 is a regular-key door linked to byte 03h/mask 80h.
+     * No key blocks without mutation; the first valid contact consumes one;
+     * an already-persisted door crosses without consuming another. */
+    static u8 no_key_game[0x10000], no_key_vga[0x10000];
+    no_key_game[0x80] = 26 - 16;
+    no_key_game[0x82] = (15 - 9) & 0x3F;
+    no_key_game[0x83] = 12;
+    no_key_game[0x91] = no_key_game[0xB3] = 1;
+    no_key_game[0xFF33] = 5;
+    palette_set_game_mcga();
+    const int no_key_started = zeliard_fight_masm_vm_start(
+        no_key_game, sizeof(no_key_game), no_key_vga, sizeof(no_key_vga));
+    const int no_key_advanced = zeliard_fight_masm_vm_advance(
+        no_key_game, sizeof(no_key_game), no_key_vga, sizeof(no_key_vga),
+        1, 1);
+    const u16 no_key_width = zeliard_fight_masm_vm_peek_u16(0xC002);
+
+    static u8 two_key_game[0x10000], two_key_vga[0x10000];
+    two_key_game[0x80] = 26 - 16;
+    two_key_game[0x82] = (15 - 9) & 0x3F;
+    two_key_game[0x83] = 12;
+    two_key_game[0x91] = two_key_game[0xB3] = 1;
+    two_key_game[0x98] = 2;
+    two_key_game[0xFF33] = 5;
+    palette_set_game_mcga();
+    const int unlock_started = zeliard_fight_masm_vm_start(
+        two_key_game, sizeof(two_key_game), two_key_vga,
+        sizeof(two_key_vga));
+    const int unlocked = zeliard_fight_masm_vm_advance(
+        two_key_game, sizeof(two_key_game), two_key_vga,
+        sizeof(two_key_vga), 1, 1);
+    const u8 unlock_cue = zeliard_fight_masm_vm_peek_u8(0xFF75);
+    const u16 unlocked_width = zeliard_fight_masm_vm_peek_u16(0xC002);
+
+    static u8 revisit_game[0x10000], revisit_vga[0x10000];
+    revisit_game[0x80] = 26 - 16;
+    revisit_game[0x82] = (15 - 9) & 0x3F;
+    revisit_game[0x83] = 12;
+    revisit_game[0x03] = 0x80;
+    revisit_game[0x91] = revisit_game[0xB3] = 1;
+    revisit_game[0x98] = 1;
+    revisit_game[0xFF33] = 5;
+    palette_set_game_mcga();
+    const int revisit_started = zeliard_fight_masm_vm_start(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga));
+    const int revisited = zeliard_fight_masm_vm_advance(
+        revisit_game, sizeof(revisit_game), revisit_vga,
+        sizeof(revisit_vga), 1, 1);
+    const u16 revisit_width = zeliard_fight_masm_vm_peek_u16(0xC002);
+    const int regular_key_door_ok =
+        no_key_started && no_key_advanced && no_key_width == 240 &&
+        no_key_game[0x98] == 0 && no_key_game[0x03] == 0 &&
+        unlock_started && unlocked && unlocked_width == 240 &&
+        two_key_game[0x98] == 1 && two_key_game[0x03] == 0x80 &&
+        unlock_cue == 0x15 && revisit_started && revisited &&
+        revisit_width == 73 && revisit_game[0x98] == 1 &&
+        revisit_game[0x03] == 0x80;
+    ok &= regular_key_door_ok;
+    printf("malicia_regular_key_door: %s no_key=%d/%u/%u/%02x "
+           "unlock=%d/%u/%u/%02x/%02x revisit=%d/%u/%u/%02x\n",
+           regular_key_door_ok ? "PASS" : "FAIL", no_key_advanced,
+           no_key_width, no_key_game[0x98], no_key_game[0x03], unlocked,
+           unlocked_width, two_key_game[0x98], two_key_game[0x03],
+           unlock_cue, revisited, revisit_width, revisit_game[0x98],
+           revisit_game[0x03]);
     printf("VERDICT: %s: MASM Malicia map, movement, combat, pickups, death, exits, and Cangrejo\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

@@ -374,6 +374,7 @@ int main(void) {
     record[0x8D] = 7;          /* experience level */
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
+    record[0x98] = 3;          /* regular cavern keys */
     record[0x99] = 1;          /* Lion Head's Key */
     record[0x9A] = 0xFF;       /* Elf Crest inventory marker */
     record[0x9B] = 0xFF;       /* Glory Crest inventory marker */
@@ -406,6 +407,7 @@ int main(void) {
         zeliard_test_game_u8(0x8D) == 7 &&
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
+        zeliard_test_game_u8(0x98) == 3 &&
         zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_game_u8(0x9A) == 0xFF &&
         zeliard_test_game_u8(0x9B) == 0xFF &&
@@ -524,6 +526,8 @@ int main(void) {
 
     ok &= zeliard_test_begin_malicia_combat();
     const int lion_key_entered_cavern =
+        zeliard_test_game_u8(0x98) == 3 &&
+        zeliard_test_fight_u8(0x98) == 3 &&
         zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_fight_u8(0x99) == 1 &&
         zeliard_test_game_u8(0xA0) == 4 &&
@@ -546,10 +550,11 @@ int main(void) {
         zeliard_test_fight_u8(0x9A) == 0xFF;
     ok &= lion_key_entered_cavern;
     printf("main_controls:progression_cavern_handoff: %s "
-           "lion=%u/%u tears=%u/%u hero=%02x/%02x/%02x/%02x "
+           "keys=%u/%u lion=%u/%u tears=%u/%u hero=%02x/%02x/%02x/%02x "
            "glory=%02x/%02x/%02x/%02x "
            "elf=%02x/%02x/%02x/%02x/%02x/%02x/%02x/%02x\n",
            lion_key_entered_cavern ? "PASS" : "FAIL",
+           zeliard_test_game_u8(0x98), zeliard_test_fight_u8(0x98),
            zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99),
            zeliard_test_game_u8(0xA0), zeliard_test_fight_u8(0xA0),
            zeliard_test_game_u8(0x12), zeliard_test_fight_u8(0x12),
@@ -767,6 +772,7 @@ int main(void) {
         zeliard_town_area() == 1 && zeliard_room_kind() == 2 &&
         death_sage_entry_ip == 0xA006 &&
         zeliard_test_game_u8(0x9F) == death_saved_frame_scratch &&
+        zeliard_test_game_u8(0x98) == 3 &&
         zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_game_u8(0xA0) == 4 &&
         (zeliard_test_game_u8(0x12) & 0x08) != 0 &&
