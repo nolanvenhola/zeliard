@@ -25,6 +25,14 @@ const TRACKED_OPDMO_BIN = '3_Assembly/tasm/bin/zelres1/100OPDMO.bin';
 const OPDMO_MASM_SHA256 = '424f2acbaec8c0395e5e72562ac6f6fd8bfa6f8b5c58a867fe1c5b21a6f51548';
 const SNDADLIB_SHA256 = 'bf1c2036980f0557106ab0521be163fedb32458a187b4f49a60fee12b3b0a858';
 const MSCADLIB_SHA256 = '3d972d619e94071c38c4b810f17054957aff46ad21b25a65f519a43f16158d4d';
+const LEGACY_AUDIO_HASHES = new Map([
+    ['mscmt.drv', '45b169ade347f342560f8c6b285f9a96a6ad5cd6c296ba75fb4ff34425d02d83'],
+    ['mscjr.drv', 'b09d2045ff959774eef5d82288ede7ace7211743c5891b03af699a65146193f9'],
+    ['mscstd.drv', '5f49fad4db1394c3469eece482449fcdce4f904fa7e8213f66cfc6262b509047'],
+    ['sndjr.drv', 'f66583660a24c5fc8a0c20a5fe00c9af7d1009a45652043af5a0280a25423c70'],
+    ['sndstd.drv', 'e055088bcb1b5d26d7ddd57989733d98b05cdd277c477241c54cddc3f4e60278'],
+    ['mtinit.com', 'd2964c02e2af6429dffb4d86ac40ad083026992b74bb09898018d7850165a272'],
+]);
 const TINY86_BIOS_SHA256 = 'ba4b2e62246aaadeda8d90bc0928d4f00242c16039982163d7e82740dceb5e31';
 const VERIFIED_DATA_HASHES = new Map([
     ['zelres2/data/246MGT1S.msd', '40836c6321800fb3b6821d358a08eb4c4168fd317a7c0101279b176aa3647ed7'],
@@ -67,6 +75,13 @@ const mscadlibBytes = readFileSync(join(REPO_ROOT, '1_OriginalGame/mscadlib.drv'
 const mscadlibHash = createHash('sha256').update(mscadlibBytes).digest('hex');
 if (mscadlibHash !== MSCADLIB_SHA256)
     throw new Error(`mscadlib.drv does not match the original DOS driver: ${mscadlibHash}`);
+
+for (const [name, expected] of LEGACY_AUDIO_HASHES) {
+    const bytes = readFileSync(join(REPO_ROOT, '1_OriginalGame', name));
+    const actual = createHash('sha256').update(bytes).digest('hex');
+    if (actual !== expected)
+        throw new Error(`${name} does not match the original DOS release: ${actual}`);
+}
 
 const tiny86Bios = readFileSync(join(REPO_ROOT, '6_WebPort/engine/third_party/8086tiny/bios.bin'));
 const tiny86BiosHash = createHash('sha256').update(tiny86Bios).digest('hex');
@@ -121,6 +136,8 @@ const ASSET_MAP = [
 const EXTRA_ASSET_MAP = [
     ['1_OriginalGame/sndadlib.drv', 'sndadlib.drv'],
     ['1_OriginalGame/mscadlib.drv', 'mscadlib.drv'],
+    ...[...LEGACY_AUDIO_HASHES.keys()].map(name =>
+        [`1_OriginalGame/${name}`, name]),
     ['6_WebPort/engine/third_party/8086tiny/bios.bin', '8086tiny-bios.bin'],
     ['3_Assembly/dumps/zeliard_title_image.BIN', 'title_full.bin'],
     [OPDMO_BIN, '100opdmo.bin'],
@@ -407,4 +424,4 @@ for (const obsolete of [
     'sfx_3f.wav', 'sfx_40.wav', 'sfx_41.wav',
 ])
     rmSync(join(DEST_AUDIO, obsolete), { force: true });
-console.log('[copy_assets] browser audio uses exact SNDADLIB/MSCADLIB WASM output');
+console.log('[copy_assets] browser audio uses original AdLib, MT-32, PCjr, and speaker driver output');

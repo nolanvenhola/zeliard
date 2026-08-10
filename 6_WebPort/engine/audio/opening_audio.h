@@ -27,6 +27,13 @@ typedef zel_music_track_t zel_opening_music_track_t;
 #define ZEL_OPENING_MUSIC_ZOPN ZEL_MUSIC_ZOPN
 #define ZEL_OPENING_MUSIC_ZEND ZEL_MUSIC_ZEND
 
+typedef enum {
+    ZEL_AUDIO_ADLIB = 0,
+    ZEL_AUDIO_MT32 = 1,
+    ZEL_AUDIO_PCJR = 2,
+    ZEL_AUDIO_SPEAKER = 3
+} zel_audio_backend_t;
+
 /* Keep enough PCM ahead for one browser audio callback plus a delayed
  * animation frame. This remains bounded so gameplay cues stay responsive. */
 #define ZEL_AUDIO_PCM_CUSHION_FRAMES 3072
@@ -56,6 +63,9 @@ size_t zel_opening_audio_read_pcm(short *stereo, size_t frames);
 size_t zel_opening_audio_pcm_available(void);
 int zel_opening_audio_exact_driver_active(void);
 void zel_opening_audio_set_sample_rate(int sample_rate);
+int zel_opening_audio_set_backend(int backend);
+int zel_opening_audio_backend(void);
+int zel_opening_audio_backend_fallback(void);
 u32 zel_opening_audio_opl_write_count(void);
 u32 zel_opening_audio_generated_peak(void);
 u32 zel_opening_audio_cue_serial(void);

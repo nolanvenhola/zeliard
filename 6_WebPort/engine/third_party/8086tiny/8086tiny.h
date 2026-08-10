@@ -39,5 +39,6 @@ unsigned char *zel_tiny86_byte_registers(void);
 unsigned short zel_tiny86_ip(void);
 void zel_tiny86_set_ip(unsigned short value);
 void zel_tiny86_set_flags(unsigned short value);
+void zel_tiny86_set_io_port(unsigned short port, unsigned char value);
 
 #endif

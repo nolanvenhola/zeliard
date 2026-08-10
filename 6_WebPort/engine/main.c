@@ -1224,6 +1224,9 @@ EXPORT void             zeliard_audio_set_sample_rate(int sample_rate) { zel_ope
 EXPORT u32              zeliard_audio_opl_write_count(void) { return zel_opening_audio_opl_write_count(); }
 EXPORT u32              zeliard_audio_generated_peak(void) { return zel_opening_audio_generated_peak(); }
 EXPORT u32              zeliard_audio_cue_serial(void) { return zel_opening_audio_cue_serial(); }
+EXPORT int              zeliard_audio_set_backend(int backend) { return zel_opening_audio_set_backend(backend); }
+EXPORT int              zeliard_audio_backend(void) { return zel_opening_audio_backend(); }
+EXPORT int              zeliard_audio_backend_fallback(void) { return zel_opening_audio_backend_fallback(); }
 EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
     opening_set_phase_for_test(phase);
     zel_opening_audio_sync_phase(opening_phase_id());

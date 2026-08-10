@@ -5,6 +5,7 @@
 #include "opal/opal.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 /* 100OPDMO release phase IDs. The proxy models the two places where MASM
  * loads a score and invokes INT 60h; unrelated phase changes leave the
@@ -29,6 +30,8 @@ static int g_last_phase;
 static zel_mscadlib_vm_t g_mscadlib;
 static Opal g_opl;
 static unsigned char g_exact_driver;
+static zel_audio_backend_t g_backend = ZEL_AUDIO_ADLIB;
+static unsigned char g_backend_fallback;
 static u32 g_pcm_subframe_accum;
 static int g_audio_rate = 48000;
 enum {
@@ -41,6 +44,139 @@ static size_t g_pcm_write;
 static u32 g_opl_write_count;
 static u32 g_generated_peak;
 static u32 g_cue_serial;
+
+typedef struct {
+    double phase;
+    double frequency;
+    unsigned char volume;
+    unsigned char active;
+    unsigned char note;
+    unsigned char channel;
+} legacy_voice_t;
+
+static legacy_voice_t g_legacy_voice[32];
+static u16 g_pcjr_tone[3];
+static u8 g_pcjr_volume[4];
+static u8 g_pcjr_latched;
+static u8 g_pcjr_noise;
+static u16 g_pcjr_lfsr;
+static u16 g_speaker_divisor;
+static u8 g_speaker_low;
+static u8 g_speaker_enabled;
+static u8 g_midi_status;
+static u8 g_midi_data[2];
+static u8 g_midi_count;
+
+static void reset_legacy_synth(void) {
+    memset(g_legacy_voice, 0, sizeof(g_legacy_voice));
+    memset(g_pcjr_tone, 0, sizeof(g_pcjr_tone));
+    memset(g_pcjr_volume, 15, sizeof(g_pcjr_volume));
+    g_pcjr_latched = g_pcjr_noise = 0;
+    g_pcjr_lfsr = 0x4000;
+    g_speaker_divisor = 0;
+    g_speaker_low = g_speaker_enabled = 0;
+    g_midi_status = g_midi_count = 0;
+}
+
+static double midi_frequency(u8 note) {
+    static const double octave4[12] = {
+        261.625565, 277.182631, 293.664768, 311.126984,
+        329.627557, 349.228231, 369.994423, 391.995436,
+        415.304698, 440.0, 466.163762, 493.883301
+    };
+    int octave = (int)note / 12 - 1;
+    double f = octave4[note % 12];
+    while (octave < 4) { f *= 0.5; octave++; }
+    while (octave > 4) { f *= 2.0; octave--; }
+    return f;
+}
+
+static void midi_note(u8 channel, u8 note, u8 velocity, int on) {
+    for (unsigned i = 0; i < 32; ++i) {
+        legacy_voice_t *voice = &g_legacy_voice[i];
+        if (!on && voice->active && voice->channel == channel && voice->note == note) {
+            voice->active = 0;
+            return;
+        }
+        if (on && (!voice->active || (voice->channel == channel && voice->note == note))) {
+            voice->active = 1;
+            voice->channel = channel;
+            voice->note = note;
+            voice->volume = velocity;
+            voice->frequency = midi_frequency(note);
+            return;
+        }
+    }
+}
+
+static void consume_midi_byte(u8 value) {
+    if (value & 0x80) {
+        if (value < 0xF0) {
+            g_midi_status = value;
+            g_midi_count = 0;
+        } else if (value < 0xF8) {
+            g_midi_status = 0;
+            g_midi_count = 0;
+        }
+        return;
+    }
+    if (!g_midi_status)
+        return;
+    g_midi_data[g_midi_count++] = value;
+    if (g_midi_count == 2) {
+        u8 command = g_midi_status & 0xF0;
+        u8 channel = g_midi_status & 0x0F;
+        if (command == 0x90)
+            midi_note(channel, g_midi_data[0], g_midi_data[1], g_midi_data[1] != 0);
+        else if (command == 0x80)
+            midi_note(channel, g_midi_data[0], 0, 0);
+        g_midi_count = 0;
+    }
+}
+
+static void consume_pcjr_byte(u8 value) {
+    unsigned channel;
+    if (value & 0x80) {
+        g_pcjr_latched = value;
+        channel = (value >> 5) & 3;
+        if (value & 0x10)
+            g_pcjr_volume[channel] = value & 15;
+        else if (channel < 3)
+            g_pcjr_tone[channel] = (g_pcjr_tone[channel] & 0x3F0) | (value & 15);
+        else
+            g_pcjr_noise = value & 7;
+    } else {
+        channel = (g_pcjr_latched >> 5) & 3;
+        if (!(g_pcjr_latched & 0x10) && channel < 3)
+            g_pcjr_tone[channel] = (g_pcjr_tone[channel] & 15) | ((u16)(value & 0x3F) << 4);
+    }
+}
+
+static void apply_legacy_writes(void) {
+    zel_audio_port_write_t writes[256];
+    size_t count;
+    do {
+        count = zel_mscadlib_vm_take_port_writes(&g_mscadlib, writes, 256);
+        for (size_t i = 0; i < count; ++i) {
+            u16 port = writes[i].port;
+            u8 value = writes[i].value;
+            if (g_backend == ZEL_AUDIO_MT32 && port == 0x330)
+                consume_midi_byte(value);
+            else if (g_backend == ZEL_AUDIO_PCJR && port == 0xC0)
+                consume_pcjr_byte(value);
+            else if (g_backend == ZEL_AUDIO_SPEAKER && port == 0x42) {
+                if (!g_speaker_low) {
+                    g_speaker_divisor = (g_speaker_divisor & 0xFF00) | value;
+                    g_speaker_low = 1;
+                } else {
+                    g_speaker_divisor = (g_speaker_divisor & 0x00FF) | ((u16)value << 8);
+                    g_speaker_low = 0;
+                }
+            } else if (g_backend == ZEL_AUDIO_SPEAKER && port == 0x61)
+                g_speaker_enabled = (value & 3) == 3;
+        }
+    } while (count == 256);
+}
 
 static void clear_pcm_ring(void) {
     g_pcm_read = g_pcm_write = 0;
@@ -58,6 +194,7 @@ static void apply_driver_writes(void) {
             g_opl_write_count++;
         }
     } while (count == sizeof(writes) / sizeof(writes[0]));
+    apply_legacy_writes();
 }
 
 static size_t pcm_available(void) {
@@ -86,7 +223,61 @@ static void generate_pcm_ms(void) {
     g_pcm_subframe_accum %= 1000u;
     for (unsigned i = 0; i < frames; ++i) {
         short left, right;
-        opalSample(&g_opl, &left, &right);
+        if (g_backend == ZEL_AUDIO_ADLIB) {
+            opalSample(&g_opl, &left, &right);
+        } else {
+            double sample = 0.0;
+            if (g_backend == ZEL_AUDIO_MT32) {
+                short opl_left, opl_right;
+                opalSample(&g_opl, &opl_left, &opl_right);
+                sample = ((double)opl_left + opl_right) / 65536.0;
+                unsigned voices = 0;
+                for (unsigned v = 0; v < 32; ++v) {
+                    legacy_voice_t *voice = &g_legacy_voice[v];
+                    if (!voice->active)
+                        continue;
+                    voice->phase += voice->frequency / g_audio_rate;
+                    if (voice->phase >= 1.0) voice->phase -= 1.0;
+                    sample += (voice->phase < 0.5 ? 1.0 : -1.0) *
+                              voice->volume / 127.0;
+                    voices++;
+                }
+                if (voices) sample /= (voices > 1 ? voices : 1);
+            } else if (g_backend == ZEL_AUDIO_PCJR) {
+                for (unsigned v = 0; v < 3; ++v) {
+                    u16 divisor = g_pcjr_tone[v] ? g_pcjr_tone[v] : 1;
+                    double frequency = 3579545.0 / (32.0 * divisor);
+                    g_legacy_voice[v].phase += frequency / g_audio_rate;
+                    if (g_legacy_voice[v].phase >= 1.0) g_legacy_voice[v].phase -= 1.0;
+                    sample += (g_legacy_voice[v].phase < 0.5 ? 1.0 : -1.0) *
+                              (15 - g_pcjr_volume[v]) / 45.0;
+                }
+                if (g_pcjr_volume[3] < 15) {
+                    static const double noise_rates[3] = { 6991.3, 3495.6, 1747.8 };
+                    double frequency = (g_pcjr_noise & 3) == 3
+                        ? 3579545.0 / (32.0 * (g_pcjr_tone[2] ? g_pcjr_tone[2] : 1))
+                        : noise_rates[g_pcjr_noise & 3];
+                    g_legacy_voice[3].phase += frequency / g_audio_rate;
+                    if (g_legacy_voice[3].phase >= 1.0) {
+                        g_legacy_voice[3].phase -= 1.0;
+                        u16 feedback = (g_pcjr_lfsr ^
+                            ((g_pcjr_noise & 4) ? (g_pcjr_lfsr >> 1) : 0)) & 1;
+                        g_pcjr_lfsr = (g_pcjr_lfsr >> 1) | (feedback << 14);
+                    }
+                    sample += (g_pcjr_lfsr & 1 ? 1.0 : -1.0) *
+                              (15 - g_pcjr_volume[3]) / 45.0;
+                }
+            } else if (g_speaker_enabled && g_speaker_divisor) {
+                double frequency = 1193182.0 / g_speaker_divisor;
+                g_legacy_voice[0].phase += frequency / g_audio_rate;
+                if (g_legacy_voice[0].phase >= 1.0) g_legacy_voice[0].phase -= 1.0;
+                sample = g_legacy_voice[0].phase < 0.5 ? 0.32 : -0.32;
+            }
+            sample *= (64.0 - g_attenuation) / 64.0;
+            if (sample > 1.0) sample = 1.0;
+            if (sample < -1.0) sample = -1.0;
+            left = right = (short)(sample * 20000.0);
+        }
         unsigned left_magnitude = left < 0 ? (unsigned)-(int)left : (unsigned)left;
         unsigned right_magnitude = right < 0 ? (unsigned)-(int)right : (unsigned)right;
         if (left_magnitude > g_generated_peak)
@@ -160,6 +351,8 @@ void zel_opening_audio_init(void) {
     u8 *driver;
     u8 *sfx_driver;
     u8 *bios;
+    const char *music_driver_name = "mscadlib.drv";
+    const char *sfx_driver_name = "sndadlib.drv";
     g_music_track = ZEL_OPENING_MUSIC_NONE;
     g_cue_mailbox = 0;
     g_music_enabled = 1;
@@ -176,14 +369,39 @@ void zel_opening_audio_init(void) {
     g_opl_write_count = 0;
     g_generated_peak = 0;
     g_cue_serial = 0;
+    g_backend_fallback = 0;
+    reset_legacy_synth();
     opalInit(&g_opl, g_audio_rate);
-    driver = platform_load_asset("mscadlib.drv", &driver_size);
-    sfx_driver = platform_load_asset("sndadlib.drv", &sfx_driver_size);
+    if (g_backend == ZEL_AUDIO_MT32)
+        music_driver_name = "mscmt.drv";
+    else if (g_backend == ZEL_AUDIO_PCJR) {
+        music_driver_name = "mscjr.drv";
+        sfx_driver_name = "sndjr.drv";
+    } else if (g_backend == ZEL_AUDIO_SPEAKER) {
+        music_driver_name = "mscstd.drv";
+        sfx_driver_name = "sndstd.drv";
+    }
+    driver = platform_load_asset(music_driver_name, &driver_size);
+    sfx_driver = platform_load_asset(sfx_driver_name, &sfx_driver_size);
     bios = platform_load_asset("8086tiny-bios.bin", &bios_size);
     g_exact_driver = driver && sfx_driver && bios &&
-        zel_mscadlib_vm_init(&g_mscadlib, driver, driver_size, bios, bios_size) &&
+        zel_mscadlib_vm_init_variant(&g_mscadlib, driver, driver_size,
+                                     bios, bios_size,
+                                     g_backend == ZEL_AUDIO_MT32) &&
         zel_mscadlib_vm_load_sfx_driver(&g_mscadlib, sfx_driver,
                                         sfx_driver_size);
+    if (!g_exact_driver && g_backend != ZEL_AUDIO_ADLIB) {
+        free(driver); free(sfx_driver);
+        driver = platform_load_asset("mscadlib.drv", &driver_size);
+        sfx_driver = platform_load_asset("sndadlib.drv", &sfx_driver_size);
+        g_backend = ZEL_AUDIO_ADLIB;
+        g_backend_fallback = 1;
+        g_exact_driver = driver && sfx_driver && bios &&
+            zel_mscadlib_vm_init(&g_mscadlib, driver, driver_size,
+                                 bios, bios_size) &&
+            zel_mscadlib_vm_load_sfx_driver(&g_mscadlib, sfx_driver,
+                                            sfx_driver_size);
+    }
     if (g_exact_driver) {
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF27, 0);
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, 0);
@@ -416,6 +634,37 @@ void zel_opening_audio_set_sample_rate(int sample_rate) {
     clear_pcm_ring();
     opalSetSampleRate(&g_opl, sample_rate);
 }
+
+int zel_opening_audio_set_backend(int backend) {
+    zel_music_track_t resume = g_music_track;
+    unsigned char music_enabled = g_music_enabled;
+    unsigned char sound_enabled = g_sound_enabled;
+    unsigned char paused = g_paused;
+    if (backend < ZEL_AUDIO_ADLIB || backend > ZEL_AUDIO_SPEAKER)
+        return 0;
+    if ((int)g_backend == backend && g_exact_driver)
+        return 1;
+    g_backend = (zel_audio_backend_t)backend;
+    zel_opening_audio_init();
+    if (resume != ZEL_MUSIC_NONE)
+        zel_audio_play_music(resume);
+    if (!music_enabled && g_exact_driver)
+        zel_mscadlib_vm_service(&g_mscadlib, 2, 0);
+    g_music_enabled = music_enabled;
+    g_sound_enabled = sound_enabled;
+    if (g_exact_driver)
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF27,
+                                   sound_enabled ? 0 : 0xFF);
+    g_paused = paused;
+    if (paused && g_exact_driver)
+        zel_mscadlib_vm_service(&g_mscadlib, 3, 0x00FF);
+    if (g_exact_driver)
+        apply_driver_writes();
+    return g_exact_driver && !g_backend_fallback;
+}
+
+int zel_opening_audio_backend(void) { return (int)g_backend; }
+int zel_opening_audio_backend_fallback(void) { return g_backend_fallback != 0; }
 
 u32 zel_opening_audio_opl_write_count(void) {
     return g_opl_write_count;

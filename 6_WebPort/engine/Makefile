@@ -293,6 +293,18 @@ TEST_MSCADLIB_VM_SRC := \
 	tests/mscadlib_vm_native.c \
 	audio/mscadlib_vm.c \
 	third_party/8086tiny/8086tiny.c
+TEST_LEGACY_AUDIO_SRC := \
+	tests/legacy_audio_native.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c
+TEST_LEGACY_AUDIO_PCM_SRC := \
+	tests/legacy_audio_pcm_native.c \
+	audio/opening_audio.c \
+	audio/mscadlib_vm.c \
+	third_party/8086tiny/8086tiny.c \
+	third_party/opal/src/opal.c \
+	core/timer.c \
+	platform/platform_sdl.c
 TEST_MAIN_CONTROLS_SRC := \
 	tests/main_controls_native.c \
 	main.c \
@@ -470,7 +482,7 @@ EMCC_FLAGS  := $(CFLAGS_COMMON) \
 	-s EXPORT_ES6=1 \
 	-s ENVIRONMENT=web \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_speed_menu_active","_zeliard_restore_menu_active","_zeliard_load_request_serial","_zeliard_game_speed_digit","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_player_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_fight_active","_zeliard_fight_ip","_zeliard_fight_map_width","_zeliard_fight_music_chunk","_zeliard_fight_boundary","_zeliard_ending_active","_zeliard_ending_finished","_zeliard_ending_scene","_zeliard_test_restart_fight","_zeliard_test_defeat_pulpo","_zeliard_test_defeat_jashiin","_zeliard_test_fight_u8","_zeliard_test_enter_room","_zeliard_test_restart_town","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_zeliard_init","_zeliard_tick","_zeliard_session_terminated","_zeliard_key","_zeliard_key_down","_zeliard_key_up","_zeliard_text_key","_zeliard_release_all_keys","_zeliard_framebuf","_zeliard_rgb_framebuf","_zeliard_rgb_framebuf_active","_zeliard_palette","_zeliard_width","_zeliard_height","_zeliard_scene","_zeliard_phase","_zeliard_phase_elapsed","_zeliard_music_track","_zeliard_music_complete","_zeliard_music_attenuation","_zeliard_paused","_zeliard_speed_menu_active","_zeliard_restore_menu_active","_zeliard_load_request_serial","_zeliard_game_speed_digit","_zeliard_music_enabled","_zeliard_sound_enabled","_zeliard_sound_cue","_zeliard_audio_pcm","_zeliard_audio_pcm_available","_zeliard_audio_set_sample_rate","_zeliard_audio_opl_write_count","_zeliard_audio_generated_peak","_zeliard_audio_cue_serial","_zeliard_exact_music_driver","_zeliard_audio_set_backend","_zeliard_audio_backend","_zeliard_audio_backend_fallback","_zeliard_opening_set_phase_for_test","_zeliard_opening_nec_hou_sprite_debug_word","_zeliard_opening_nec_hou_sprite_debug_slots","_zeliard_room_kind","_zeliard_room_input_kind","_zeliard_room_ip","_zeliard_save_serial","_zeliard_save_name","_zeliard_save_record","_zeliard_player_record","_zeliard_load_record","_zeliard_town_dialog_active","_zeliard_inventory_active","_zeliard_town_area","_zeliard_town_cavern_exit_requested","_zeliard_cavern_transition_active","_zeliard_cavern_transition_complete","_zeliard_cavern_transition_step","_zeliard_fight_active","_zeliard_fight_ip","_zeliard_fight_map_width","_zeliard_fight_music_chunk","_zeliard_fight_boundary","_zeliard_ending_active","_zeliard_ending_finished","_zeliard_ending_scene","_zeliard_test_restart_fight","_zeliard_test_defeat_pulpo","_zeliard_test_defeat_jashiin","_zeliard_test_fight_u8","_zeliard_test_enter_room","_zeliard_test_restart_town","_zeliard_test_game_u8","_zeliard_test_game_u16","_zeliard_test_game_set_u8","_malloc","_free"]' \
 	-s EXPORTED_RUNTIME_METHODS='["HEAPU8","HEAPU32","UTF8ToString","ccall","cwrap"]' \
 	--preload-file assets@/assets \
 	-o build/zeliard.js
@@ -479,7 +491,11 @@ WASM_DEPS := $(WEB_SRC) Makefile $(wildcard assets/*)
 
 WASM_OUT := build/zeliard.js build/zeliard.wasm build/zeliard.data
 
-.PHONY: wasm native test-native clean check-assets
+.PHONY: wasm native test-native test-legacy-audio clean check-assets
+
+test-legacy-audio: build/legacy-audio-native build/legacy-audio-pcm-native
+	./build/legacy-audio-native
+	./build/legacy-audio-pcm-native
 
 wasm: check-assets $(WASM_OUT)
 
@@ -509,6 +525,8 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
+	./build/legacy-audio-native
+	./build/legacy-audio-pcm-native
 	./build/main-controls-native
 	./build/continuous-input-native
 	./build/gameplay-parity-native
@@ -561,9 +579,17 @@ build/opening-audio-native: $(TEST_OPENING_AUDIO_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(TEST_OPENING_AUDIO_SRC)
 
-build/mscadlib-vm-native: $(TEST_MSCADLIB_VM_SRC) Makefile
+build/mscadlib-vm-native: $(TEST_MSCADLIB_VM_SRC) Makefile build/legacy-audio-native build/legacy-audio-pcm-native
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_MSCADLIB_VM_SRC)
+
+build/legacy-audio-native: $(TEST_LEGACY_AUDIO_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_LEGACY_AUDIO_SRC)
+
+build/legacy-audio-pcm-native: $(TEST_LEGACY_AUDIO_PCM_SRC) Makefile
+	@mkdir -p build
+	$(CC) $(CFLAGS_COMMON) -Wno-parentheses -Wno-sign-compare -Wno-unused-value -Wno-implicit-fallthrough -Wno-deprecated-declarations -o $@ $(TEST_LEGACY_AUDIO_PCM_SRC)
 
 build/main-controls-native: $(TEST_MAIN_CONTROLS_SRC) Makefile
 	@mkdir -p build

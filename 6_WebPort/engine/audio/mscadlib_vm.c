@@ -30,6 +30,14 @@ static void write_u16(u8 *memory, size_t address, u16 value) {
 static void on_port_write(void *context, u16 port, u8 value) {
     zel_mscadlib_vm_t *vm = (zel_mscadlib_vm_t *)context;
 
+    if (vm->port_write_count >= sizeof(vm->port_writes) / sizeof(vm->port_writes[0])) {
+        vm->failed = 1;
+        return;
+    }
+    vm->port_writes[vm->port_write_count++] = (zel_audio_port_write_t){
+        .tick = vm->tick, .port = port, .value = value
+    };
+
     if (port == 0x0388) {
         vm->opl_address = value;
         vm->opl_address_valid = 1;
@@ -80,6 +88,14 @@ static int run_iret(zel_mscadlib_vm_t *vm, u16 entry) {
 int zel_mscadlib_vm_init(zel_mscadlib_vm_t *vm,
                          const u8 *driver, size_t driver_size,
                          const u8 *tiny86_bios, size_t bios_size) {
+    return zel_mscadlib_vm_init_variant(vm, driver, driver_size,
+                                        tiny86_bios, bios_size, 0);
+}
+
+int zel_mscadlib_vm_init_variant(zel_mscadlib_vm_t *vm,
+                         const u8 *driver, size_t driver_size,
+                         const u8 *tiny86_bios, size_t bios_size,
+                         int mt32_score) {
     u8 *memory;
     const size_t driver_address = linear(MUSIC_SEG, DRIVER_LOAD_OFFSET);
 
@@ -96,8 +112,11 @@ int zel_mscadlib_vm_init(zel_mscadlib_vm_t *vm,
     write_u16(memory, 0x60u * 4u, DRIVER_ENTRY_SERVICE);
     write_u16(memory, 0x60u * 4u + 2u, MUSIC_SEG);
     zel_tiny86_set_out_callback(on_port_write, vm);
+    /* MPU-401 status: bit 6 clear means ready for a command/data byte. */
+    zel_tiny86_set_io_port(0x331, 0);
     g_active_vm = vm;
     vm->loaded = 1;
+    vm->mt32_score = mt32_score ? 1 : 0;
     return 1;
 }
 
@@ -123,7 +142,8 @@ int zel_mscadlib_vm_load_score(zel_mscadlib_vm_t *vm,
     u32 payload_size;
     u16 mt32_size;
     u16 adlib_size;
-    const u8 *adlib_score;
+    const u8 *selected_score;
+    u16 selected_size;
 
     if (!vm || vm != g_active_vm || !vm->loaded || !sar_file || sar_file_size < 4)
         return 0;
@@ -133,16 +153,18 @@ int zel_mscadlib_vm_load_score(zel_mscadlib_vm_t *vm,
         return 0;
     mt32_size = (u16)sar_file[4] | ((u16)sar_file[5] << 8);
     adlib_size = (u16)sar_file[6] | ((u16)sar_file[7] << 8);
-    if (4u + (u32)mt32_size + (u32)adlib_size != payload_size ||
-        SCORE_OFFSET + (u32)adlib_size > 0x10000u)
+    if (4u + (u32)mt32_size + (u32)adlib_size != payload_size)
         return 0;
-    adlib_score = sar_file + 8u + mt32_size;
+    selected_size = vm->mt32_score ? mt32_size : adlib_size;
+    selected_score = vm->mt32_score ? sar_file + 8u : sar_file + 8u + mt32_size;
+    if (SCORE_OFFSET + (u32)selected_size > 0x10000u)
+        return 0;
     memory = zel_tiny86_memory();
     /* stick.asm fio_open_savefile_retry consumes the outer SAR size dword.
      * AL=5 then reads two 16-bit variant sizes from the payload.  With the
      * non-MT-32 flag used by MSCADLIB it seeks past the first variant and
      * reads the second one at the caller's exact ES:DI. */
-    memcpy(memory + linear(GAME_SEG, SCORE_OFFSET), adlib_score, adlib_size);
+    memcpy(memory + linear(GAME_SEG, SCORE_OFFSET), selected_score, selected_size);
 
     regs = zel_tiny86_registers();
     regs[ZEL_TINY86_AX] = 0;
@@ -213,6 +235,20 @@ size_t zel_mscadlib_vm_take_writes(zel_mscadlib_vm_t *vm,
         vm->read_index = 0;
         vm->write_count = 0;
     }
+    return count;
+}
+
+size_t zel_mscadlib_vm_take_port_writes(zel_mscadlib_vm_t *vm,
+                                   zel_audio_port_write_t *out, size_t capacity) {
+    size_t available, count;
+    if (!vm || !out)
+        return 0;
+    available = vm->port_write_count - vm->port_read_index;
+    count = available < capacity ? available : capacity;
+    memcpy(out, vm->port_writes + vm->port_read_index, count * sizeof(*out));
+    vm->port_read_index += count;
+    if (vm->port_read_index == vm->port_write_count)
+        vm->port_read_index = vm->port_write_count = 0;
     return count;
 }
 

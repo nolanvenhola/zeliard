@@ -43,6 +43,9 @@ type EngineExports = {
     _zeliard_audio_generated_peak(): number;
     _zeliard_audio_cue_serial(): number;
     _zeliard_exact_music_driver(): number;
+    _zeliard_audio_set_backend(backend: number): number;
+    _zeliard_audio_backend(): number;
+    _zeliard_audio_backend_fallback(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
     _zeliard_room_kind(): number;
     _zeliard_town_area(): number;
@@ -83,6 +86,7 @@ const loadSaveEl = document.getElementById('load-save') as HTMLButtonElement;
 const downloadSaveEl = document.getElementById(
     'download-save') as HTMLButtonElement;
 const openSaveEl = document.getElementById('open-save') as HTMLInputElement;
+const audioBackendEl = document.getElementById('audio-backend') as HTMLSelectElement;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
@@ -126,7 +130,7 @@ class OpeningMusic {
 
     static async load(module: ZeliardModule): Promise<OpeningMusic> {
         if (!module._zeliard_exact_music_driver())
-            throw new Error('original MSCADLIB runtime unavailable');
+            throw new Error('original audio driver runtime unavailable');
         const context = new AudioContext();
         const workletUrl = new URL('audio-worklet.js', appBaseUrl);
         workletUrl.searchParams.set('v', Date.now().toString(36));
@@ -207,6 +211,19 @@ async function boot() {
             assetUrl.searchParams.set('v', engineCacheBust);
             return assetUrl.href;
         },
+    });
+    const requestedAudio = Math.max(0, Math.min(3, Number(
+        params.get('audio') ?? localStorage.getItem('zeliard.audioBackend') ?? '0')));
+    audioBackendEl.value = String(requestedAudio);
+    Module._zeliard_audio_set_backend(requestedAudio);
+    audioBackendEl.value = String(Module._zeliard_audio_backend());
+    audioBackendEl.addEventListener('change', () => {
+        const backend = Number(audioBackendEl.value);
+        localStorage.setItem('zeliard.audioBackend', String(backend));
+        Module._zeliard_audio_set_backend(backend);
+        audioBackendEl.value = String(Module._zeliard_audio_backend());
+        if (Module._zeliard_audio_backend_fallback())
+            setStatus('selected audio unavailable; using AdLib');
     });
 
     setStatus('initialising engine…');
@@ -427,7 +444,7 @@ async function boot() {
         return;
     }
 
-    setStatus('loading exact AdLib audio...');
+    setStatus('loading original audio driver...');
     let music: OpeningMusic | null = null;
     try {
         music = await OpeningMusic.load(Module);

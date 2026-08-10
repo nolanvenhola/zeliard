@@ -10,6 +10,7 @@
 #define zel_tiny86_ip zel_inventory86_ip
 #define zel_tiny86_set_ip zel_inventory86_set_ip
 #define zel_tiny86_set_flags zel_inventory86_set_flags
+#define zel_tiny86_set_io_port zel_inventory86_set_io_port
 #define set_CF zel_inventory86_set_CF
 #define set_AF zel_inventory86_set_AF
 #define set_OF zel_inventory86_set_OF
