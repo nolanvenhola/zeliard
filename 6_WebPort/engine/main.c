@@ -48,6 +48,8 @@ static int g_paused;
 static int g_speed_menu_active;
 static int g_speed_menu_selected;
 static int g_restore_menu_active;
+static u8 g_gamepad_directions;
+static u8 g_gamepad_buttons;
 static u32 g_load_request_serial;
 static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
@@ -712,6 +714,8 @@ EXPORT void zeliard_init(void) {
     g_speed_menu_active = 0;
     g_speed_menu_selected = 0;
     g_restore_menu_active = 0;
+    g_gamepad_directions = 0;
+    g_gamepad_buttons = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
     zel_opening_audio_init();
@@ -1172,9 +1176,62 @@ EXPORT void zeliard_text_key(int ascii) {
         zeliard_room_masm_vm_text_key((u8)ascii);
 }
 
+/* Browser Gamepad API input enters the same MASM-shaped direction and button
+ * bytes as keyboard input. Raw masks are retained so modal overlays can
+ * consume controller edges without leaking held movement into gameplay. */
+EXPORT void zeliard_gamepad_update(int connected, int directions, int buttons) {
+    if (g_session_terminated) return;
+    const u8 next_directions = connected ? (u8)(directions & 0x0F) : 0;
+    const u8 next_buttons = connected ? (u8)buttons : 0;
+    const u8 direction_edges =
+        (u8)(next_directions & (u8)~g_gamepad_directions);
+    const u8 button_edges = (u8)(next_buttons & (u8)~g_gamepad_buttons);
+    g_gamepad_directions = next_directions;
+    g_gamepad_buttons = next_buttons;
+    /* stick.asm uses FF0A as the saved joystick-enabled flag. */
+    g_game_segments[0][0xFF0A] = connected ? 0xFF : 0;
+
+    if (g_restore_menu_active) {
+        (void)zel_input_gamepad_update(&g_input, g_game_segments[0], 0,
+            (u8)(next_buttons & ~(ZEL_GAMEPAD_A | ZEL_GAMEPAD_B)));
+        if (button_edges & ZEL_GAMEPAD_A)
+            zeliard_text_key('Y');
+        else if (button_edges & ZEL_GAMEPAD_B)
+            zeliard_text_key('N');
+        return;
+    }
+    if (g_speed_menu_active && !g_speed_menu_selected) {
+        (void)zel_input_gamepad_update(&g_input, g_game_segments[0], 0,
+            (u8)(next_buttons & ~ZEL_GAMEPAD_A));
+        if ((button_edges & ZEL_GAMEPAD_A) || direction_edges) {
+            u8 speed = g_game_segments[0][0xFF33];
+            u8 digit;
+            if (speed < 1u || speed > 10u) speed = 5u;
+            digit = (u8)(10u - speed);
+            if (direction_edges & (ZEL_GAMEPAD_UP | ZEL_GAMEPAD_RIGHT))
+                digit = (u8)((digit + 9u) % 10u);
+            else if (direction_edges &
+                     (ZEL_GAMEPAD_DOWN | ZEL_GAMEPAD_LEFT))
+                digit = (u8)((digit + 1u) % 10u);
+            zeliard_text_key('0' + digit);
+        }
+        return;
+    }
+    u32 actions = zel_input_gamepad_update(
+        &g_input, g_game_segments[0], next_directions, next_buttons);
+    /* Start is a controller-friendly pause toggle.  The original pause wait
+     * exits through the same Space action used by keyboard confirmation. */
+    if (g_paused && (button_edges & ZEL_GAMEPAD_START))
+        actions |= ZEL_INPUT_ACTION_SPACE;
+    apply_input_actions(actions);
+}
+
 EXPORT void zeliard_release_all_keys(void) {
     if (g_session_terminated) return;
     zel_input_release_all(&g_input, g_game_segments[0], 1);
+    g_gamepad_directions = 0;
+    g_gamepad_buttons = 0;
+    g_game_segments[0][0xFF0A] = 0;
 }
 
 /* Compatibility pulse for older native callers. Browser code uses down/up. */

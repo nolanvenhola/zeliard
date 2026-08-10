@@ -30,6 +30,7 @@
     "playthrough:browser-test": "node test_continuous_playthrough_browser.mjs",
     "shops:animation-test": "node test_shop_animations_browser.mjs",
     "bank:input-test": "node test_bank_input_browser.mjs",
+    "gamepad:test": "node test_gamepad_host.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",

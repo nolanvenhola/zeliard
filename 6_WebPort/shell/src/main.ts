@@ -1,3 +1,6 @@
+import { firstConnectedGamepad, mapBrowserGamepad,
+    type GamepadMask } from './gamepad';
+
 /*
  * Zeliard web shell — boots the Emscripten engine, copies the 320x200
  * paletted framebuffer into a Canvas2D ImageData each frame, and drives
@@ -14,6 +17,8 @@ type EngineExports = {
     _zeliard_key_down(keycode: number): void;
     _zeliard_key_up(keycode: number): void;
     _zeliard_text_key(ascii: number): void;
+    _zeliard_gamepad_update(connected: number, directions: number,
+        buttons: number): void;
     _zeliard_release_all_keys(): void;
     _zeliard_framebuf(): number;     // pointer (offset into HEAPU8)
     _zeliard_rgb_framebuf(): number; // optional RGB output for MCGA raster-DAC frames
@@ -453,6 +458,25 @@ async function boot() {
     }
     let started = false;
     let tickRemainderMs = 0;
+    let gamepadConnected = false;
+    let gamepadMask: GamepadMask = { directions: 0, buttons: 0 };
+
+    function pollGamepad() {
+        const pad = typeof navigator.getGamepads === 'function'
+            ? firstConnectedGamepad(Array.from(navigator.getGamepads()))
+            : null;
+        const connected = pad !== null;
+        const next = pad ? mapBrowserGamepad(pad, gamepadMask)
+            : { directions: 0, buttons: 0 };
+        if (connected !== gamepadConnected ||
+            next.directions !== gamepadMask.directions ||
+            next.buttons !== gamepadMask.buttons) {
+            Module._zeliard_gamepad_update(connected ? 1 : 0,
+                next.directions, next.buttons);
+        }
+        gamepadConnected = connected;
+        gamepadMask = next;
+    }
     async function startPlayback() {
         if (started)
             return;
@@ -535,7 +559,11 @@ async function boot() {
         e.preventDefault();
         Module._zeliard_key_up(keycode);
     });
-    const releaseHeldKeys = () => Module._zeliard_release_all_keys();
+    const releaseHeldKeys = () => {
+        Module._zeliard_release_all_keys();
+        gamepadConnected = false;
+        gamepadMask = { directions: 0, buttons: 0 };
+    };
     window.addEventListener('blur', releaseHeldKeys);
     document.addEventListener('visibilitychange', () => {
         if (document.hidden)
@@ -549,6 +577,7 @@ async function boot() {
         tickRemainderMs += dt;
         const tickMs = Math.floor(tickRemainderMs);
         tickRemainderMs -= tickMs;
+        pollGamepad();
         Module._zeliard_tick(tickMs);
         const terminated = Module._zeliard_session_terminated() !== 0;
         if (terminated !== lastTerminated) {
@@ -569,6 +598,11 @@ async function boot() {
             console.log(`[zeliard] saved ${name} (${record.length} bytes)`);
             refreshSaveControls();
             downloadRecord(name, record);
+        }
+        const loadRequestSerial = Module._zeliard_load_request_serial();
+        if (loadRequestSerial !== lastLoadRequestSerial) {
+            lastLoadRequestSerial = loadRequestSerial;
+            openSaveEl.click();
         }
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,

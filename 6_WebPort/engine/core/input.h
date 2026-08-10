@@ -31,11 +31,32 @@ typedef enum {
 
 typedef struct {
     u16 held_keys;
+    u16 gamepad_keys;
 } zel_input_state_t;
+
+enum {
+    ZEL_GAMEPAD_UP = 0x01,
+    ZEL_GAMEPAD_DOWN = 0x02,
+    ZEL_GAMEPAD_LEFT = 0x04,
+    ZEL_GAMEPAD_RIGHT = 0x08,
+};
+
+enum {
+    ZEL_GAMEPAD_A = 0x01,
+    ZEL_GAMEPAD_B = 0x02,
+    ZEL_GAMEPAD_X = 0x04,
+    ZEL_GAMEPAD_START = 0x08,
+    ZEL_GAMEPAD_BACK = 0x10,
+    ZEL_GAMEPAD_Y = 0x20,
+    ZEL_GAMEPAD_LB = 0x40,
+    ZEL_GAMEPAD_RB = 0x80,
+};
 
 void zel_input_init(zel_input_state_t *state, u8 *game_seg);
 u32 zel_input_key_down(zel_input_state_t *state, u8 *game_seg, int keycode);
 void zel_input_key_up(zel_input_state_t *state, u8 *game_seg, int keycode);
+u32 zel_input_gamepad_update(zel_input_state_t *state, u8 *game_seg,
+                             u8 directions, u8 buttons);
 u32 zel_input_advance_pit(zel_input_state_t *state, u8 *game_seg, u32 ticks);
 void zel_input_release_all(zel_input_state_t *state, u8 *game_seg,
                            int clear_actions);

@@ -11,6 +11,7 @@ void zeliard_key(int keycode);
 void zeliard_key_down(int keycode);
 void zeliard_key_up(int keycode);
 void zeliard_text_key(int ascii);
+void zeliard_gamepad_update(int connected, int directions, int buttons);
 int zeliard_scene(void);
 int zeliard_test_town_dialog_active(void);
 int zeliard_test_fight_returns_to_town(int operation, int selector,
@@ -289,6 +290,53 @@ int main(void) {
            restore_opened, restore_ignored_other_keys, restore_declined,
            restore_confirmed,
            (unsigned)zeliard_load_request_serial());
+
+    zeliard_gamepad_update(1, 0, 0x08); /* Start: pause */
+    const int pad_pause_opened = zeliard_paused();
+    zeliard_gamepad_update(1, 0, 0);
+    zeliard_gamepad_update(1, 0, 0x08); /* Start: resume */
+    zeliard_tick(25);
+    const int pad_pause_closed = !zeliard_paused();
+    zeliard_gamepad_update(1, 0, 0);
+
+    zeliard_gamepad_update(1, 0, 0x20); /* Y: F9 */
+    zeliard_gamepad_update(1, 0, 0);
+    const int pad_speed_opened = zeliard_speed_menu_active();
+    zeliard_gamepad_update(1, 0x08, 0); /* Right: one faster */
+    const int pad_speed_selected = zeliard_game_speed_digit() == 4;
+    zeliard_gamepad_update(1, 0, 0);
+    zeliard_gamepad_update(1, 0, 0x01); /* A: dismiss */
+    zeliard_tick(25);
+    zeliard_gamepad_update(1, 0, 0);
+    const int pad_speed_closed = !zeliard_speed_menu_active();
+    zeliard_text_key('5'); /* ignored outside menu; document expected default */
+    zeliard_test_game_set_u8(0xFF33, 5);
+
+    const u32 pad_load_before = zeliard_load_request_serial();
+    zeliard_gamepad_update(1, 0, 0x10); /* Back: F7 */
+    zeliard_gamepad_update(1, 0, 0);
+    const int pad_restore_opened = zeliard_restore_menu_active();
+    zeliard_gamepad_update(1, 0, 0x02); /* B: No */
+    zeliard_gamepad_update(1, 0, 0);
+    const int pad_restore_no = !zeliard_restore_menu_active() &&
+        zeliard_load_request_serial() == pad_load_before;
+    zeliard_gamepad_update(1, 0, 0x10);
+    zeliard_gamepad_update(1, 0, 0);
+    zeliard_gamepad_update(1, 0, 0x01); /* A: Yes */
+    zeliard_gamepad_update(1, 0, 0);
+    const int pad_restore_yes = !zeliard_restore_menu_active() &&
+        zeliard_load_request_serial() == pad_load_before + 1;
+    zeliard_gamepad_update(0, 0, 0);
+    const int pad_controls = pad_pause_opened && pad_pause_closed &&
+        pad_speed_opened && pad_speed_selected && pad_speed_closed &&
+        pad_restore_opened && pad_restore_no && pad_restore_yes;
+    ok &= pad_controls;
+    printf("main_controls:gamepad_modal_controls: %s pause=%d/%d "
+           "speed=%d/%d/%d restore=%d/%d/%d\n",
+           pad_controls ? "PASS" : "FAIL", pad_pause_opened,
+           pad_pause_closed, pad_speed_opened, pad_speed_selected,
+           pad_speed_closed, pad_restore_opened, pad_restore_no,
+           pad_restore_yes);
     zeliard_key_down(39);
     zeliard_tick(90);
     zeliard_key_up(39);

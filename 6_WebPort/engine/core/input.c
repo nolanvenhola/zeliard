@@ -65,6 +65,18 @@ static const key_binding_t *find_binding(int keycode) {
     return NULL;
 }
 
+static u32 binding_action(const key_binding_t *binding) {
+    if (binding->keycode == ZEL_INPUT_KEY_ENTER)
+        return ZEL_INPUT_ACTION_ENTER;
+    if (binding->keycode == ZEL_INPUT_KEY_ESCAPE)
+        return ZEL_INPUT_ACTION_ESCAPE;
+    if (binding->keycode == ZEL_INPUT_KEY_F7)
+        return ZEL_INPUT_ACTION_RESTORE_MENU;
+    if (binding->keycode == ZEL_INPUT_KEY_F9)
+        return ZEL_INPUT_ACTION_SPEED_MENU;
+    return ZEL_INPUT_ACTION_NONE;
+}
+
 static void merge_direction(u8 *mem) {
     u8 value = (u8)(mem[STICK_INPUT_DIR_LO] | mem[STICK_INPUT_BTN_LO]);
     value |= (u8)(mem[STICK_INPUT_DIR_HI] & 0x0F);
@@ -123,16 +135,10 @@ u32 zel_input_key_down(zel_input_state_t *state, u8 *mem, int keycode) {
     if (!state || !mem || !binding || (state->held_keys & binding->held_bit))
         return ZEL_INPUT_ACTION_NONE;
     state->held_keys |= binding->held_bit;
+    if (state->gamepad_keys & binding->held_bit)
+        return ZEL_INPUT_ACTION_NONE;
     apply_binding(mem, binding, 1);
-    if (keycode == ZEL_INPUT_KEY_ENTER)
-        return ZEL_INPUT_ACTION_ENTER;
-    if (keycode == ZEL_INPUT_KEY_ESCAPE)
-        return ZEL_INPUT_ACTION_ESCAPE;
-    if (keycode == ZEL_INPUT_KEY_F7)
-        return ZEL_INPUT_ACTION_RESTORE_MENU;
-    if (keycode == ZEL_INPUT_KEY_F9)
-        return ZEL_INPUT_ACTION_SPEED_MENU;
-    return ZEL_INPUT_ACTION_NONE;
+    return binding_action(binding);
 }
 
 void zel_input_key_up(zel_input_state_t *state, u8 *mem, int keycode) {
@@ -140,7 +146,50 @@ void zel_input_key_up(zel_input_state_t *state, u8 *mem, int keycode) {
     if (!state || !mem || !binding || !(state->held_keys & binding->held_bit))
         return;
     state->held_keys &= (u16)~binding->held_bit;
+    if (state->gamepad_keys & binding->held_bit)
+        return;
     apply_binding(mem, binding, 0);
+}
+
+u32 zel_input_gamepad_update(zel_input_state_t *state, u8 *mem,
+                             u8 directions, u8 buttons) {
+    u16 desired = 0;
+    u32 actions = ZEL_INPUT_ACTION_NONE;
+    if (!state || !mem)
+        return actions;
+    directions &= 0x0F;
+    if (directions & ZEL_GAMEPAD_RIGHT) desired |= 1u << 0;
+    if (directions & ZEL_GAMEPAD_LEFT)  desired |= 1u << 1;
+    if (directions & ZEL_GAMEPAD_DOWN)  desired |= 1u << 2;
+    if (directions & ZEL_GAMEPAD_UP)    desired |= 1u << 3;
+    if (buttons & ZEL_GAMEPAD_A)        desired |= 1u << 4;
+    if (buttons & ZEL_GAMEPAD_B)        desired |= 1u << 9;
+    if (buttons & ZEL_GAMEPAD_X)        desired |= 1u << 5;
+    if (buttons & ZEL_GAMEPAD_START)    desired |= 1u << 6;
+    if (buttons & ZEL_GAMEPAD_BACK)     desired |= 1u << 11;
+    if (buttons & ZEL_GAMEPAD_Y)        desired |= 1u << 10;
+    if (buttons & ZEL_GAMEPAD_LB)       desired |= 1u << 7;
+    if (buttons & ZEL_GAMEPAD_RB)       desired |= 1u << 8;
+
+    for (u32 i = 0; i < sizeof(KEY_BINDINGS) / sizeof(KEY_BINDINGS[0]); ++i) {
+        const key_binding_t *binding = &KEY_BINDINGS[i];
+        const int was_down = (state->gamepad_keys & binding->held_bit) != 0;
+        const int now_down = (desired & binding->held_bit) != 0;
+        if (was_down == now_down)
+            continue;
+        if (now_down) {
+            state->gamepad_keys |= binding->held_bit;
+            if (!(state->held_keys & binding->held_bit)) {
+                apply_binding(mem, binding, 1);
+                actions |= binding_action(binding);
+            }
+        } else {
+            state->gamepad_keys &= (u16)~binding->held_bit;
+            if (!(state->held_keys & binding->held_bit))
+                apply_binding(mem, binding, 0);
+        }
+    }
+    return actions;
 }
 
 static u32 sample_special_keys(u8 *mem) {
@@ -215,9 +264,10 @@ void zel_input_release_all(zel_input_state_t *state, u8 *mem,
     if (!state || !mem)
         return;
     for (u32 i = 0; i < sizeof(KEY_BINDINGS) / sizeof(KEY_BINDINGS[0]); ++i)
-        if (state->held_keys & KEY_BINDINGS[i].held_bit)
+        if ((state->held_keys | state->gamepad_keys) & KEY_BINDINGS[i].held_bit)
             apply_binding(mem, &KEY_BINDINGS[i], 0);
     state->held_keys = 0;
+    state->gamepad_keys = 0;
     if (clear_actions) {
         mem[GVAR_SPACEBAR_STATE] = 0;
         mem[GVAR_STATE_B] = 0;
