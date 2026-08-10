@@ -1808,12 +1808,49 @@ int main(void) {
            sizeof(llama_vga));
     const zeliard_town_runtime_t llama_runtime_snapshot = *llama;
 
+    /* LLMP places the frightened resident at x220, two columns before the
+     * Paguro door at x222.  Merely approaching from the left must begin her
+     * warning dialog; the player does not press Space or Up to trigger it.
+     * This is the release flow that introduces the creature in the hut. */
+    llama_segments[0][0x0080] = 201;
+    llama_segments[0][0x0081] = 0;
+    llama_segments[0][0x0083] = 13;
+    llama_segments[0][0x0084] = 0;
+    u16 llama_tile = (u16)(0xC017 + 201 * 8);
+    llama_segments[0][0xFF2A] = (u8)llama_tile;
+    llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
+    const int llama_warning = zeliard_town_advance_pit(
+        llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 8);
+    const unsigned long long llama_warning_frame =
+        fnv1a64(llama_vga, sizeof(llama_vga));
+    ok &= llama_warning > 0 && llama->dialog.active &&
+          llama->facing_npc_position == 220 &&
+          llama->dialog.npc_offset == 0xD0CB &&
+          llama->dialog.pending_sound_cue == 0x1E &&
+          !llama->cavern_exit_requested;
+
+    unsigned llama_warning_steps = 0;
+    while (llama->dialog.active && llama_warning_steps++ < 2000) {
+        if (llama->dialog.scroll_active ||
+            llama->dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &llama->dialog, llama_segments[0], llama_vga,
+                sizeof(llama_vga)) >= 0;
+        } else if (llama->dialog.waiting) {
+            llama_segments[0][0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &llama->dialog, llama_segments[0], llama_segments[3],
+                llama_vga, sizeof(llama_vga)) >= 0;
+        }
+    }
+    ok &= !llama->dialog.active && llama_segments[0][0x009A] == 0;
+
     /* Door type 8 uses route record 0: the wrapped start value is authored
      * by 106TOWN's unconditional destination-10h subtraction. */
     llama_segments[0][0x0080] = 252;
     llama_segments[0][0x0081] = 0;
     llama_segments[0][0x0083] = 13;
-    u16 llama_tile = (u16)(0xC017 + 252 * 8);
+    llama_tile = (u16)(0xC017 + 252 * 8);
     llama_segments[0][0xFF2A] = (u8)llama_tile;
     llama_segments[0][0xFF2B] = (u8)(llama_tile >> 8);
     const int llama_route_0 = zeliard_town_advance_pit(
@@ -1925,8 +1962,9 @@ int main(void) {
            llama_story_after[1], llama_story_after[2]);
     printf("town_llama_routes: edge=%d/fff1/0c/00/12 "
            "reverse=%d/0088/3d/ff/12 paguro=%d/000b/03/00/15 "
-           "inn=%d/%d/%d bank=%d/%d/%d\n",
+           "warning=%d/%016llx/%u inn=%d/%d/%d bank=%d/%d/%d\n",
            llama_route_0, llama_caliente_reverse, llama_paguro,
+           llama_warning, llama_warning_frame, llama_warning_steps,
            llama_inn_trigger, llama_inn_fade, ZEL_ROOM_INN,
            llama_bank_trigger, llama_bank_fade, ZEL_ROOM_BANK);
     free(llama);
