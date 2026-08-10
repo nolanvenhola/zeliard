@@ -158,6 +158,15 @@ static int fight_boundary_returns_to_town(u8 operation, u8 selector,
 
 static void sync_fight_music(void) {
     const u8 chunk = zeliard_fight_masm_vm_music_chunk();
+    if (zeliard_fight_masm_vm_ending_active()) {
+        if (chunk == g_fight_music_chunk) return;
+        if (chunk == 39) {
+            if (!zel_audio_play_music(ZEL_MUSIC_ZEND))
+                platform_log("250ENDMO: ending score start failed");
+            g_fight_music_chunk = chunk;
+        }
+        return;
+    }
     const u16 map_width = zeliard_fight_masm_vm_active()
         ? zeliard_fight_masm_vm_peek_u16(0xC002) : 0;
     /* MP21 is the authored transition cavern between Malicia and Peligro.
@@ -848,6 +857,17 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             }
         }
         if (zeliard_fight_masm_vm_active()) {
+            if (zeliard_fight_masm_vm_ending_active()) {
+                const int frames = zeliard_fight_masm_vm_advance(
+                    g_game_segments[0], sizeof(g_game_segments[0]),
+                    g_game_vga, sizeof(g_game_vga), input_ticks,
+                    g_game_segments[0][0xFF17]);
+                if (frames > 0)
+                    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                sync_fight_music();
+                zel_opening_audio_tick(dt_ms);
+                return;
+            }
             if (zeliard_fight_masm_vm_music_chunk() == 95 &&
                 zel_opening_audio_ready_for_transition()) {
                 /* Exact driver's score-complete callback writes FF26h=FFh,
@@ -864,6 +884,17 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 g_game_segments[0], sizeof(g_game_segments[0]),
                 g_game_vga, sizeof(g_game_vga), input_ticks,
                 g_game_segments[0][0xFF17]);
+            if (zeliard_fight_masm_vm_ending_requested()) {
+                g_fight_death_pending = 0;
+                g_fight_death_return_pending = 0;
+                g_fight_death_audio_fade_started = 0;
+                g_fight_music_chunk =
+                    zeliard_fight_masm_vm_music_chunk();
+                if (!zeliard_fight_masm_vm_begin_ending())
+                    platform_log("319MAO2: 250ENDMO overlay handoff failed");
+                zel_opening_audio_tick(dt_ms);
+                return;
+            }
             const u16 hp_after_vm = (u16)(
                 g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));

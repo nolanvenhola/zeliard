@@ -43,6 +43,13 @@ typedef struct {
     u8 exit_scroll_dir;
     u8 exit_player_y;
     u8 music_chunk;
+    u8 ending_requested;
+    u8 ending_mode;
+    u8 ending_finished;
+    u8 ending_at_wait;
+    u8 ending_allow_wait_once;
+    u8 ending_driver_init;
+    u8 ending_driver_ready;
     u8 bootstrap_clock;
     u8 authored_wait_sequence;
     u16 exit_dispatch_slot;
@@ -226,6 +233,59 @@ static const char *asset_for_ref(u8 archive, u8 chunk) {
     return NULL;
 }
 
+static const char *ending_asset_for_ref(u8 archive, u8 chunk) {
+    if (archive == 0) {
+        switch (chunk) {
+            case 0x11: return "himp.grp";
+            case 0x15: return "ne80.grp";
+            case 0x16: return "ne81.grp";
+            case 0x18: return "new1.grp";
+            case 0x19: return "new2.grp";
+            case 0x1C: return "sei.grp";
+            case 0x1D: return "seip.grp";
+            case 0x21: return "waku.grp";
+            case 0x26: return "yuup.grp";
+            case 0x27: return "zend.msd";
+            default: return NULL;
+        }
+    }
+    if (archive == 1) {
+        switch (chunk) {
+            case 0x34: return "en72.grp";
+            case 0x35: return "end4.grp";
+            case 0x36: return "end5.grp";
+            case 0x37: return "end6.grp";
+            case 0x38: return "end7.grp";
+            case 0x39: return "final.grp";
+            default: return NULL;
+        }
+    }
+    return NULL;
+}
+
+static int ending_poll_instruction(const u8 *memory, size_t instruction) {
+    /* Both 250ENDMO and 105GDMCA busy-wait on the shared ISR counters.
+     * Yield at the compare/test instruction itself, independent of which
+     * scene/driver helper owns the loop. */
+    return (memory[instruction] == 0x2E &&
+            ((memory[instruction + 1] == 0x80 &&
+              memory[instruction + 2] == 0x3E &&
+              memory[instruction + 3] == 0x1A &&
+              memory[instruction + 4] == 0xFF) ||
+             (memory[instruction + 1] == 0x3A &&
+              memory[instruction + 2] == 0x06 &&
+              memory[instruction + 3] == 0x1A &&
+              memory[instruction + 4] == 0xFF))) ||
+           (memory[instruction] == 0x3B &&
+            memory[instruction + 1] == 0x06 &&
+            memory[instruction + 2] == 0x50 &&
+            memory[instruction + 3] == 0xFF) ||
+           (memory[instruction] == 0xF6 &&
+            memory[instruction + 1] == 0x06 &&
+            memory[instruction + 2] == 0x21 &&
+            memory[instruction + 3] == 0xFF);
+}
+
 static const char *map_for_selector(u8 selector) {
     switch (selector) {
         case 0x00: return "mp10.mdt";
@@ -303,6 +363,10 @@ static int fight_step(void *context, u16 cs, u16 ip) {
     if (cs == FIGHT_SEG) {
         state->trace[state->trace_at++ & 31u] = ip;
         ++state->instructions;
+        if (state->ending_driver_init && ip == 0x0502) {
+            state->ending_driver_ready = 1;
+            return 1;
+        }
         const size_t instruction = linear(cs, ip);
         /* All 200FIGHT sound posts use `mov byte ptr [FF75h],imm8`.
          * Observe execution of that instruction, not the duration for which
@@ -313,6 +377,13 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             memory[instruction + 2] == 0x75 &&
             memory[instruction + 3] == 0xFF)
             post_sound_cue(state, memory[instruction + 4]);
+        if (!state->ending_mode && memory[instruction] == 0xC6 &&
+            memory[instruction + 1] == 0x06 &&
+            memory[instruction + 2] == 0x30 &&
+            memory[instruction + 3] == 0xFF &&
+            memory[instruction + 4] == 0xFF &&
+            memory[linear(FIGHT_SEG, 0x00C4)] == 0x1E)
+            state->ending_requested = 1;
         if (state->bootstrap_clock &&
             (state->instructions & 0x7FFu) == 0) {
             ++memory[linear(FIGHT_SEG, 0xFF1A)];
@@ -321,7 +392,24 @@ static int fight_step(void *context, u16 cs, u16 ip) {
                             ((u16)memory[linear(FIGHT_SEG, 0xFF1C)] << 8)) + 1u);
         }
     }
-    if (cs == FIGHT_SEG && ip == 0x629C) {
+    if (cs == FIGHT_SEG && state->ending_mode) {
+        const size_t instruction = linear(cs, ip);
+        if (ip == 0x66C8 || ip == 0x66CB || ip == 0x66CC) {
+            state->ending_finished = 1;
+            state->ending_at_wait = 1;
+            return 1;
+        }
+        if (ending_poll_instruction(memory, instruction)) {
+            if (state->ending_allow_wait_once) {
+                state->ending_allow_wait_once = 0;
+                state->ending_at_wait = 0;
+            } else {
+                state->ending_at_wait = 1;
+                return 1;
+            }
+        }
+    }
+    if (cs == FIGHT_SEG && !state->ending_mode && ip == 0x629C) {
         state->authored_wait_sequence = 0;
         if (state->allow_frame_once) {
             state->allow_frame_once = 0;
@@ -351,7 +439,9 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         const u8 selector = (u8)(registers[ZEL_TINY86_AX] >> 8);
         const u8 archive = memory[ref];
         const u8 chunk = memory[ref + 1];
-        const char *asset = operation == 1 ? map_for_selector(selector)
+        const char *asset = state->ending_mode
+                          ? ending_asset_for_ref(archive, chunk)
+                          : operation == 1 ? map_for_selector(selector)
                           : operation == 4 ? "sword.grp:selected-bank"
                                            : asset_for_ref(archive, chunk);
         int loaded = 0;
@@ -559,6 +649,29 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
     memcpy(memory + fight + 0xFF16, game_seg + 0xFF16, 0x14);
     g_fight_vm.direction = direction;
 
+    if (g_fight_vm.ending_mode) {
+        memory[fight + 0xFF1A] =
+            (u8)(memory[fight + 0xFF1A] + (u8)pit_ticks);
+        write_u16(memory, fight + 0xFF50,
+                  (u16)(read_u16(memory, fight + 0xFF50) + (u16)pit_ticks));
+        if (game_seg[0xFF16]) {
+            memory[fight + 0xFF1D] = 0xFF;
+            memory[fight + 0xFF21] = 0xFF;
+        }
+        g_fight_vm.ending_at_wait = 0;
+        g_fight_vm.ending_allow_wait_once = 1;
+        for (unsigned pass = 0; pass < 256 && g_fight_vm.active &&
+                !g_fight_vm.ending_at_wait; ++pass) {
+            if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) ==
+                    ZEL_TINY86_HALTED) {
+                g_fight_vm.active = 0;
+                break;
+            }
+        }
+        sync_host_state(game_seg, vga);
+        return 1;
+    }
+
     g_fight_vm.frame_pit_ticks += pit_ticks;
 
     /* stick.asm's timer ISR advances these counters at 1.193182 MHz / 13B1h
@@ -641,6 +754,73 @@ u8 zeliard_fight_masm_vm_exit_player_y(void) {
 }
 u8 zeliard_fight_masm_vm_music_chunk(void) {
     return g_fight_vm.music_chunk;
+}
+int zeliard_fight_masm_vm_ending_requested(void) {
+    return g_fight_vm.ending_requested;
+}
+int zeliard_fight_masm_vm_begin_ending(void) {
+    if (!g_fight_vm.active || !g_fight_vm.ending_requested) return 0;
+    u8 *memory = zel_fight86_memory();
+    const size_t fight = linear(FIGHT_SEG, 0);
+    /* The release handoff replaces GFMCGA with the same GDMCGA image
+     * driver used by OPDMO before loading 250ENDMO at 6000h.  Keeping the
+     * existing game and VGA segments preserves Jashiin's final frame while
+     * switching only the two authored overlays. */
+    if (!load_payload_to(memory, fight + 0x3000, "gdmcga.bin"))
+        return 0;
+    u16 *registers = zel_fight86_registers();
+    registers[ZEL_TINY86_AX] = 0;
+    registers[ZEL_TINY86_CS] = FIGHT_SEG;
+    registers[ZEL_TINY86_DS] = FIGHT_SEG;
+    registers[ZEL_TINY86_ES] = FIGHT_SEG;
+    registers[ZEL_TINY86_SS] = FIGHT_SEG;
+    registers[ZEL_TINY86_SP] = 0x1FFE;
+    write_u16(memory, fight + 0x1FFE, 0x0502);
+    g_fight_vm.ending_driver_init = 1;
+    g_fight_vm.ending_driver_ready = 0;
+    zel_fight86_set_ip(read_u16(memory, fight + 0x3000));
+    zel_fight86_set_flags(0x0202);
+    for (unsigned pass = 0; pass < 200 && g_fight_vm.active &&
+            !g_fight_vm.ending_driver_ready; ++pass)
+        if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED)
+            g_fight_vm.active = 0;
+    g_fight_vm.ending_driver_init = 0;
+    if (!g_fight_vm.active || !g_fight_vm.ending_driver_ready ||
+        !load_payload_to(memory, fight + FIGHT_LOAD_BASE, "endmo.bin"))
+        return 0;
+    registers[ZEL_TINY86_AX] = 0;
+    registers[ZEL_TINY86_CS] = FIGHT_SEG;
+    registers[ZEL_TINY86_DS] = FIGHT_SEG;
+    registers[ZEL_TINY86_ES] = FIGHT_SEG;
+    registers[ZEL_TINY86_SS] = FIGHT_SEG;
+    registers[ZEL_TINY86_SP] = 0x2000;
+    zel_fight86_set_ip(FIGHT_LOAD_BASE);
+    zel_fight86_set_flags(0x0202);
+    g_fight_vm.ending_requested = 0;
+    g_fight_vm.ending_mode = 1;
+    g_fight_vm.ending_finished = 0;
+    g_fight_vm.ending_at_wait = 0;
+    g_fight_vm.ending_allow_wait_once = 1;
+    g_fight_vm.at_frame = 0;
+    g_fight_vm.music_chunk = 0xFF;
+    for (unsigned pass = 0; pass < 2000 && g_fight_vm.active &&
+            !g_fight_vm.ending_at_wait; ++pass) {
+        if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED) {
+            g_fight_vm.active = 0;
+            break;
+        }
+    }
+    return g_fight_vm.active && g_fight_vm.ending_at_wait;
+}
+int zeliard_fight_masm_vm_ending_active(void) {
+    return g_fight_vm.active && g_fight_vm.ending_mode;
+}
+int zeliard_fight_masm_vm_ending_finished(void) {
+    return g_fight_vm.ending_finished;
+}
+u8 zeliard_fight_masm_vm_ending_scene(void) {
+    return g_fight_vm.active && g_fight_vm.ending_mode
+        ? zel_fight86_memory()[linear(FIGHT_SEG, 0x696C)] : 0;
 }
 u8 zeliard_fight_masm_vm_take_sound_cue(void) {
     if (!g_fight_vm.sound_cue_count) return 0;

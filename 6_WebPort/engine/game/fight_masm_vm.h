@@ -29,6 +29,11 @@ u16 zeliard_fight_masm_vm_exit_scroll_count(void);
 u8 zeliard_fight_masm_vm_exit_scroll_dir(void);
 u8 zeliard_fight_masm_vm_exit_player_y(void);
 u8 zeliard_fight_masm_vm_music_chunk(void);
+int zeliard_fight_masm_vm_ending_requested(void);
+int zeliard_fight_masm_vm_begin_ending(void);
+int zeliard_fight_masm_vm_ending_active(void);
+int zeliard_fight_masm_vm_ending_finished(void);
+u8 zeliard_fight_masm_vm_ending_scene(void);
 /* One entry per executed 200FIGHT write to gvar_volume_b (FF75h). */
 u8 zeliard_fight_masm_vm_take_sound_cue(void);
 int zeliard_fight_masm_vm_peek_u8(u16 offset);
