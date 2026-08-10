@@ -85,7 +85,7 @@ Sword base damage values:
 | Spirit Sword | 4 | ~9.2 |
 | Knight's Sword | 8 | ~18.4 |
 | Illumination Sword | 32 | ~73.6 |
-| Enchantment Sword | 255 | ~586.5 |
+| Enchantment Sword | 127 (`0x7F`; normal attack doubles to 254) | Saturates at 255 |
 
 **Level Damage Bonus**:
 - Applies every 2 levels (rounds down if odd)
@@ -101,7 +101,7 @@ Sword base damage values:
 - Level 4 Wise Man's Sword: 2 + 2 = 4 damage
   (Same as Level 2 Spirit Sword!)
 - Level 255 Training Sword: 1 + 127 = 128 damage
-  (Half the damage of Level 0 Enchantment Sword!)
+  (The Enchantment Sword's release table value is 127 before attack-state processing.)
 
 **Sabre Oil Effect**:
 - Increases sword damage by approximately **230%**

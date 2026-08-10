@@ -39,7 +39,7 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Prices**: Dorado (69800), Llama (34800), Pureza (32800), Esco (29800)
 
 ### Enchantment Sword (Sword of the Fairy Flame)
-- **Base Damage**: 255 (+ level/2)
+- **Base Table Value**: 127 (`0x7F` in release `200FIGHT`; the normal attack state doubles this to 254 before bonuses, saturating at 255)
 - **Description**: **LEGENDARY** - strongest weapon in game
 - **Location**: Hidden in Cavern of Arrugia (Gold Caverns)
 - **Requires**: Lion Head's Key (found in Fruit Gardens, door in Gold Caverns)
