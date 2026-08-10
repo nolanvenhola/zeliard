@@ -351,7 +351,7 @@ def main() -> None:
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open('w', newline='', encoding='utf8') as fp:
-        w = csv.DictWriter(fp, fieldnames=cols)
+        w = csv.DictWriter(fp, fieldnames=cols, lineterminator='\n')
         w.writeheader()
         for r in rows:
             w.writerow({k: r.get(k, '') for k in cols})
