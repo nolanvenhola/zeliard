@@ -226,8 +226,11 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
   - Given to woman in Pureza by Spirits
   - Stolen by Jashiin's underlings
   - Hidden in Fruit Gardens
-  - Opens door in Gold Caverns
-  - Unlocks: Cavern of Arrugia (Feruza Shoes + Enchantment Sword)
+  - Release location: hidden stone-slab object in Absor at `x=150,y=7`; ownership is USR byte `0x99`
+  - Opens Tesoro's door to the Cavern of Arrugia
+  - Use decrements `0x99` once and sets persistent byte `0x2B` bit `0x10`
+  - The open door can be revisited without another key; Arrugia's reverse door is always free
+  - Unlocks access to Feruza Shoes and the Enchantment Sword
 
 ### Tears of Esmesanti (Crystals)
 - **Small Tears** (x8): Obtained from defeating 8 main bosses

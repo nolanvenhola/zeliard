@@ -369,6 +369,7 @@ int main(void) {
     record[0x8D] = 7;          /* experience level */
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
+    record[0x99] = 1;          /* Lion Head's Key */
     record[0x9D] = 3;          /* selected spell */
     record[0xAB] = 24;         /* Espada charge */
     record[0xAD] = 8;          /* Fuego charge */
@@ -391,6 +392,7 @@ int main(void) {
         zeliard_test_game_u8(0x8D) == 7 &&
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
+        zeliard_test_game_u8(0x99) == 1 &&
          zeliard_test_game_u8(0x9D) == 3 &&
          zeliard_test_game_u8(0xBD) == 0xFF &&
          zeliard_test_game_u8(0xC4) == 0x81 &&
@@ -503,6 +505,13 @@ int main(void) {
            zeliard_music_track());
 
     ok &= zeliard_test_begin_malicia_combat();
+    const int lion_key_entered_cavern =
+        zeliard_test_game_u8(0x99) == 1 &&
+        zeliard_test_fight_u8(0x99) == 1;
+    ok &= lion_key_entered_cavern;
+    printf("main_controls:lion_key_cavern_handoff: %s game=%u fight=%u\n",
+           lion_key_entered_cavern ? "PASS" : "FAIL",
+           zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99));
     unsigned malicia_cue_counts[256] = {0};
     for (unsigned settle = 0; settle < 5; ++settle) {
         zeliard_tick(16);
@@ -710,6 +719,7 @@ int main(void) {
         zeliard_town_area() == 1 && zeliard_room_kind() == 2 &&
         death_sage_entry_ip == 0xA006 &&
         zeliard_test_game_u8(0x9F) == death_saved_frame_scratch &&
+        zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_game_u8(0xC4) == 0x81 &&
         zeliard_test_game_u8(0xC5) == 0x81 &&
         zeliard_test_game_u16(0x90) == zeliard_test_game_u16(0xB2);

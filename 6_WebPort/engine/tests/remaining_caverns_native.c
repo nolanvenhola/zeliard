@@ -162,6 +162,112 @@ static int run_reaccion_connector_case(void) {
     return ok;
 }
 
+static int run_lion_key_probe(void) {
+    static u8 game[0x10000], vga[0x10000];
+    prepare_player(game, 0x17);
+    game[0x80] = 147 - 16;
+    game[0x82] = (4 - 9) & 0x3F;
+    game[0x92] = 1;
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    unsigned frames = 0;
+    while (ok && frames < 20 && !game[0x99]) {
+        game[0xFF16] = 1;
+        ok &= advance_frame(game, vga, 0);
+        ++frames;
+    }
+    u8 cue = 0;
+    for (u8 next; (next = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
+        cue = next;
+    const unsigned long long frame = fnv1a64(vga, 64000);
+    const int found = ok && frames == 1 && game[0x99] == 1 &&
+        (game[0x42] & 0x08) && cue == 0x11 &&
+        frame == 0xD2A4B730E2894357ULL;
+    printf("lion_key_acquisition: %s frames=%u key=%u state=%02x "
+           "cue=%02x frame=%016llx\n", found ? "PASS" : "FAIL", frames,
+           game[0x99], game[0x42], cue, frame);
+    zeliard_fight_masm_vm_stop();
+    return found;
+}
+
+static void prepare_route_player(u8 *game, u8 selector, u16 x, u8 y) {
+    prepare_player(game, selector);
+    game[0x80] = (u8)(x - 16u);
+    game[0x81] = (u8)((x - 16u) >> 8);
+    game[0x82] = (u8)((y - 9u) & 0x3Fu);
+    game[0xC3] = 0xFF;
+}
+
+static int run_lion_key_routes(void) {
+    static u8 game[0x10000], vga[0x10000];
+    prepare_route_player(game, 14, 31, 5);
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    ok &= advance_frame(game, vga, 1);
+    const u16 locked_width = zeliard_fight_masm_vm_peek_u16(0xC002);
+    const unsigned long long locked_frame = fnv1a64(vga, 64000);
+    const int locked = zeliard_fight_masm_vm_active() &&
+        locked_width == 320 && game[0x99] == 0 && !(game[0x2B] & 0x10);
+    zeliard_fight_masm_vm_stop();
+
+    prepare_route_player(game, 14, 31, 5);
+    game[0x99] = 1;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    ok &= advance_frame(game, vga, 1);
+    const unsigned long long opened_frame = fnv1a64(vga, 64000);
+    const int unlocked = zeliard_fight_masm_vm_active() &&
+        zeliard_fight_masm_vm_peek_u16(0xC002) == 320 &&
+        game[0x99] == 0 && (game[0x2B] & 0x10);
+    ok &= advance_frame(game, vga, 1);
+    const unsigned long long entered_frame = fnv1a64(vga, 64000);
+    const int entered = zeliard_fight_masm_vm_active() &&
+        zeliard_fight_masm_vm_peek_u16(0xC002) == 73 &&
+        game[0x99] == 0 && (game[0x2B] & 0x10);
+    zeliard_fight_masm_vm_stop();
+
+    prepare_route_player(game, 14, 31, 5);
+    game[0x2B] = 0x10;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    ok &= advance_frame(game, vga, 1);
+    const unsigned long long revisit_frame = fnv1a64(vga, 64000);
+    const int revisit = zeliard_fight_masm_vm_active() &&
+        zeliard_fight_masm_vm_peek_u16(0xC002) == 73 &&
+        game[0x99] == 0 && game[0x2B] == 0x10;
+    zeliard_fight_masm_vm_stop();
+
+    prepare_route_player(game, 16, 62, 13);
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    ok &= advance_frame(game, vga, 1);
+    const int free_return = zeliard_fight_masm_vm_active() &&
+        zeliard_fight_masm_vm_peek_u16(0xC002) == 320 &&
+        game[0x99] == 0;
+    zeliard_fight_masm_vm_stop();
+
+    const int frames_match =
+        locked_frame == 0xDF17A50269DE13BCULL &&
+        opened_frame == 0x9A42F282121D01CFULL &&
+        entered_frame == 0x50FE5808AC150C69ULL &&
+        revisit_frame == entered_frame;
+
+    printf("lion_key_routes: %s locked=%d/%u unlock=%d enter=%d "
+           "revisit=%d return=%d frames=%016llx/%016llx/%016llx/%016llx\n",
+           locked && unlocked && entered && revisit && free_return &&
+           frames_match ?
+           "PASS" : "FAIL", locked, locked_width, unlocked, entered,
+           revisit, free_return, locked_frame, opened_frame, entered_frame,
+           revisit_frame);
+    return ok && locked && unlocked && entered && revisit && free_return &&
+        frames_match;
+}
+
 static int run_alguien_case(void) {
     static u8 game[0x10000], vga[0x10000];
     prepare_player(game, 0x18);
@@ -293,8 +399,11 @@ int main(void) {
     ok &= run_alguien_case();
     ok &= run_jashiin_case();
     ok &= run_reaccion_connector_case();
+    ok &= run_lion_key_probe();
+    ok &= run_lion_key_routes();
     ok &= run_persistence_case("Reaccion", 0x13, 9, 0x35, 0x10);
     ok &= run_persistence_case("Absor", 0x17, 24, 0x42, 0x10);
+    ok &= run_persistence_case("Lion key", 0x17, 32, 0x42, 0x08);
     ok &= run_persistence_case("Milagro", 0x18, 3, 0x43, 0x20);
     ok &= run_persistence_case("Desleal", 0x19, 3, 0x44, 0x08);
     ok &= run_persistence_case("Final", 0x1B, 0, 0x45, 0x10);

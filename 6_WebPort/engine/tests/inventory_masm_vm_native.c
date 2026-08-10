@@ -70,6 +70,25 @@ int main(void) {
 
     zeliard_inventory_masm_vm_stop();
 
+    /* Lion Head's Key is the distinct 0099h special-key count.  It draws
+     * in the inventory stats panel and remains separate from normal keys. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x98] = 0;
+    game[0x99] = 1;
+    game[0xB2] = 100;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long lion_key_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_lion_key: normal=%u lion=%u frame=%016llx\n",
+           game[0x98], game[0x99], lion_key_frame);
+    ok &= game[0x98] == 0 && game[0x99] == 1 &&
+        lion_key_frame == 0xC75C5285A14628DFULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* Tier 3 is the Stone Shield.  Its equipped identity and persisted
      * 180/180 strength render through the unmodified 201SELCT/GMMCGA path. */
     memset(game, 0, 0x10000);
