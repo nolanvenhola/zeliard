@@ -1,5 +1,25 @@
 # Gameplay Oracle Coverage
 
+Current status: the MCGA web target has no known un-ticketed parity gaps.
+`3_Assembly/masm/functest/coverage.csv` records evidence without treating every
+chunk-level execution as a direct procedure proof:
+
+| Evidence tier | Procedures | Meaning |
+| --- | ---: | --- |
+| Direct procedure oracle | 59 | Named procedure behavior has fixed MASM inputs/outputs or release-byte assertions. |
+| Exact release-byte VM | 311 | The production runtime executes the original overlay bytes; evidence is chunk/integration scoped unless a direct oracle is also listed. |
+| Integration only | 175 | Native frame/state or browser flow covers the composed behavior, not every internal procedure independently. |
+| Out-of-scope non-MCGA | 377 | EGA/CGA/HGC/TGA-only driver procedures are not part of the MCGA web-port target. |
+
+Browser smoke is tracked independently in the generated `browser_smoke` column.
+It supplements the strongest evidence tier for a procedure; it never promotes an
+integration run to a direct procedure oracle.
+
+The production browser gate `shell/test_continuous_playthrough_browser.mjs`
+adds 48 stateful checkpoints across all towns and cavern selectors, inventory,
+persistent state, death/Sage recovery, Jashiin, and both new-game and
+loaded-record routes into 250ENDMO.
+
 This file tracks which `gameplay_state.c` primitives are backed by MASM
 behavior probes. "Oracle-backed" means there is a MASM-side functest and a
 native C parity case using the same scenario name or a direct manifest mirror.

@@ -56,6 +56,12 @@ jobs:
       - name: Run native parity suite
         run: make -C 6_WebPort/engine test-native
 
+      - name: Verify parity evidence inventory
+        run: |
+          python 3_Assembly/masm/functest/classify.py
+          git diff --exit-code -- 3_Assembly/masm/functest/coverage.csv
+          python 3_Assembly/masm/functest/check_evidence_consistency.py
+
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm
 

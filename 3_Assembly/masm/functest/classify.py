@@ -24,11 +24,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 WEB_TESTS = PROJECT_ROOT / '6_WebPort' / 'tests'
 
 LST_PROC_RE = re.compile(
-    r'^\s*\d+\s+([0-9A-Fa-f]{1,4})\s+.*?\b(\w+)\s+proc\s+(near|far)\b',
+    r'^\s*([0-9A-Fa-f]{1,4})\s+.*?\b(\w+)\s+proc\s+(near|far)\b',
     re.IGNORECASE,
 )
 LST_ENDP_RE = re.compile(
-    r'^\s*\d+\s+([0-9A-Fa-f]{1,4})\s+.*?\b(\w+)\s+endp\b',
+    r'^\s*([0-9A-Fa-f]{1,4})\s+.*?\b(\w+)\s+endp\b',
     re.IGNORECASE,
 )
 
@@ -190,6 +190,29 @@ ORACLE_ROW_OVERRIDES = {
     ('213BANKP', 'bank_main'): 'partial',
 }
 
+# Coverage is intentionally tiered.  A row is only "direct" when a procedure
+# oracle names it.  Loading a release overlay in the production VM is strong
+# executable evidence, but is not mislabeled as a direct procedure proof.
+RELEASE_VM_CHUNKS = {
+    '200FIGHT', '201SELCT', '210KINGP', '211OMOYP', '212ARMRP',
+    '213BANKP', '214CHURP', '215DRUGP', '216INNAP', '217KENJP',
+    '250ENDMO', '300ROKAD', '301EAI1', '302EAI2', '303EAI3',
+    '304EAI4', '305EAI5', '306EAI6', '307EAI7', '308EAI8',
+    '309CRAB', '310TAKO', '311TORI', '312ZELA', '313MEDA',
+    '314LEGA', '315ZEL2', '316DRGN', '317AKMA', '318MAO1',
+    '319MAO2',
+}
+INTEGRATION_CHUNKS = {
+    '100OPDMO', '105GDMCA', '106TOWN', '111GTMCA', '206GFMCA',
+    '207MOLE', '208YMPD', '209CKPD',
+}
+BROWSER_SMOKE_CHUNKS = RELEASE_VM_CHUNKS | INTEGRATION_CHUNKS
+NON_MCGA_CHUNKS = {
+    '101GDEGA', '102GDCGA', '103GDHGC', '104GDTGA',
+    '107GTEGA', '108GTCGA', '109GTHGC', '110GTTGA',
+    '202GFEGA', '203GFCGA', '204GFHGC', '205GFTGA',
+}
+
 
 def load_oracle_proc_labels() -> set[str]:
     labels: set[str] = set()
@@ -215,6 +238,24 @@ def oracle_coverage_for(row: dict, oracle_labels: set[str]) -> str:
     if row['name'] in oracle_labels:
         return 'yes'
     return 'no'
+
+
+def evidence_for(row: dict) -> tuple[str, str, str, str]:
+    direct = row['covered_by_oracle']
+    if direct == 'yes':
+        return ('direct-procedure-oracle', 'procedure',
+                '3_Assembly/masm/functest/INDEX.md', '')
+    if row['chunk'] in RELEASE_VM_CHUNKS:
+        return ('exact-release-byte-vm', 'chunk/integration',
+                '6_WebPort/shell/test_continuous_playthrough_browser.mjs', '')
+    if direct == 'partial' or row['chunk'] in INTEGRATION_CHUNKS:
+        return ('integration-only', 'chunk/integration',
+                '6_WebPort/engine/game/GAMEPLAY_ORACLE_COVERAGE.md', '')
+    if row['chunk'] in NON_MCGA_CHUNKS:
+        return ('out-of-scope-non-mcga', 'target-scope',
+                '6_WebPort/README.md', '')
+    return ('uncovered', 'procedure', '',
+            'https://github.com/nolanvenhola/zeliard/issues/179')
 
 
 def main() -> None:
@@ -266,6 +307,11 @@ def main() -> None:
             row['category'] = cat
             row['skip_reason'] = reason
             row['covered_by_oracle'] = oracle_coverage_for(row, oracle_labels)
+            (row['evidence_tier'], row['evidence_scope'],
+             row['evidence_source'], row['gap_ticket']) = evidence_for(row)
+            row['browser_smoke'] = (
+                'yes' if row['chunk'] in BROWSER_SMOKE_CHUNKS else 'no'
+            )
             rows.append(row)
 
     cols = [
@@ -274,6 +320,8 @@ def main() -> None:
         'int_count', 'port_io', 'mem_writes', 'loops',
         'has_placeholder_name', 'category', 'skip_reason',
         'covered_by_oracle',
+        'evidence_tier', 'evidence_scope', 'browser_smoke',
+        'evidence_source', 'gap_ticket',
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open('w', newline='', encoding='utf8') as fp:
@@ -285,10 +333,12 @@ def main() -> None:
     print(f'Wrote {len(rows)} rows to {OUT}')
     cats = defaultdict(int)
     oracle_counts = defaultdict(int)
+    evidence_counts = defaultdict(int)
     placeholder_by_cat = defaultdict(int)
     for r in rows:
         cats[r['category']] += 1
         oracle_counts[r['covered_by_oracle']] += 1
+        evidence_counts[r['evidence_tier']] += 1
         if r['has_placeholder_name']:
             placeholder_by_cat[r['category']] += 1
     print('Distribution:')
@@ -299,6 +349,9 @@ def main() -> None:
     for status in ('yes', 'partial', 'no'):
         if oracle_counts[status]:
             print(f'  {status}: {oracle_counts[status]:4d}')
+    print('Evidence tiers:')
+    for status in sorted(evidence_counts):
+        print(f'  {status}: {evidence_counts[status]:4d}')
     if no_lst:
         print(f'\nNo LST for {len(no_lst)} asm files (skipped):')
         for n in no_lst[:5]:
