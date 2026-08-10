@@ -79,10 +79,11 @@ jobs:
           git diff --exit-code -- 3_Assembly/masm/functest/coverage.csv
           python 3_Assembly/masm/functest/check_evidence_consistency.py
 
-      - name: Run exact display procedure oracles
+      - name: Run exact procedure oracles
         run: |
           python -m pip install --disable-pip-version-check unicorn==2.1.4
           python 3_Assembly/masm/functest/run.py --ci --filter '*display_procedure_oracle.py'
+          python 3_Assembly/masm/functest/proc_equivalence/test_stick_remaining_procedure_oracle.py
 
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm

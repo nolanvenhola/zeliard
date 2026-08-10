@@ -241,6 +241,18 @@
     },
     {
       "chunk": "stick",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_stick_remaining_procedure_oracle.py",
+      "scope": "procedure/register-flags-memory-port-file-io-dispatch-trace",
+      "procedures": [
+        "poll_joystick_buttons", "decode_joystick_bits",
+        "calibrate_joystick", "calc_joystick_deadzone",
+        "fio_open_savefile_retry", "fio_read_write_block", "fio_close_file",
+        "fio_load_decompressed", "decompress_anchor_loop_a",
+        "decompress_anchor_loop_b", "decompress_anchor_loop_c"
+      ]
+    },
+    {
+      "chunk": "stick",
       "source": "3_Assembly/masm/functest/proc_equivalence/test_stick_overlay_swap_oracle.py",
       "scope": "procedure/register-memory-framebuffer",
       "procedures": [
