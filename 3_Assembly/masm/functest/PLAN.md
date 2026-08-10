@@ -11,10 +11,12 @@ bit-perfect contract is orthogonal to this work.
 
 ---
 
-## 0. Corpus shape (measured 2026-04-29)
+## 0. Corpus shape (remeasured 2026-08-10)
 
-* **888** `proc near` declarations under `working/zelres{1,2,3}/code/*.asm`
-  (the cleaned tree).  Of those:
+* **1,077** named `proc near`/`proc far` declarations under
+  `working/{core,drivers,zelres*/code}/*.asm` (the canonical cleaned tree).
+  Nested Sourcer procedure labels are counted as independently callable
+  release entries. Of those:
   * **88**  start with `game_func_` — the Sourcer-numbered placeholders
     that need identity.
   * **6**   start with `sub_` — Sourcer raw, mostly cleaned up already.
@@ -28,8 +30,8 @@ bit-perfect contract is orthogonal to this work.
 * **2** speculative bytes with thin evidence: `ply_accel`, `stat_X88_hi/lo`.
 * **1** single-site placeholder: `state_byte_C017`.
 
-When this plan refers to "the corpus", it means the 888 procs in
-`working/zelres{1,2,3}/code/`.
+When this plan refers to "the corpus", it means the 1,077 canonical procedures
+in core, base drivers, and all three resource overlays.
 
 ---
 
@@ -75,7 +77,8 @@ columns.
 Tunables (`--max-size`, `--call-threshold`) live in the classifier
 script so we can re-bin without touching the rules.
 
-Expected distribution (from the 888 procs, eyeballed):
+The checked-in `coverage.csv` records the current measured distribution; the
+table below is the original planning estimate and is retained only as history:
 
 | Category | Approx count | Action |
 |---|---|---|
@@ -160,7 +163,7 @@ test out of the template with the right paths.
 
 ### 2.6 Phase-1 deliverable
 
-* `functest/coverage.csv` exists and lists all 888 procs with category.
+* `functest/coverage.csv` exists and lists all canonical procedures with category.
 * `functest/run.py --ci` runs the existing 5 tests and prints a status
   table.
 * `harness.py` has `fingerprint()` + `format_diffs()` + `snapshot()`.
@@ -168,7 +171,7 @@ test out of the template with the right paths.
   `BIN_PATHS`.
 
 **Cost estimate: ~6–8 hrs.**  Bulk is the classifier extracting
-features cleanly across 888 procs (weird sourcer artefacts + multi-
+features cleanly across the full corpus (weird Sourcer artefacts + multi-
 chunk addr collisions).
 
 ---

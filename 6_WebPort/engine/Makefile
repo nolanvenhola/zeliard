@@ -40,6 +40,8 @@ ENGINE_SRC := \
 	game/fight_masm_vm.c \
 	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
+	game/ckpd_masm_vm.c \
+	third_party/8086tiny/ckpd_8086tiny.c \
 	game/cavern_transition.c \
 	game/gameplay_state.c
 
@@ -76,6 +78,8 @@ TEST_OPENING_SRC := \
 	game/fight_masm_vm.c \
 	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
+	game/ckpd_masm_vm.c \
+	third_party/8086tiny/ckpd_8086tiny.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -112,6 +116,8 @@ TEST_OPENING_TRACE_SRC := \
 	game/fight_masm_vm.c \
 	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
+	game/ckpd_masm_vm.c \
+	third_party/8086tiny/ckpd_8086tiny.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -318,6 +324,8 @@ TEST_MAIN_CONTROLS_SRC := \
 	game/fight_masm_vm.c \
 	third_party/8086tiny/fight_8086tiny.c \
 	game/town_runtime.c \
+	game/ckpd_masm_vm.c \
+	third_party/8086tiny/ckpd_8086tiny.c \
 	game/cavern_transition.c \
 	render/room_mcga.c \
 	render/town_background.c \
@@ -413,6 +421,8 @@ TEST_TOWN_RUNTIME_SRC := \
 	game/room_masm_vm.c \
 	third_party/8086tiny/room_8086tiny.c \
 	game/town_runtime.c \
+	game/ckpd_masm_vm.c \
+	third_party/8086tiny/ckpd_8086tiny.c \
 	render/room_mcga.c \
 	render/town_background.c \
 	render/town_mcga.c \

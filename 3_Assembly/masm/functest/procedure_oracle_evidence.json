@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "description": "Reviewed canonical-procedure mappings to release-byte fixtures. A group is procedure evidence only when its source executes the named entry or records that entry inside an asserted release-byte scenario.",
+  "groups": [
+    {
+      "chunk": "100OPDMO",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_opdemo_opening_sequence.py",
+      "scope": "procedure/register-memory-service-trace",
+      "procedures": [
+        "run_opening_demo_main", "play_sprite_anim_script", "animate_scanline",
+        "interrupt_handler_cascade", "scene_transition_wait",
+        "credits_scroll_display", "wait_story_scene_timer",
+        "story_scene_input_handler", "timer_wait_loop", "run_script_interpreter",
+        "calc_text_width", "animate_scanline_alt", "decode_rle_stream",
+        "decompress_image", "decode_rle_to_es_di", "render_font_row_double",
+        "render_font_row_inverse", "blit_rect_to_sprite_cache", "busy_wait_delay"
+      ]
+    },
+    {
+      "chunk": "100OPDMO",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_opdemo_char_render_proc_oracle.py",
+      "scope": "procedure/register-memory",
+      "procedures": ["char_render_proc"]
+    },
+    {
+      "chunk": "100OPDMO",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_opdemo_palette_lookup_oracle.py",
+      "scope": "procedure/register-memory",
+      "procedures": ["palette_lookup"]
+    },
+    {
+      "chunk": "100OPDMO",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "cycle_palette_colors", "apply_palette_blend", "xor_mask_render",
+        "merge_gfx_planes"
+      ]
+    },
+    {
+      "chunk": "105GDMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mcga_render_entries_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "run_mcga_imgctl_main", "run_render_passes_mcga", "build_pixel_pair_mcga",
+        "copy_pixel_row_mcga", "copy_to_di_mcga", "blit_sprite_mcga",
+        "compute_tile_vram_offset_mcga", "extract_pixel_bits_mcga",
+        "blit_sprite_clipped_mcga", "compute_vram_xy_offset_mcga"
+      ]
+    },
+    {
+      "chunk": "105GDMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mcga_sprite_object_init_oracle.py",
+      "scope": "procedure/register-memory",
+      "procedures": [
+        "init_status_buf_mcga", "clear_status_buf_rows_mcga",
+        "write_status_pattern_202_mcga", "init_status_row_28_mcga",
+        "init_status_row_11_mcga", "seed_status_pattern_mcga",
+        "fill_status_byte_24x_mcga", "index_status_row_47_mcga",
+        "index_status_row_47_alt_mcga"
+      ]
+    },
+    {
+      "chunk": "105GDMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_mcga_palette_dispatch_oracle.py",
+      "scope": "procedure/register-memory-dac",
+      "procedures": [
+        "lookup_palette_entry_mcga", "write_palette_byte_mcga",
+        "pal_process_loop", "rotate_mask_word_mcga"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_first_muralla_frame_oracle.py",
+      "scope": "procedure/register-memory-service-framebuffer-trace",
+      "procedures": [
+        "run_town_main_loop", "set_pose_dirty", "find_npc_at_bx_with_flag40",
+        "tick_npcs_then_pump", "draw_and_pump_input", "run_town_input_frame",
+        "player_process_loop", "render_town_actors", "find_npc_col_slot",
+        "find_npc_dx", "find_npc_dx_inner", "load_pattern_then_play_music",
+        "play_current_music", "player_load_chunk", "load_town_hud_icons",
+        "load_area_assets", "load_town_pattern_chunk", "load_town_door_table",
+        "try_door_transition", "tick_town_frame", "player_copy_buf"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_first_dialog_oracle.py",
+      "scope": "procedure/register-memory-service-framebuffer-trace",
+      "procedures": [
+        "try_take_facing_item", "try_talk_to_facing_npc", "render_dialog_text",
+        "draw_dialog_typewriter", "wait_for_text_continue", "prompt_take_no_take",
+        "math_calc", "advance_dialog_line", "scroll_dlg_text_up",
+        "dlg_draw_prompt_then_clear", "wait_for_spacebar_or_skip",
+        "measure_dialog_word_width", "count_dialog_wrapped_lines"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_live_loop_primitives.py",
+      "scope": "procedure/register-memory-flags",
+      "procedures": [
+        "player_scan_loop", "mark_player_col_in_cursor_buf",
+        "process_town_event_table", "tick_npcs_dispatch",
+        "stamp_npcs_save_tiles", "restore_tiles_under_npcs"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_menu_input_decision.py",
+      "scope": "procedure/register-memory-flags",
+      "procedures": [
+        "poll_menu_input", "animate_cursor_left_10cols",
+        "animate_cursor_right_10cols"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_save_name_cursor.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "enter_savegame_dialog", "prepare_save_name_screen",
+        "update_save_name_cursor", "redraw_save_name_at_cursor"
+      ]
+    },
+    {
+      "chunk": "106TOWN",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_town_numeric_hud_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": ["div_24bit_emit_digit", "div_16bit_emit_digit"]
+    },
+    {
+      "chunk": "111GTMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_town_first_muralla_frame_oracle.py",
+      "scope": "procedure/register-memory-framebuffer-trace",
+      "procedures": [
+        "run_gtmca_main", "run_render_passes_gtmca", "render_tile_if_marked_mca",
+        "render_tile_entry_mca", "mark_tile_FE_mca", "set_cx_alt_mca",
+        "set_cx_6_mca", "save_cs_then_op_mca", "save_state_then_blit_mca",
+        "load_tile_list_then_use_mca", "load_tile_list_ptr_mca",
+        "match_tile_by_dx_mca", "init_4E_loop_mca", "compute_col_decrement_mca",
+        "decode_entity_slot_byte_mca", "render_2_col_iter_mca",
+        "render_3_tile_cols_mca", "init_alt_setup_mca"
+      ]
+    },
+    {
+      "chunk": "111GTMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gtmcga_town_scroll.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "init_text_render_buf_mca", "extract_bits", "render_via_proc_loop2_mca",
+        "step_text_char_loop_mca", "step_text_char_loop2_mca",
+        "step_text_char_loop3_mca"
+      ]
+    },
+    {
+      "chunk": "111GTMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_town_numeric_hud_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "div_24bit_emit_digit_mca", "div_16bit_emit_digit_mca",
+        "div_16bit_emit_digit_alt_mca"
+      ]
+    },
+    {
+      "chunk": "111GTMCA",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gtmcga_encode_tile_block_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": ["pack_2plane_pixel_mca", "simg_scan_loop"]
+    },
+    {
+      "chunk": "game",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_game_load_music_tracks.py",
+      "scope": "procedure/register-memory-service-order",
+      "procedures": ["load_music_tracks"]
+    },
+    {
+      "chunk": "game",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_game_set_vga_palette.py",
+      "scope": "procedure/register-memory-dac",
+      "procedures": ["set_vga_palette"]
+    },
+    {
+      "chunk": "zeliad",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_zeliad_load_order.py",
+      "scope": "procedure/register-memory-service-order",
+      "procedures": [
+        "run_zeliad_main", "flush_keyboard", "load_driver_file",
+        "display_file_error", "ctrl_c_handler"
+      ]
+    },
+    {
+      "chunk": "zeliad",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_zeliad_config_parsers.py",
+      "scope": "procedure/register-memory-flags",
+      "procedures": [
+        "read_config_line", "parse_graphics_mode", "parse_music_driver",
+        "parse_joystick_name", "parse_joystick_enable", "find_colon_in_line"
+      ]
+    },
+    {
+      "chunk": "gmmcga",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_gfx_init_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "run_gmmcga_main", "fill_horizontal_line", "clear_screen", "plot_pixel",
+        "calc_text_width", "fill_vertical_line", "render_text_char",
+        "fill_rectangle"
+      ]
+    },
+    {
+      "chunk": "gmmcga",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_town_numeric_hud_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "init_timestamp", "convert_time_to_bcd", "modulo_divide_bcd",
+        "int_divide_bcd"
+      ]
+    },
+    {
+      "chunk": "gmmcga",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_town_first_frame_hud_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "render_tilemap_large", "decode_bitplane_tile", "render_tilemap_small",
+        "extract_bitplane_pixels", "process_sprite_row",
+        "decode_bitplane_to_pixels", "extract_bitplane_bit"
+      ]
+    },
+    {
+      "chunk": "gmmcga",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_gmmcga_render_text_char_alt_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": ["render_text_char_alt"]
+    },
+    {
+      "chunk": "stick",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_stick_continuous_input_oracle.py",
+      "scope": "procedure/register-memory-flags",
+      "procedures": ["run_stick_main", "dispatch_extended_key"]
+    },
+    {
+      "chunk": "stick",
+      "source": "3_Assembly/masm/functest/proc_equivalence/test_stick_overlay_swap_oracle.py",
+      "scope": "procedure/register-memory-framebuffer",
+      "procedures": [
+        "draw_screen_element", "wait_for_digit_or_esc", "joy_calibrate_request",
+        "enter_pause_menu_and_draw", "draw_pause_menu_box",
+        "restore_pause_menu_bg", "flush_dos_kbd_buffer"
+      ]
+    }
+  ]
+}

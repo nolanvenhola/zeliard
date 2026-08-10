@@ -1009,10 +1009,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int satono_bootstrap = satono_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 2 && zeliard_test_game_u8(0xC4) == 0x82 &&
-        zeliard_test_game_u8(0x80) == 0x4B &&
-        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u8(0x80) == 0x4D &&
+        zeliard_test_game_u8(0x83) == 0x10 &&
         zeliard_music_track() == 5 &&
-        satono_playfield == 0x2B037379CC51F013ULL;
+        satono_playfield == 0xB1E7BBB56077297AULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/satono-save-bootstrap.ppm", g_framebuf);
     ok &= satono_bootstrap;
@@ -1187,10 +1187,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int helada_bootstrap = helada_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 4 && zeliard_test_game_u8(0xC4) == 0x84 &&
-        zeliard_test_game_u8(0x80) == 0x1B &&
-        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u8(0x80) == 0x1D &&
+        zeliard_test_game_u8(0x83) == 0x10 &&
         zeliard_music_track() == 5 &&
-        helada_playfield == 0xBAC31FEAB6F5800EULL;
+        helada_playfield == 0x33725D1F0BED744BULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/helada-save-bootstrap.ppm", g_framebuf);
     ok &= helada_bootstrap;
@@ -1218,10 +1218,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int tumba_bootstrap = tumba_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 5 && zeliard_test_game_u8(0xC4) == 0x85 &&
-        zeliard_test_game_u8(0x80) == 0x6F &&
-        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u8(0x80) == 0x71 &&
+        zeliard_test_game_u8(0x83) == 0x10 &&
         zeliard_music_track() == 6 &&
-        tumba_playfield == 0x9ADCE418F222531CULL;
+        tumba_playfield == 0xABB9D188BA3587BAULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/tumba-save-bootstrap.ppm", g_framebuf);
     ok &= tumba_bootstrap;
@@ -1248,10 +1248,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int dorado_bootstrap = dorado_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 6 && zeliard_test_game_u8(0xC4) == 0x86 &&
-        zeliard_test_game_u8(0x80) == 0x4B &&
-        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u8(0x80) == 0x4D &&
+        zeliard_test_game_u8(0x83) == 0x10 &&
         zeliard_music_track() == 6 &&
-        dorado_playfield == 0x0DE689A1BDEFFA27ULL;
+        dorado_playfield == 0xCF1F7F8B8128A908ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/dorado-save-bootstrap.ppm", g_framebuf);
     ok &= dorado_bootstrap;
@@ -1310,10 +1310,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int pureza_bootstrap = pureza_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 8 && zeliard_test_game_u8(0xC4) == 0x88 &&
-        zeliard_test_game_u8(0x80) == 0x3B &&
-        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u8(0x80) == 0x3D &&
+        zeliard_test_game_u8(0x83) == 0x10 &&
         zeliard_music_track() == 5 &&
-        pureza_playfield == 0x594014704DE81F54ULL;
+        pureza_playfield == 0x13DAF9E648F65FF6ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/pureza-save-bootstrap.ppm", g_framebuf);
     ok &= pureza_bootstrap;

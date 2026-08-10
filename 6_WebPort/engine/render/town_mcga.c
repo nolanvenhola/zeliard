@@ -1311,6 +1311,18 @@ int zeliard_gtmcga_scroll_view_left(u8 *vga, size_t vga_size) {
     return 0;
 }
 
+int zeliard_gtmcga_scroll_view_up(u8 *vga, size_t vga_size) {
+    if (!vga || vga_size < 0x10000) return -1;
+    u16 row_end = 0x128E;
+    for (u8 row = 0; row < 0x10; ++row, row_end = (u16)(row_end + 0x140)) {
+        u16 source = (u16)(row_end - 4), destination = row_end;
+        copy_words_direction(vga, &source, &destination, 0x6E, 1);
+        source = (u16)(source + 0x74);
+        copy_words_direction(vga, &source, &destination, 2, 1);
+    }
+    return 0;
+}
+
 int zeliard_gtmcga_scroll_view_right(u8 *vga, size_t vga_size) {
     if (!vga || vga_size < 0x10000) return -1;
     u16 row_start = 0xB1B0;
@@ -1326,6 +1338,18 @@ int zeliard_gtmcga_scroll_view_right(u8 *vga, size_t vga_size) {
         copy_words_direction(vga, &source, &destination, 0x68, 0);
         source = (u16)(source - 0x80);
         copy_words_direction(vga, &source, &destination, 8, 0);
+    }
+    return 0;
+}
+
+int zeliard_gtmcga_scroll_view_down(u8 *vga, size_t vga_size) {
+    if (!vga || vga_size < 0x10000) return -1;
+    u16 row_start = 0x11B0;
+    for (u8 row = 0; row < 0x10; ++row, row_start = (u16)(row_start + 0x140)) {
+        u16 source = (u16)(row_start + 4), destination = row_start;
+        copy_words_direction(vga, &source, &destination, 0x6E, 0);
+        source = (u16)(source - 0x74);
+        copy_words_direction(vga, &source, &destination, 2, 0);
     }
     return 0;
 }

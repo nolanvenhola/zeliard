@@ -68,8 +68,46 @@ int main(void) {
     }
     ok &= vga_hash == 0x14093BAEA087B3ADULL;
     ok &= scratch_hash == 0x7102E40B2CF1F6DFULL;
+    /* The translated renderers must fail closed at the same asset boundary:
+     * malformed/truncated buffers may not become partial frames or writes
+     * outside the caller-owned scratch/VGA regions. */
+    u8 guard_chunk[0x500] = {0};
+    u8 guard_scratch[0x4D00];
+    u8 guard_vga[0x10000];
+    memset(guard_scratch, 0xA5, sizeof(guard_scratch));
+    memset(guard_vga, 0x5A, sizeof(guard_vga));
+    const unsigned long long scratch_guard_hash =
+        fnv1a64(guard_scratch, sizeof(guard_scratch));
+    const unsigned long long vga_guard_hash =
+        fnv1a64(guard_vga, sizeof(guard_vga));
+    const int malformed_ok =
+        zeliard_mole_render_mcga(NULL, 0, guard_vga,
+                                sizeof(guard_vga)) != 0 &&
+        zeliard_mole_render_mcga(guard_chunk, sizeof(guard_chunk), guard_vga,
+                                sizeof(guard_vga)) != 0 &&
+        zeliard_mole_render_mcga(guard_chunk, sizeof(guard_chunk), guard_vga,
+                                sizeof(guard_vga) - 1) != 0 &&
+        zeliard_ympd_render_mcga(NULL, 0, guard_scratch,
+                                sizeof(guard_scratch), guard_vga,
+                                sizeof(guard_vga)) != 0 &&
+        zeliard_ympd_render_mcga(guard_chunk, 0, guard_scratch,
+                                sizeof(guard_scratch), guard_vga,
+                                sizeof(guard_vga)) != 0 &&
+        zeliard_ympd_render_mcga(guard_chunk, sizeof(guard_chunk),
+                                guard_scratch, sizeof(guard_scratch) - 1,
+                                guard_vga, sizeof(guard_vga)) != 0 &&
+        zeliard_ympd_render_mcga(guard_chunk, sizeof(guard_chunk),
+                                guard_scratch, sizeof(guard_scratch),
+                                guard_vga, sizeof(guard_vga) - 1) != 0 &&
+        fnv1a64(guard_vga, sizeof(guard_vga)) == vga_guard_hash;
+    /* YMPD clears its owned scratch before detecting a truncated stream; the
+     * VGA remains untouched.  Null/size precondition failures touch neither. */
+    ok &= malformed_ok;
     printf("town_background: %s rc=%d mole=%016llx combined=%016llx scratch=%016llx\n",
            ok ? "PASS" : "FAIL", mole_result, mole_hash, vga_hash, scratch_hash);
+    printf("town_background: malformed=%s scratch_seed=%016llx vga_seed=%016llx\n",
+           malformed_ok ? "PASS" : "FAIL", scratch_guard_hash,
+           vga_guard_hash);
     printf("VERDICT: %s: 207MOLE + 208YMPD MCGA frame matches release MASM\n",
            ok ? "PASS" : "FAIL");
     free(vga);

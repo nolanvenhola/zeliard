@@ -1,5 +1,6 @@
 #include "town_runtime.h"
 #include "room_masm_vm.h"
+#include "ckpd_masm_vm.h"
 
 #include "../core/player_state.h"
 #include "../load/fill_buffer.h"
@@ -366,6 +367,9 @@ static int load_pattern_bank(zeliard_game_exec_state_t *game,
     return zeliard_gtmcga_process_pattern_tiles(game_data, 0x10000);
 }
 
+static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
+                       size_t vga_size, u8 direction);
+
 int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
                                    zeliard_game_exec_state_t *game,
                                    u8 *vga, size_t vga_size) {
@@ -470,17 +474,26 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_CLEAR_PLAYFIELD, "106TOWN:gfx_clear_fn", NULL,
             0, 0, 0}))
         return -6;
-    /* 106TOWN:player_load_chunk loads YMPD at (CS+2000h):3300h. */
-    if (!load_raw_chunk("ympd.bin", cs_2000 + TOWN_YMPD_DEST,
+    /* 106TOWN:player_load_chunk uses town_map_side&1 to select the raw
+     * YMPD/CKPD SAR entry at (CS+2000h):3300h. */
+    const int side_1 = (town->map_side & 1u) != 0;
+    const char *side_asset = side_1 ? "ckpd.bin" : "ympd.bin";
+    if (!load_raw_chunk(side_asset, cs_2000 + TOWN_YMPD_DEST,
                         0x10000 - TOWN_YMPD_DEST, &loaded_size) ||
         !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_LOAD_YMPD, "106TOWN:player_load_chunk", "ympd.bin",
+            side_1 ? ZEL_TOWN_EVENT_LOAD_CKPD : ZEL_TOWN_EVENT_LOAD_YMPD,
+            "106TOWN:player_load_chunk", side_asset,
             0x2000, TOWN_YMPD_DEST, 3}))
         return -8;
-    if (zeliard_ympd_render_mcga(cs_2000 + TOWN_YMPD_DEST, loaded_size,
-                                  cs_3000, 0x10000, vga, vga_size) ||
+    const int side_render = side_1
+        ? zeliard_ckpd_masm_vm_render(cs_2000 + TOWN_YMPD_DEST,
+                                      loaded_size, vga, vga_size)
+        : zeliard_ympd_render_mcga(cs_2000 + TOWN_YMPD_DEST, loaded_size,
+                                   cs_3000, 0x10000, vga, vga_size);
+    if (side_render ||
         !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_RUN_208YMPD, "106TOWN:int60", "ympd.bin",
+            side_1 ? ZEL_TOWN_EVENT_RUN_209CKPD : ZEL_TOWN_EVENT_RUN_208YMPD,
+            "106TOWN:gfx_draw_fn", side_asset,
             0x2000, TOWN_YMPD_DEST, 4}))
         return -9;
 
@@ -535,6 +548,29 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             ZEL_TOWN_EVENT_UPDATE_FRAME, "106TOWN:gfx_update_fn", NULL,
             0, 0x3051, 0}))
         return -12;
+
+    /* 106TOWN:portal_check invokes the direction-selected walk routine five
+     * times when a side-1 map is entered with init_complete clear, pumping
+     * an NPC frame between the first four calls. */
+    if (town->map_side == 1 &&
+        !zeliard_player_read_u8(&player, ZEL_PLAYER_INIT_COMPLETE)) {
+        const u8 direction =
+            (zeliard_player_read_u8(&player, ZEL_PLAYER_FACING_DIRECTION) & 1u)
+                ? 4u : 8u;
+        for (u8 step = 0; step < 5; ++step) {
+            restore_tiles_under_npcs(cs);
+            move_player(cs, cs_1000, vga, vga_size, direction);
+            if (step < 4) zeliard_town_tick_npcs(cs);
+            stamp_npcs_save_tiles(cs);
+            if (zeliard_gtmcga_render_town_actors(
+                    cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
+                    vga, vga_size) ||
+                zeliard_gtmcga_update_town_frame(
+                    cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
+                    vga, vga_size))
+                return -13;
+        }
+    }
 
     palette_set_game_mcga();
     return 0;
@@ -641,6 +677,8 @@ static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
                 &player, ZEL_PLAYER_START_POSITION) - 1));
         write_u16(cs, GVAR_TILE_POINTER, (u16)(tile_ptr - 8));
         zeliard_gtmcga_scroll_view_left(vga, vga_size);
+        if (cs[TOWN_MAP_SIDE] == 1)
+            zeliard_gtmcga_scroll_view_up(vga, vga_size);
         return 2;
     }
 
@@ -663,6 +701,8 @@ static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
     zeliard_player_write_u16(&player, ZEL_PLAYER_START_POSITION, next_start);
     write_u16(cs, GVAR_TILE_POINTER, (u16)(tile_ptr + 8));
     zeliard_gtmcga_scroll_view_right(vga, vga_size);
+    if (cs[TOWN_MAP_SIDE] == 1)
+        zeliard_gtmcga_scroll_view_down(vga, vga_size);
     return 2;
 }
 
@@ -1032,8 +1072,16 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
         cs[PLAYER_CURRENT_AREA] = 0x86;
         write_u16(cs, TOWN_START_POSITION, 0x0084);
         cs[TOWN_PLAYER_COLUMN] = 0x0D;
-        if (zeliard_town_enter_first_frame(
-                town, game, vga, vga_size)) return -4;
+        /* 106TOWN:special_door_load jumps back into the resident town loop
+         * after fixing 0084h/0Dh; it does not take portal_check's side-1
+         * entry walk. Model that resident-loop gate with init_complete only
+         * for this synchronous full-frame reconstruction. */
+        const u8 init_complete = cs[ZEL_PLAYER_INIT_COMPLETE];
+        cs[ZEL_PLAYER_INIT_COMPLETE] = 0xFF;
+        const int enter_result = zeliard_town_enter_first_frame(
+            town, game, vga, vga_size);
+        cs[ZEL_PLAYER_INIT_COMPLETE] = init_complete;
+        if (enter_result) return -4;
         return 1;
     }
     town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_NONE;

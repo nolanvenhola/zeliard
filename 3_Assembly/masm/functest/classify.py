@@ -2,7 +2,7 @@
 """classify.py — feature-extract every `proc near` in the cleaned tree
 and emit functest/coverage.csv with category labels.
 
-Reads:    working/zelres{1,2,3}/code/*.asm  +  matching *.LST
+Reads:    working/{core,drivers,zelres*/code}/*.asm  +  matching *.LST
 Writes:   functest/coverage.csv
 
 Categories (Plan §1.2):
@@ -20,6 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / 'working'
 OUT  = Path(__file__).parent / 'coverage.csv'
+PROCEDURE_EVIDENCE = Path(__file__).parent / 'procedure_oracle_evidence.json'
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 WEB_TESTS = PROJECT_ROOT / '6_WebPort' / 'tests'
 
@@ -109,23 +110,39 @@ def body_features(body_lines: list[str]) -> dict:
 def parse_asm_features(path: Path) -> dict[str, dict]:
     """Walk the .asm and return {proc_name: features} for every proc."""
     out: dict[str, dict] = {}
-    cur_name: str | None = None
-    cur_body: list[str] = []
+    # Sourcer occasionally emits a named PROC inside another named PROC.  Both
+    # labels are callable release entry points (OPDMO's interrupt helpers are
+    # the clearest example), so a single ``cur_name`` silently dropped the
+    # inner procedure.  Keep every open procedure and feed each its complete
+    # lexical body until the matching ENDP.
+    active: list[tuple[str, list[str]]] = []
     for line in path.read_text(encoding='latin-1').splitlines():
         code = line.split(';', 1)[0]
-        if cur_name is None:
-            m = re.match(r'\s*(\w+)\s+proc\s+(near|far)\b', code, re.IGNORECASE)
-            if m:
-                cur_name = m.group(1)
-                cur_body = []
+        start = re.match(
+            r'\s*(\w+)\s+proc\s+(near|far)\b', code, re.IGNORECASE
+        )
+        if start:
+            for _name, body in active:
+                body.append(code)
+            active.append((start.group(1), []))
             continue
-        m = re.match(r'\s*(\w+)\s+endp\b', code, re.IGNORECASE)
-        if m and cur_name == m.group(1):
-            out[cur_name] = body_features(cur_body)
-            cur_name = None
-            cur_body = []
+
+        end = re.match(r'\s*(\w+)\s+endp\b', code, re.IGNORECASE)
+        if end:
+            match_index = next(
+                (index for index in range(len(active) - 1, -1, -1)
+                 if active[index][0].lower() == end.group(1).lower()),
+                None,
+            )
+            if match_index is not None:
+                for index, (_name, body) in enumerate(active):
+                    if index != match_index:
+                        body.append(code)
+                name, body = active.pop(match_index)
+                out[name] = body_features(body)
             continue
-        cur_body.append(code)
+        for _name, body in active:
+            body.append(code)
     return out
 
 
@@ -215,7 +232,8 @@ ORACLE_ROW_OVERRIDES = {
 # oracle names it.  Loading a release overlay in the production VM is strong
 # executable evidence, but is not mislabeled as a direct procedure proof.
 RELEASE_VM_CHUNKS = {
-    '200FIGHT', '201SELCT', '210KINGP', '211OMOYP', '212ARMRP',
+    '200FIGHT', '201SELCT', '206GFMCA', '209CKPD',
+    '210KINGP', '211OMOYP', '212ARMRP',
     '213BANKP', '214CHURP', '215DRUGP', '216INNAP', '217KENJP',
     '250ENDMO', '300ROKAD', '301EAI1', '302EAI2', '303EAI3',
     '304EAI4', '305EAI5', '306EAI6', '307EAI7', '308EAI8',
@@ -224,15 +242,79 @@ RELEASE_VM_CHUNKS = {
     '319MAO2',
 }
 INTEGRATION_CHUNKS = {
-    '100OPDMO', '105GDMCA', '106TOWN', '111GTMCA', '206GFMCA',
-    '207MOLE', '208YMPD', '209CKPD',
+    '100OPDMO', '105GDMCA', '106TOWN', '111GTMCA',
+    '207MOLE', '208YMPD', 'game', 'zeliad', 'gmmcga', 'stdply', 'stick',
 }
 BROWSER_SMOKE_CHUNKS = RELEASE_VM_CHUNKS | INTEGRATION_CHUNKS
 NON_MCGA_CHUNKS = {
     '101GDEGA', '102GDCGA', '103GDHGC', '104GDTGA',
     '107GTEGA', '108GTCGA', '109GTHGC', '110GTTGA',
     '202GFEGA', '203GFCGA', '204GFHGC', '205GFTGA',
+    'gmcga', 'gmega', 'gmhgc', 'gmtga',
 }
+DATA_ONLY_CHUNKS = {'stdply'}
+
+EXACT_ORACLE_SOURCE = (
+    '3_Assembly/masm/functest/proc_equivalence/'
+    'test_mole_ympd_mcga_frame_oracle.py'
+)
+EXACT_ORACLE_PROCS = {
+    '207MOLE': {
+        'module_init', 'dispatch_decode_table_a', 'vga_pixel_unpack',
+        'dispatch_decode_table_b', 'decode_5col_blit_loop',
+        'decode_4bit_unpack',
+    },
+    '208YMPD': {
+        'run_satono_bg_main', 'rle_decode_mountain_88x56',
+        'render_mountains', 'pixel_expand_mcga',
+        'rle_decode_ground_28', 'render_ground',
+    },
+    '209CKPD': {
+        'bos_render_main', 'bos_frame_dispatch', 'vga_row_copy',
+        'nibble_expand_8', 'decode_nibble_pair', 'sprite_rle_decode',
+        'render_dispatch_layer2', 'nibble_expand_8_b',
+        'decode_nibble_pair_alt',
+    },
+}
+MODE_EXCLUDED_PROCS = {
+    '207MOLE': {
+        'mcga_pixel_unpack', 'mono_scan_loop', 'extract_bits',
+        'write_dma_port_then_pad',
+    },
+    '208YMPD': {
+        'ega_mtn_blit_88_rows', 'pixel_expand_cga', 'copy_28b_ega',
+        'pixel_expand_cgaalt',
+    },
+}
+GAP_TICKETS = {
+    '100OPDMO': 184, '105GDMCA': 184,
+    '106TOWN': 183, '111GTMCA': 183,
+    'zeliad': 190, 'stick': 190,
+}
+PROCEDURE_GAP_TICKETS = {
+    ('stick', name): 188 for name in {
+        'decode_joystick_bits', 'poll_joystick_buttons',
+        'calibrate_joystick', 'calc_joystick_deadzone',
+    }
+}
+
+
+def load_procedure_evidence() -> dict[tuple[str, str], tuple[str, str]]:
+    """Load reviewed procedure-to-fixture claims from the evidence manifest."""
+    if not PROCEDURE_EVIDENCE.exists():
+        return {}
+    data = json.loads(PROCEDURE_EVIDENCE.read_text(encoding='utf8'))
+    evidence: dict[tuple[str, str], tuple[str, str]] = {}
+    for group in data.get('groups', []):
+        chunk = group['chunk']
+        source = group['source']
+        scope = group.get('scope', 'procedure')
+        for name in group['procedures']:
+            key = (chunk, name)
+            if key in evidence:
+                raise ValueError(f'duplicate procedure evidence: {chunk}:{name}')
+            evidence[key] = (source, scope)
+    return evidence
 
 
 def load_oracle_proc_labels() -> set[str]:
@@ -261,28 +343,53 @@ def oracle_coverage_for(row: dict, oracle_labels: set[str]) -> str:
     return 'no'
 
 
-def evidence_for(row: dict) -> tuple[str, str, str, str]:
+def evidence_for(row: dict, procedure_evidence: dict) -> tuple[str, str, str, str]:
+    reviewed = procedure_evidence.get((row['chunk'], row['name']))
+    if reviewed:
+        source, scope = reviewed
+        return ('release-byte-procedure-oracle', scope, source, '')
     direct = row['covered_by_oracle']
     if direct == 'yes':
         return ('direct-procedure-oracle', 'procedure',
                 '3_Assembly/masm/functest/INDEX.md', '')
+    if row['name'] in EXACT_ORACLE_PROCS.get(row['chunk'], set()):
+        source = (EXACT_ORACLE_SOURCE if row['chunk'] != '209CKPD' else
+                  '3_Assembly/masm/functest/proc_equivalence/'
+                  'test_ckpd_mcga_background_oracle.py')
+        return ('exact-release-byte-oracle', 'procedure', source, '')
+    if row['name'] in MODE_EXCLUDED_PROCS.get(row['chunk'], set()):
+        return ('out-of-scope-non-mcga', 'target-scope',
+                '3_Assembly/masm/functest/proc_equivalence/'
+                'test_mole_ympd_mcga_frame_oracle.py', '')
+    if row['chunk'] in DATA_ONLY_CHUNKS:
+        return ('out-of-scope-data-only', 'target-scope',
+                '3_Assembly/masm/working/drivers/stdply.asm', '')
     if row['chunk'] in RELEASE_VM_CHUNKS:
         return ('exact-release-byte-vm', 'chunk/integration',
                 '6_WebPort/shell/test_continuous_playthrough_browser.mjs', '')
     if direct == 'partial' or row['chunk'] in INTEGRATION_CHUNKS:
+        ticket = PROCEDURE_GAP_TICKETS.get(
+            (row['chunk'], row['name']), GAP_TICKETS.get(row['chunk'], 182)
+        )
         return ('integration-only', 'chunk/integration',
-                '6_WebPort/engine/game/GAMEPLAY_ORACLE_COVERAGE.md', '')
+                '6_WebPort/engine/game/GAMEPLAY_ORACLE_COVERAGE.md',
+                f'https://github.com/nolanvenhola/zeliard/issues/{ticket}')
     if row['chunk'] in NON_MCGA_CHUNKS:
         return ('out-of-scope-non-mcga', 'target-scope',
                 '6_WebPort/README.md', '')
     return ('uncovered', 'procedure', '',
-            'https://github.com/nolanvenhola/zeliard/issues/179')
+            'https://github.com/nolanvenhola/zeliard/issues/182')
 
 
 def main() -> None:
-    asm_files = sorted(ROOT.rglob('zelres*/code/*.asm'))
+    asm_files = sorted(
+        list((ROOT / 'core').glob('*.asm')) +
+        list((ROOT / 'drivers').glob('*.asm')) +
+        list(ROOT.glob('zelres*/code/*.asm'))
+    )
     print(f'Scanning {len(asm_files)} asm files...')
     oracle_labels = load_oracle_proc_labels()
+    procedure_evidence = load_procedure_evidence()
     committed_offsets = load_committed_lst_offsets()
 
     asm_features: dict[Path, dict[str, dict]] = {}
@@ -334,7 +441,9 @@ def main() -> None:
             row['skip_reason'] = reason
             row['covered_by_oracle'] = oracle_coverage_for(row, oracle_labels)
             (row['evidence_tier'], row['evidence_scope'],
-             row['evidence_source'], row['gap_ticket']) = evidence_for(row)
+             row['evidence_source'], row['gap_ticket']) = evidence_for(
+                 row, procedure_evidence
+             )
             row['browser_smoke'] = (
                 'yes' if row['chunk'] in BROWSER_SMOKE_CHUNKS else 'no'
             )

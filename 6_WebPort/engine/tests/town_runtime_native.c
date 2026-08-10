@@ -842,11 +842,11 @@ int main(void) {
     ok &= satono_result == 0 && satono->area == ZEL_TOWN_AREA_SATONO;
     ok &= satono->music_index == 1 && satono->map_side == 1 &&
           satono->palette_index == 2 && satono->town_text_record == 0xC6D8;
-    ok &= satono_frame == 0x6C183B551150BDCFULL &&
-          satono_playfield == 0x2B037379CC51F013ULL &&
-          satono_capture == 0xF2C3F82A0F93D06DULL &&
-          satono_state == 0xA4825ECC9A8D201DULL &&
-          satono_npcs == 0xA7B3561BCB693B5FULL;
+    ok &= satono_frame == 0xE184784D846DEB35ULL &&
+          satono_playfield == 0xB1E7BBB56077297AULL &&
+          satono_capture == 0xAB3088CF79795EEDULL &&
+          satono_state == 0xA44A7ECC9A5C610DULL &&
+          satono_npcs == 0xB6CF2444E8970735ULL;
     ok &= satono_dpat_pixels == 0x3F819F76329F575EULL &&
           satono_dpat_alpha == 0x597550E40F08BCB6ULL &&
           satono_cman_pixels == 0x44D254E063EEEC7DULL &&
@@ -857,6 +857,24 @@ int main(void) {
     memcpy(satono_snapshot + sizeof(satono_segments), satono_vga,
            sizeof(satono_vga));
     const zeliard_town_runtime_t satono_runtime_snapshot = *satono;
+
+    /* 106TOWN:portal_check selects the opposite five-step entry routine
+     * when facing_direction bit 0 is set. Starting at 004Bh/0Dh, three
+     * column steps and two scroll steps end at 0049h/0Ah. */
+    satono_segments[0][ZEL_PLAYER_START_POSITION] = 0x4B;
+    satono_segments[0][ZEL_PLAYER_START_POSITION + 1] = 0;
+    satono_segments[0][ZEL_PLAYER_SCREEN_POSITION] = 0x0D;
+    satono_segments[0][ZEL_PLAYER_FACING_DIRECTION] = 1;
+    const int satono_left_entry = zeliard_town_enter_first_frame(
+        satono, &satono_game, satono_vga, sizeof(satono_vga));
+    ok &= satono_left_entry == 0 &&
+          satono_segments[0][ZEL_PLAYER_START_POSITION] == 0x49 &&
+          satono_segments[0][ZEL_PLAYER_START_POSITION + 1] == 0 &&
+          satono_segments[0][ZEL_PLAYER_SCREEN_POSITION] == 0x0A;
+    memcpy(satono_segments, satono_snapshot, sizeof(satono_segments));
+    memcpy(satono_vga, satono_snapshot + sizeof(satono_segments),
+           sizeof(satono_vga));
+    *satono = satono_runtime_snapshot;
 
     /* The same 106TOWN live pump is used by every town while an NPC speaks.
      * Satono's flame tiles intersect the right-hand dialog panel, making it
@@ -1321,11 +1339,11 @@ int main(void) {
     ok &= helada_result == 0 && helada->area == ZEL_TOWN_AREA_HELADA;
     ok &= helada->music_index == 1 && helada->map_side == 1 &&
           helada->palette_index == 2 && helada->town_text_record == 0xC738;
-    ok &= helada_frame == 0x39C562E39C145D8BULL &&
-          helada_playfield == 0xBAC31FEAB6F5800EULL &&
-          helada_capture == 0xF2C3F82A0F93D06DULL &&
-          helada_state == 0xA2CE5CCC9919D537ULL &&
-          helada_npcs == 0x8F04116449AC59E2ULL;
+    ok &= helada_frame == 0xC678692E5219DD1DULL &&
+          helada_playfield == 0x33725D1F0BED744BULL &&
+          helada_capture == 0xAB3088CF79795EEDULL &&
+          helada_state == 0xA2987CCC98EC7C27ULL &&
+          helada_npcs == 0x8B7DD19459FB8D09ULL;
     ok &= helada_story_before[0] == 0x80 &&
           helada_story_before[1] == 3 &&
           helada_story_before[2] == 2 &&
@@ -1462,11 +1480,11 @@ int main(void) {
     ok &= tumba_result == 0 && tumba->area == ZEL_TOWN_AREA_TUMBA;
     ok &= tumba->music_index == 3 && tumba->map_side == 1 &&
           tumba->palette_index == 2 && tumba->town_text_record == 0xC890;
-    ok &= tumba_frame == 0x01C631FF49DA9F89ULL &&
-          tumba_playfield == 0x9ADCE418F222531CULL &&
-          tumba_capture == 0xF2C3F82A0F93D06DULL &&
-          tumba_state == 0xA4141DCC9A2E2CCAULL &&
-          tumba_npcs == 0x6D1F3277532AACCEULL;
+    ok &= tumba_frame == 0xB3F1DFA357CFB7DFULL &&
+          tumba_playfield == 0xABB9D188BA3587BAULL &&
+          tumba_capture == 0xAB3088CF79795EEDULL &&
+          tumba_state == 0xA3DE3DCC9A00D3BAULL &&
+          tumba_npcs == 0xAED5E95756A0FAB5ULL;
     ok &= tumba_story_before[0] == 2 && tumba_story_before[1] == 3 &&
           tumba_story_before[2] == 7;
 
@@ -1638,11 +1656,11 @@ int main(void) {
     ok &= dorado_result == 0 && dorado->area == ZEL_TOWN_AREA_DORADO;
     ok &= dorado->music_index == 3 && dorado->map_side == 1 &&
           dorado->palette_index == 2 && dorado->town_text_record == 0xC6D8;
-    ok &= dorado_frame == 0x74DBE9B150A09C25ULL &&
-          dorado_playfield == 0x0DE689A1BDEFFA27ULL &&
-          dorado_capture == 0xF2C3F82A0F93D06DULL &&
-          dorado_state == 0xA4825ECC9A8D201DULL &&
-          dorado_npcs == 0x2C9606A30CC60832ULL;
+    ok &= dorado_frame == 0x4F9C6F31DC340AFBULL &&
+          dorado_playfield == 0xCF1F7F8B8128A908ULL &&
+          dorado_capture == 0xAB3088CF79795EEDULL &&
+          dorado_state == 0xA44A7ECC9A5C610DULL &&
+          dorado_npcs == 0xC72AB76FC09C998BULL;
     ok &= dorado_story_before[0] == 4 && dorado_story_before[1] == 5;
 
     static u8 dorado_snapshot[sizeof(dorado_segments) + sizeof(dorado_vga)];
@@ -2014,11 +2032,11 @@ int main(void) {
     ok &= pureza_result == 0 && pureza->area == ZEL_TOWN_AREA_PUREZA;
     ok &= pureza->music_index == 1 && pureza->map_side == 1 &&
           pureza->palette_index == 2 && pureza->town_text_record == 0xCA20;
-    ok &= pureza_frame == 0x4A498D3EFDDB8598ULL &&
-          pureza_playfield == 0x594014704DE81F54ULL &&
-          pureza_capture == 0xF2C3F82A0F93D06DULL &&
-          pureza_state == 0xA2CE5BCC9919D384ULL &&
-          pureza_npcs == 0x01DFDBDC7D06DBAFULL;
+    ok &= pureza_frame == 0x15D4E858E270C2D6ULL &&
+          pureza_playfield == 0x13DAF9E648F65FF6ULL &&
+          pureza_capture == 0xAB3088CF79795EEDULL &&
+          pureza_state == 0xA2987BCC98EC7A74ULL &&
+          pureza_npcs == 0x737F75CF48604F3BULL;
     ok &= pureza_segments[0][0xD090] == 5 &&
           (u16)(pureza_segments[0][0xD0B1] |
                 ((u16)pureza_segments[0][0xD0B2] << 8)) == 0x0124;

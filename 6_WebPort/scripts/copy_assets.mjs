@@ -135,6 +135,7 @@ const GAME_BINARY_MAP = [
     [verifiedMasmOutput('zelres1/111GTMCA.bin', '1a3384ae85db5476165d09149bc12a31ae71d7c1f0a77a78e560ff0502a0e9c8'), 'gtmcga.bin'],
     [verifiedMasmOutput('zelres1/106TOWN.bin', 'bce0f4832d434867f17df2c5c416d3ece7b69bda78063c1b33d80f56dc6c942b'), 'town.bin'],
     [verifiedMasmOutput('zelres2/208YMPD.bin', '00fc13d63b6ef310bb10096581337ca5498b1342cf3806c04b77315c1c937342'), 'ympd.bin'],
+    [verifiedMasmOutput('zelres2/209CKPD.bin', '39e27623b6ce9e84eb8ff00d8831249935d715807f0cb979e245d007c334d5ea'), 'ckpd.bin'],
     [verifiedMasmOutput('zelres2/233CPATG.grp', 'e6355b4a8f2fc6c0cd2bca33ac0add875f20e1b994e71b5ea9a1b32c8e2a8cf8'), 'cpat.grp'],
     [verifiedMasmOutput('zelres2/234MPATG.grp', '8b45794a38d7e6953e7c90d53d05c2c7b41838339ca208bc3499fccba6c8265f'), 'mpat.grp'],
     [verifiedMasmOutput('zelres2/235DPATG.grp', '73eac4be24de62cf52816f6a251c365a6ee261bd5b4bd4818915cf3a90c5c84c'), 'dpat.grp'],

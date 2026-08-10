@@ -120,6 +120,37 @@ async function runNewGameRoute(page) {
     checkpoints.push(await checkpoint(page, `new:town-${area}`));
   }
 
+  const purezaSecret = await page.evaluate(() => {
+    const m = window.__zeliard;
+    const set = (offset, value) => m._zeliard_test_game_set_u8(offset, value);
+    const started = m._zeliard_test_restart_town(8);
+    /* 106TOWN's Pureza special-door record is at world position 0126h.  A
+       player at 0115h/column 0Dh faces it while moving up (direction 1). */
+    for (const [offset, value] of [[0x45, 0x80], [0x80, 0x15],
+      [0x81, 0x01], [0x83, 0x0d], [0xc5, 0x88]]) set(offset, value);
+    const tile = 0xc017 + 0x0115 * 8;
+    set(0xff2a, tile & 0xff);
+    set(0xff2b, tile >> 8);
+    m._zeliard_key_down(38);
+    let ticks = 0;
+    while (m._zeliard_town_area() !== 6 && ticks++ < 160)
+      m._zeliard_tick(20);
+    m._zeliard_key_up(38);
+    m._zeliard_tick(20);
+    return {
+      started, ticks, area: m._zeliard_town_area(),
+      selector: m._zeliard_test_game_u8(0xc4),
+      sage: m._zeliard_test_game_u8(0xc5),
+      position: m._zeliard_test_game_u16(0x80),
+      column: m._zeliard_test_game_u8(0x83),
+    };
+  });
+  requireAt('new:pureza-secret', purezaSecret.started &&
+    purezaSecret.area === 6 && purezaSecret.selector === 0x86 &&
+    purezaSecret.sage === 0x88 && purezaSecret.position === 0x0084 &&
+    purezaSecret.column === 0x0d, JSON.stringify(purezaSecret));
+  checkpoints.push(await checkpoint(page, 'new:pureza-secret-dorado'));
+
   const inventory = await page.evaluate(() => {
     const m = window.__zeliard;
     const cueBefore = m._zeliard_audio_cue_serial();
