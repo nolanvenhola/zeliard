@@ -31,6 +31,7 @@ def main() -> int:
     valid = {
         "direct-procedure-oracle", "exact-release-byte-oracle",
         "release-byte-procedure-oracle",
+        "release-byte-inventory",
         "exact-release-byte-vm",
         "integration-only", "browser-smoke", "out-of-scope-non-mcga",
         "out-of-scope-data-only",

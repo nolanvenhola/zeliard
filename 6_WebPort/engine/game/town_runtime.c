@@ -562,10 +562,14 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             move_player(cs, cs_1000, vga, vga_size, direction);
             if (step < 4) zeliard_town_tick_npcs(cs);
             stamp_npcs_save_tiles(cs);
-            if (zeliard_gtmcga_render_town_actors(
-                    cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
-                    vga, vga_size) ||
-                zeliard_gtmcga_update_town_frame(
+            const int actor_result = zeliard_gtmcga_render_town_actors(
+                cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
+                vga, vga_size);
+            /* The fifth MASM walk has no following tick/pump.  A newly
+             * exposed FD tile can therefore lack a post-tick NPC entry; it
+             * is the normal final-walk handoff, not an initialization error. */
+            if (actor_result == -2 && step == 4) break;
+            if (actor_result || zeliard_gtmcga_update_town_frame(
                     cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
                     vga, vga_size))
                 return -13;

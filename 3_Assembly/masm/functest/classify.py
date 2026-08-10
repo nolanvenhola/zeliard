@@ -245,13 +245,13 @@ INTEGRATION_CHUNKS = {
     '100OPDMO', '105GDMCA', '106TOWN', '111GTMCA',
     '207MOLE', '208YMPD', 'game', 'zeliad', 'gmmcga', 'stdply', 'stick',
 }
-BROWSER_SMOKE_CHUNKS = RELEASE_VM_CHUNKS | INTEGRATION_CHUNKS
 NON_MCGA_CHUNKS = {
     '101GDEGA', '102GDCGA', '103GDHGC', '104GDTGA',
     '107GTEGA', '108GTCGA', '109GTHGC', '110GTTGA',
     '202GFEGA', '203GFCGA', '204GFHGC', '205GFTGA',
     'gmcga', 'gmega', 'gmhgc', 'gmtga',
 }
+BROWSER_SMOKE_CHUNKS = RELEASE_VM_CHUNKS | INTEGRATION_CHUNKS | NON_MCGA_CHUNKS
 DATA_ONLY_CHUNKS = {'stdply'}
 
 EXACT_ORACLE_SOURCE = (
@@ -375,8 +375,9 @@ def evidence_for(row: dict, procedure_evidence: dict) -> tuple[str, str, str, st
                 '6_WebPort/engine/game/GAMEPLAY_ORACLE_COVERAGE.md',
                 f'https://github.com/nolanvenhola/zeliard/issues/{ticket}')
     if row['chunk'] in NON_MCGA_CHUNKS:
-        return ('out-of-scope-non-mcga', 'target-scope',
-                '6_WebPort/README.md', '')
+        return ('release-byte-inventory', 'procedure-bound/release-binary',
+                '3_Assembly/masm/functest/proc_equivalence/'
+                'test_non_mcga_display_inventory_oracle.py', '')
     return ('uncovered', 'procedure', '',
             'https://github.com/nolanvenhola/zeliard/issues/182')
 

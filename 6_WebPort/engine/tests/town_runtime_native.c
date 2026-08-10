@@ -867,6 +867,11 @@ int main(void) {
     satono_segments[0][ZEL_PLAYER_FACING_DIRECTION] = 1;
     const int satono_left_entry = zeliard_town_enter_first_frame(
         satono, &satono_game, satono_vga, sizeof(satono_vga));
+    printf("town_satono_left_entry: rc=%d start=%02x%02x col=%02x\n",
+           satono_left_entry,
+           satono_segments[0][ZEL_PLAYER_START_POSITION + 1],
+           satono_segments[0][ZEL_PLAYER_START_POSITION],
+           satono_segments[0][ZEL_PLAYER_SCREEN_POSITION]);
     ok &= satono_left_entry == 0 &&
           satono_segments[0][ZEL_PLAYER_START_POSITION] == 0x49 &&
           satono_segments[0][ZEL_PLAYER_START_POSITION + 1] == 0 &&
