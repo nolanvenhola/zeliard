@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import struct
 import sys
 from pathlib import Path
 
@@ -20,6 +21,11 @@ def main() -> int:
     armory = ARMORY_BIN.read_bytes()
     select = SELECT_BIN.read_bytes()
     fight = FIGHT_BIN.read_bytes()
+    cementar_file = (MASM_ROOT / "bin" / "zelres3" / "332MP51.mdt").read_bytes()
+    cementar = cementar_file[4:4 + struct.unpack_from("<I", cementar_file)[0]]
+    objects = struct.unpack_from("<H", cementar, 0x10)[0] - 0xC000
+    glory_object = cementar[objects + 55 * 16:objects + 56 * 16]
+    player = (MASM_ROOT / "bin" / "stdply.bin").read_bytes()
 
     # The special offer requires trade bit clear, Tumba (town 5), and the
     # Glory Crest byte at 009Bh. It replaces the ordinary shop script.
@@ -44,9 +50,22 @@ def main() -> int:
         "8a e0 80 3e 45 ff 02 74 01 c3 02 e4 72 01 c3 b4 ff c3 "
         "01 02 04 08 20 7f"
     )
+    glory_acquire = bytes.fromhex(
+        "ba 2c 9b e8 63 e4 c6 06 9b 00 ff c3"
+    )
 
     checks = {
         "armory_name": armory.count(b"Knight\\s sword\0") == 1,
+        "cementar_hidden_object": glory_object == bytes.fromhex(
+            "d00009ff730006200000002400800000"),
+        "cementar_persistent_link":
+            struct.unpack_from("<H", glory_object, 11)[0] == 0x24 and
+            glory_object[13] == 0x80,
+        "glory_acquisition_handler": fight.count(glory_acquire) == 1,
+        "glory_acquisition_message":
+            fight.count(b"You get the Glory Crest.\xff") == 1,
+        "player_record_offsets": len(player) == 233 and
+            player[0x24] == 0 and player[0x9B] == 0,
         "glory_crest_tumba_gate": armory.count(exchange_gate) == 1,
         "exchange_dialog":
             rb"Might I trade you a knight\s sword for it?" in armory and
@@ -63,8 +82,9 @@ def main() -> int:
         print(f"knight_sword:{name}: {'PASS' if passed else 'FAIL'}")
     ok = all(checks.values())
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
-          ": release MASM defines the one-time Glory Crest exchange for "
-          "Knight's Sword tier 4, power 8")
+          ": release MASM defines Cementar's persistent Glory Crest "
+          "acquisition and the one-time Knight's Sword tier-4 exchange, "
+          "power 8")
     return 0 if ok else 1
 
 

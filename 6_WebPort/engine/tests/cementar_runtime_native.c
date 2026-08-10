@@ -116,6 +116,38 @@ int main(void) {
     ok &= changed_families == 0x1E;
     ok &= moving_frame == 0xBF272AE6914819DFULL;
 
+    /* MP51 object 55 is the hidden Glory Crest.  Its discovery is byte
+     * 24h/mask-80h, while the separately rendered inventory marker is 9Bh. */
+    const u16 crest_object = (u16)(objects + 55u * 16u);
+    const int crest_record =
+        zeliard_fight_masm_vm_peek_u16(crest_object) == 0x00D0 &&
+        zeliard_fight_masm_vm_peek_u8((u16)(crest_object + 2u)) == 9 &&
+        zeliard_fight_masm_vm_peek_u16((u16)(crest_object + 11u)) == 0x24 &&
+        zeliard_fight_masm_vm_peek_u8((u16)(crest_object + 13u)) == 0x80;
+    static u8 crest_game[0x10000], crest_vga[0x10000];
+    prepare_player(crest_game, 12, 208, 9);
+    crest_game[0x24] = 0x80;
+    crest_game[0x9B] = 0xFF;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        crest_game, sizeof(crest_game), crest_vga, sizeof(crest_vga));
+    const u16 crest_objects =
+        (u16)zeliard_fight_masm_vm_peek_u16(0xC010);
+    const u16 revisit_object = (u16)(crest_objects + 55u * 16u);
+    const u16 revisit_head =
+        zeliard_fight_masm_vm_peek_u16(revisit_object);
+    const u16 revisit_link =
+        zeliard_fight_masm_vm_peek_u16((u16)(revisit_object + 11u));
+    const int crest_revisit =
+        revisit_head == 0xFF00 && revisit_link == 0xFFFF &&
+        crest_game[0x24] == 0x80 && crest_game[0x9B] == 0xFF;
+    printf("cementar_glory_crest_persistence: record=%d revisit=%d "
+           "object=%04x link=%04x state=%02x inventory=%02x "
+           "frame=%016llx\n", crest_record, crest_revisit, revisit_head,
+           revisit_link, crest_game[0x24], crest_game[0x9B],
+           fnv1a64(crest_vga, 64000));
+    ok &= crest_record && crest_revisit;
+
     /* MP51 x88/y34 and MP50 x88/y34 are an exact reverse door pair. */
     static u8 route_game[0x10000], route_vga[0x10000];
     prepare_player(route_game, 12, 88, 34);

@@ -8,7 +8,7 @@ Canonical player-record coverage:
 
 | C primitive | Status | MASM oracle |
 | --- | --- | --- |
-| `zeliard_player_state_bind` / `snapshot` / `import` | Oracle-backed | `regression/test_player_record_contract.py`; exact release `stdply.bin` SHA-256, web-asset identity, 256-byte initialization and opaque-tail preservation |
+| `zeliard_player_state_bind` / `snapshot` / `import` | Oracle-backed | `regression/test_player_record_contract.py`, `proc_equivalence/test_sword_knight_oracle.py`; exact release `stdply.bin` SHA-256, web-asset identity, 256-byte initialization and opaque-tail preservation, including Glory Crest discovery byte 24h and inventory byte 9Bh through save/load, cavern handoff, and death/Sage recovery |
 | `zeliard_player_read/write_u8/u16/u24` | Oracle-backed | `regression/test_player_record_contract.py`; complete MASM before/after diff allowlists for byte state, HP word, and carried-gold 24-bit layout |
 | `zeliard_king_select_script` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; all four `210KINGP:select_script_branch` outcomes |
 

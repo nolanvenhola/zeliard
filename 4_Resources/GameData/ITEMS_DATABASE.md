@@ -262,6 +262,11 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Owner**: Weapons Master's family crest
 - **Required For**: Trading with Weapons Master for Knight's Sword
 - **Strategy**: Weapons Master refuses to sell Knight's Sword without it
+- **Native aliases**: called the Glory Crest and family crest in world dialog, and the crest of honor in the Tumba Weapons Master's exchange dialog
+- **Release object**: `MP51` object 55 at world coordinate `208/9`; its persistent link is player/USR byte `0x24`, mask `0x80`
+- **Inventory marker**: `0x9B = 0xFF`; the `200FIGHT` acquisition handler displays "You get the Glory Crest." and sets this byte
+- **Exchange**: in Tumba only, accepting the one-time offer consumes `0x9B`, equips sword tier 4, clears the Knight Sword stock bit `0x10` from `0xD6`, and sets trade bit `0x02` in `0x24`; declining preserves every field
+- **Persistence**: the cavern discovery bit and inventory marker survive inventory, transitions, death/Sage recovery, and USR save/load until the native exchange explicitly consumes the marker
 
 #### Elf Crest
 - **Location**: Llama Town (given by lady after defeating Paguro)

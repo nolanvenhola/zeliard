@@ -363,6 +363,7 @@ int main(void) {
     record[0x02] = 0x40;       /* MP10 collected/opened object state */
     record[0x05] = 0xFF;       /* repeat king script */
     record[0x12] = 0x08;       /* Hero's Crest cavern event */
+    record[0x24] = 0x80;       /* Glory Crest cavern event */
     record[0x80] = 0x34;       /* position */
     record[0x85] = 0x01;       /* carried gold high byte */
     record[0x86] = 0x56;
@@ -371,6 +372,7 @@ int main(void) {
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
     record[0x99] = 1;          /* Lion Head's Key */
+    record[0x9B] = 0xFF;       /* Glory Crest inventory marker */
     record[0x9C] = 0xFF;       /* Hero's Crest inventory marker */
     record[0xA0] = 4;          /* Tears of Esmesanti */
     record[0x9D] = 3;          /* selected spell */
@@ -389,6 +391,7 @@ int main(void) {
         zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x05) == 0xFF &&
         zeliard_test_game_u8(0x12) == 0x08 &&
+        zeliard_test_game_u8(0x24) == 0x80 &&
         zeliard_test_game_u8(0x80) == 0x34 &&
         zeliard_test_game_u8(0x85) == 0x01 &&
         zeliard_test_game_u8(0x86) == 0x56 &&
@@ -397,6 +400,7 @@ int main(void) {
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
         zeliard_test_game_u8(0x99) == 1 &&
+        zeliard_test_game_u8(0x9B) == 0xFF &&
         zeliard_test_game_u8(0x9C) == 0xFF &&
         zeliard_test_game_u8(0xA0) == 4 &&
          zeliard_test_game_u8(0x9D) == 3 &&
@@ -519,15 +523,22 @@ int main(void) {
         (zeliard_test_game_u8(0x12) & 0x08) != 0 &&
         (zeliard_test_fight_u8(0x12) & 0x08) != 0 &&
         zeliard_test_game_u8(0x9C) == 0xFF &&
-        zeliard_test_fight_u8(0x9C) == 0xFF;
+        zeliard_test_fight_u8(0x9C) == 0xFF &&
+        (zeliard_test_game_u8(0x24) & 0x80) != 0 &&
+        (zeliard_test_fight_u8(0x24) & 0x80) != 0 &&
+        zeliard_test_game_u8(0x9B) == 0xFF &&
+        zeliard_test_fight_u8(0x9B) == 0xFF;
     ok &= lion_key_entered_cavern;
     printf("main_controls:progression_cavern_handoff: %s "
-           "lion=%u/%u tears=%u/%u crest=%02x/%02x/%02x/%02x\n",
+           "lion=%u/%u tears=%u/%u hero=%02x/%02x/%02x/%02x "
+           "glory=%02x/%02x/%02x/%02x\n",
            lion_key_entered_cavern ? "PASS" : "FAIL",
            zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99),
            zeliard_test_game_u8(0xA0), zeliard_test_fight_u8(0xA0),
            zeliard_test_game_u8(0x12), zeliard_test_fight_u8(0x12),
-           zeliard_test_game_u8(0x9C), zeliard_test_fight_u8(0x9C));
+           zeliard_test_game_u8(0x9C), zeliard_test_fight_u8(0x9C),
+           zeliard_test_game_u8(0x24), zeliard_test_fight_u8(0x24),
+           zeliard_test_game_u8(0x9B), zeliard_test_fight_u8(0x9B));
     unsigned malicia_cue_counts[256] = {0};
     for (unsigned settle = 0; settle < 5; ++settle) {
         zeliard_tick(16);
@@ -739,6 +750,8 @@ int main(void) {
         zeliard_test_game_u8(0xA0) == 4 &&
         (zeliard_test_game_u8(0x12) & 0x08) != 0 &&
         zeliard_test_game_u8(0x9C) == 0xFF &&
+        (zeliard_test_game_u8(0x24) & 0x80) != 0 &&
+        zeliard_test_game_u8(0x9B) == 0xFF &&
         zeliard_test_game_u8(0xC4) == 0x81 &&
         zeliard_test_game_u8(0xC5) == 0x81 &&
         zeliard_test_game_u16(0x90) == zeliard_test_game_u16(0xB2);

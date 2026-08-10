@@ -89,6 +89,26 @@ int main(void) {
         lion_key_frame == 0xC75C5285A14628DFULL;
     zeliard_inventory_masm_vm_stop();
 
+    /* Glory Crest is the second native ability slot at 009Bh. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x9A] = 0;
+    game[0x9B] = 0xFF;
+    game[0x9C] = 0;
+    game[0xB2] = 100;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long glory_crest_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_glory_crest: abilities=%02x/%02x/%02x "
+           "frame=%016llx\n", game[0x9A], game[0x9B], game[0x9C],
+           glory_crest_frame);
+    ok &= game[0x9A] == 0 && game[0x9B] == 0xFF && game[0x9C] == 0 &&
+        glory_crest_frame == 0xC1F1DA33BD88CCEEULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* Hero's Crest is the third native ability slot at 009Ch.  The
      * unmodified 201SELCT loop must draw that owned crest in the inventory
      * panel without synthesizing either of the other two crest slots. */
