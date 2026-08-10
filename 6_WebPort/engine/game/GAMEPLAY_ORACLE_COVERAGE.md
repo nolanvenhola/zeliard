@@ -63,7 +63,7 @@ Canonical player-record coverage:
 | `zeliard_convert_world_x_to_screen_x` | Oracle-backed | `regression/test_compute_scroll_offset_b.py` |
 | `zeliard_entity_slot_write_tagged` | Oracle-backed | `proc_equivalence/test_fight_game_func_82.py` |
 | `zeliard_prep_dirty_blit` | Oracle-backed | `proc_equivalence/test_fight_prep_boss_dirty_blit.py` |
-| `zeliard_enemy_sprite_blit_gate` | Oracle-backed partial | `proc_equivalence/test_fight_vga_operations.py`; host blit itself is abstracted |
+| `zeliard_fight_masm_vm` enemy/projectile/boss blits | Release-byte executed and framebuffer-backed | The live fight path executes `200FIGHT` and `GFMCGA` sprite record, clipping, scroll, mask, palette, dirty-region, and VGA writes directly. Per-cavern native suites pin first/moving frames across enemy families; Agar, Vista, Pollo, Paguro, Dragon, Alguien, and Jashiin cases pin boss/large-sprite/transition/completion frames. The obsolete test-only host gate has been removed. |
 | `zeliard_prep_boss_dirty_blit` | Oracle-backed | `proc_equivalence/test_fight_prep_boss_dirty_blit.py` |
 | `zeliard_entity_fn_dispatch_b_prepare` | Oracle-backed | `proc_equivalence/test_fight_entity_fn_dispatch_b.py` |
 | `zeliard_entity_step_dispatch_c_prepare` | Oracle-backed | `proc_equivalence/test_fight_entity_step_dispatch_c.py` |

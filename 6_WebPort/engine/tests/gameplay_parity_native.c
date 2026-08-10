@@ -1368,18 +1368,6 @@ static int run_sprite_blit_gate_cases(void) {
     ok &= expect_u8("prep_dirty:set:al", prep.al, 0x42);
     ok &= expect_u8("prep_dirty:set:ah", prep.ah, 0x33);
 
-    zeliard_enemy_sprite_blit_result_t blit =
-        zeliard_enemy_sprite_blit_gate(0xFC, 0x42, 0);
-    ok &= expect_bool("enemy_blit:empty:calc", blit.calc_hud_called, true);
-    ok &= expect_bool("enemy_blit:empty:scroll", blit.scroll_offset_called, false);
-    ok &= expect_bool("enemy_blit:empty:skipped", blit.skipped, true);
-
-    blit = zeliard_enemy_sprite_blit_gate(0x10, 0x42, 5);
-    ok &= expect_bool("enemy_blit:occupied:calc", blit.calc_hud_called, true);
-    ok &= expect_bool("enemy_blit:occupied:scroll", blit.scroll_offset_called, true);
-    ok &= expect_bool("enemy_blit:occupied:skipped", blit.skipped, false);
-    ok &= expect_u8("enemy_blit:occupied:al", blit.al, 0x47);
-
     coord = 0x2345;
     prep = zeliard_prep_boss_dirty_blit(&coord, 0x42, 0x33);
     ok &= expect_bool("prep_boss_dirty:clear:dirty", prep.dirty, false);

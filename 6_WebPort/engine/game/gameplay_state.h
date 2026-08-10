@@ -231,13 +231,6 @@ typedef struct {
 } zeliard_prep_dirty_blit_result_t;
 
 typedef struct {
-    bool skipped;
-    bool calc_hud_called;
-    bool scroll_offset_called;
-    u8 al;
-} zeliard_enemy_sprite_blit_result_t;
-
-typedef struct {
     u8 table_offset;
     u8 al;
 } zeliard_entity_dispatch_b_result_t;
@@ -346,8 +339,6 @@ u16 zeliard_convert_world_x_to_screen_x(u16 world_x, u16 scroll_col,
 void zeliard_entity_slot_write_tagged(u8 *slot, u8 enemy_data_ext[0x80], u8 value);
 zeliard_prep_dirty_blit_result_t zeliard_prep_dirty_blit(
     u16 *coord_word, u8 sprite_row, u8 sprite_col);
-zeliard_enemy_sprite_blit_result_t zeliard_enemy_sprite_blit_gate(
-    u8 slot_value, u8 al, u8 map_scroll_row);
 zeliard_prep_dirty_blit_result_t zeliard_prep_boss_dirty_blit(
     u16 *coord_word, u8 sprite_row, u8 sprite_col);
 zeliard_entity_dispatch_b_result_t zeliard_entity_fn_dispatch_b_prepare(

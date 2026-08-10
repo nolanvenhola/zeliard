@@ -887,25 +887,6 @@ zeliard_prep_dirty_blit_result_t zeliard_prep_dirty_blit(
     };
 }
 
-zeliard_enemy_sprite_blit_result_t zeliard_enemy_sprite_blit_gate(
-    u8 slot_value, u8 al, u8 map_scroll_row) {
-    if (slot_value >= 0xFCu) {
-        return (zeliard_enemy_sprite_blit_result_t){
-            .skipped = true,
-            .calc_hud_called = true,
-            .scroll_offset_called = false,
-            .al = al,
-        };
-    }
-
-    return (zeliard_enemy_sprite_blit_result_t){
-        .skipped = false,
-        .calc_hud_called = true,
-        .scroll_offset_called = true,
-        .al = (u8)(al + map_scroll_row),
-    };
-}
-
 zeliard_prep_dirty_blit_result_t zeliard_prep_boss_dirty_blit(
     u16 *coord_word, u8 sprite_row, u8 sprite_col) {
     return zeliard_prep_dirty_blit(coord_word, sprite_row, sprite_col);
