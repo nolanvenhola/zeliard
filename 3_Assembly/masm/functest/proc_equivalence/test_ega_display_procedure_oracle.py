@@ -62,13 +62,16 @@ OVERLAY_LOAD = 0x2FFC
 RET_SENTINEL = 0x0080
 MAX_STEPS = 4096
 
+ADAPTER_NAME = "EGA"
+EXPECTED_COUNT = 104
+BASE_CHUNK = "gmega"
 BASE_BIN = MASM_ROOT / "bin" / "gmega.bin"
 OVERLAYS = {
     "101GDEGA": MASM_ROOT / "bin" / "zelres1" / "101GDEGA.bin",
     "107GTEGA": MASM_ROOT / "bin" / "zelres1" / "107GTEGA.bin",
     "202GFEGA": MASM_ROOT / "bin" / "zelres2" / "202GFEGA.bin",
 }
-CHUNKS = {"gmega", *OVERLAYS}
+CHUNKS = {BASE_CHUNK, *OVERLAYS}
 
 EXPECTED_BINARY_SHA256 = {
     "gmega": "631d531060464c2e7d8139d63f11628715de6ba8d5ad49e07dad96db4c7cce0b",
@@ -229,14 +232,14 @@ def load_rows() -> list[dict[str, str]]:
 def resolve_entry(row: dict[str, str], image: bytes) -> int:
     entry = int(row["entry_addr"], 0)
     if entry:
-        load = BASE_LOAD if row["chunk"] == "gmega" else OVERLAY_LOAD
+        load = BASE_LOAD if row["chunk"] == BASE_CHUNK else OVERLAY_LOAD
         return load + entry
 
     # The broad run_* procs own dispatch-table data as well as executable
     # dispatch code.  Enter the real dispatcher rather than decoding its table
     # as instructions.  Base drivers have a 35-word table; overlays store the
     # first absolute dispatch target immediately after the four-byte SAR size.
-    if row["chunk"] == "gmega":
+    if row["chunk"] == BASE_CHUNK:
         return BASE_LOAD + 35 * 2
     return int.from_bytes(image[4:6], "little")
 
@@ -343,7 +346,7 @@ def main() -> int:
     emit = "--emit" in sys.argv[1:]
     failures: list[str] = []
     base_image = BASE_BIN.read_bytes()
-    images = {"gmega": base_image, **{
+    images = {BASE_CHUNK: base_image, **{
         chunk: path.read_bytes() for chunk, path in OVERLAYS.items()
     }}
     for chunk, expected in EXPECTED_BINARY_SHA256.items():
@@ -352,13 +355,14 @@ def main() -> int:
             failures.append(f"{chunk}: release SHA-256 mismatch")
 
     rows = load_rows()
-    if len(rows) != 104:
-        failures.append(f"coverage inventory: expected 104 rows, got {len(rows)}")
+    if len(rows) != EXPECTED_COUNT:
+        failures.append(
+            f"coverage inventory: expected {EXPECTED_COUNT} rows, got {len(rows)}")
 
     actual_fingerprints: dict[str, str] = {}
     for row in rows:
         chunk = row["chunk"]
-        overlay = None if chunk == "gmega" else images[chunk]
+        overlay = None if chunk == BASE_CHUNK else images[chunk]
         actual, results = procedure_fingerprint(row, base_image, overlay)
         key = f"{chunk}:{row['name']}"
         actual_fingerprints[key] = actual
@@ -370,21 +374,22 @@ def main() -> int:
 
     if emit:
         print(json.dumps(actual_fingerprints, indent=4, sort_keys=True))
-        print("VERDICT: PASS: emitted EGA behavioral fingerprints")
+        print(f"VERDICT: PASS: emitted {ADAPTER_NAME} behavioral fingerprints")
         return 0
 
     extra = set(EXPECTED_PROCEDURE_FINGERPRINTS) - set(actual_fingerprints)
     if extra:
         failures.append("stale expected entries: " + ", ".join(sorted(extra)))
 
-    print(f"ega_behavioral_procedures: {len(rows)}/104")
-    print(f"ega_behavioral_scenarios: {len(rows) * len(SCENARIOS)}")
+    adapter = ADAPTER_NAME.lower()
+    print(f"{adapter}_behavioral_procedures: {len(rows)}/{EXPECTED_COUNT}")
+    print(f"{adapter}_behavioral_scenarios: {len(rows) * len(SCENARIOS)}")
     if failures:
         for failure in failures:
             print("FAIL: " + failure)
-        print("VERDICT: FAIL: EGA procedure behavior differs from MASM release")
+        print(f"VERDICT: FAIL: {ADAPTER_NAME} procedure behavior differs from MASM release")
         return 1
-    print("VERDICT: PASS: all EGA procedures match exact MASM behavior")
+    print(f"VERDICT: PASS: all {ADAPTER_NAME} procedures match exact MASM behavior")
     return 0
 
 

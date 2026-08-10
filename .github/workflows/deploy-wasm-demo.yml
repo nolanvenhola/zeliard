@@ -13,6 +13,18 @@ on:
       - 3_Assembly/masm/bin/zelres1/101GDEGA.bin
       - 3_Assembly/masm/bin/zelres1/107GTEGA.bin
       - 3_Assembly/masm/bin/zelres2/202GFEGA.bin
+      - 3_Assembly/masm/bin/gmcga.bin
+      - 3_Assembly/masm/bin/zelres1/102GDCGA.bin
+      - 3_Assembly/masm/bin/zelres1/108GTCGA.bin
+      - 3_Assembly/masm/bin/zelres2/203GFCGA.bin
+      - 3_Assembly/masm/bin/gmhgc.bin
+      - 3_Assembly/masm/bin/zelres1/103GDHGC.bin
+      - 3_Assembly/masm/bin/zelres1/109GTHGC.bin
+      - 3_Assembly/masm/bin/zelres2/204GFHGC.bin
+      - 3_Assembly/masm/bin/gmtga.bin
+      - 3_Assembly/masm/bin/zelres1/104GDTGA.bin
+      - 3_Assembly/masm/bin/zelres1/110GTTGA.bin
+      - 3_Assembly/masm/bin/zelres2/205GFTGA.bin
       - 3_Assembly/masm/bin/zelres1/100OPDMO.bin
       - 1_OriginalGame/sndadlib.drv
       - 1_OriginalGame/mscadlib.drv
