@@ -67,6 +67,10 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Durability**: Low
 - **Recommendation**: Basic shield for initial caverns
 - **Prices**: Muralla/Satono/Bosque (150), Helada (50), Esco (10)
+- **MASM equipment tier**: 2 (`shield` byte `0x93`); purchase initializes current/max strength (`0x94`/`0x96`) to 80.
+- **Damage/break**: uses the common tier-based reduction and strength-drain routine; reaching zero clears the equipped shield.
+- **Repair**: Holy Water of Acero adds the tier-2 amount (90), capped at the persisted maximum.
+- **Persistence**: tier and current/max strength remain in the shared 256-byte player record across inventory, areas, death, and USR reload.
 
 ### Stone Shield
 - **Power**: 180
