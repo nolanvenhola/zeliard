@@ -70,6 +70,27 @@ int main(void) {
 
     zeliard_inventory_masm_vm_stop();
 
+    /* Tier 3 is the Stone Shield.  Its equipped identity and persisted
+     * 180/180 strength render through the unmodified 201SELCT/GMMCGA path. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x93] = 3;
+    game[0x94] = 180;
+    game[0x96] = 180;
+    game[0x98] = 1;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long stone_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_stone_shield: shield=%u hp=%u/%u "
+           "frame=%016llx\n", game[0x93], game[0x94], game[0x96],
+           stone_frame);
+    ok &= game[0x93] == 3 && game[0x94] == 180 && game[0x96] == 180 &&
+        stone_frame == 0xD751025FDA37F6EAULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* 201SELCT builds one wearable cursor table from A1h..A5h and keeps
      * selected_accessory (9Eh) on the matching owned entry. Ruzeria is ID
      * 4; the implicit leading zero is the unequipped choice. */
@@ -407,17 +428,17 @@ int main(void) {
     ok &= game[0xA6] == 0 && game[0xFF4B] == 5 && magia_matches;
     zeliard_inventory_masm_vm_stop();
 
-    /* Holy Water ID 6 repairs by the equipped shield tier's native amount
-     * and caps at the player's persisted maximum shield strength. */
+    /* Holy Water ID 6 repairs Stone Shield tier 3 by its native 100 points
+     * and caps at the player's persisted 180 maximum strength. */
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);
     ok &= load_player(game);
     memset(game + 0xA1, 0, 0x21);
     game[0xA6] = 6;
-    game[0x93] = 2;
-    game[0x94] = 5;
+    game[0x93] = 3;
+    game[0x94] = 100;
     game[0x95] = 0;
-    game[0x96] = 90;
+    game[0x96] = 180;
     game[0x97] = 0;
     ok &= zeliard_inventory_masm_vm_start(
         game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
@@ -434,10 +455,10 @@ int main(void) {
     const u16 holy_shield = (u16)(game[0x94] | ((u16)game[0x95] << 8));
     const u8 holy_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
     const u8 holy_cue = zeliard_inventory_masm_vm_take_sound_cue();
-    printf("inventory_masm_holy_water: shield=%u/90 item=%02x "
+    printf("inventory_masm_stone_holy_water: shield=%u/180 item=%02x "
            "result=%02x cue=%02x\n", holy_shield, game[0xA6],
            game[0xFF4B], holy_cue);
-    ok &= holy_shield == 90 && game[0xA6] == 0 &&
+    ok &= holy_shield == 180 && game[0xA6] == 0 &&
         game[0xFF4B] == 6 && holy_select_cue == 0x0C && holy_cue == 0x0E;
     zeliard_inventory_masm_vm_stop();
 

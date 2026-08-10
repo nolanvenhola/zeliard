@@ -1055,6 +1055,60 @@ static int muralla_release_vm_armory_replace_shield(void) {
     return ok;
 }
 
+static int satono_release_vm_stone_shield_buy(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 2;
+    cs[ZEL_PLAYER_SHIELD] = 2;
+    cs[ZEL_PLAYER_SHIELD_HP] = 80;
+    cs[ZEL_PLAYER_SHIELD_HP_MAX] = 80;
+    cs[0x85] = 0; cs[0x86] = 0x10; cs[0x87] = 0x27;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    /* Satono stocks Clay, Wise Man's, and Stone shields. */
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    const u16 shield_hp = (u16)(cs[ZEL_PLAYER_SHIELD_HP] |
+        ((u16)cs[ZEL_PLAYER_SHIELD_HP + 1] << 8));
+    const u16 shield_max = (u16)(cs[ZEL_PLAYER_SHIELD_HP_MAX] |
+        ((u16)cs[ZEL_PLAYER_SHIELD_HP_MAX + 1] << 8));
+    const unsigned long long shield_frame = frame_rect_hash(
+        vga, 246, 164, 24, 32);
+    const unsigned long long shield_icon = frame_rect_hash(
+        vga, 250, 164, 16, 16);
+    const unsigned long long shield_field = frame_rect_hash(
+        vga, 246, 186, 24, 10);
+    printf("satono_release_vm_stone_shield: ticks=%u gold=%u shield=%u "
+           "hp=%u/%u inventory=%02x frame=%016llx icon=%016llx "
+           "field=%016llx\n", ticks, gold, cs[ZEL_PLAYER_SHIELD],
+           shield_hp, shield_max, cs[0xDC], shield_frame, shield_icon,
+           shield_field);
+    /* 2980-gold Stone Shield purchase less the native 75-gold Wise Man's
+     * Shield trade-in.  Tier, current/max strength, stock byte, icon, and
+     * beveled strength field all come from the release room/graphics VM. */
+    ok &= cs[ZEL_PLAYER_SHIELD] == 3 && gold == 7095 &&
+          shield_hp == 180 && shield_max == 180 && cs[0xDC] == 0xE0 &&
+          shield_frame == 0x367CF4A625CDEBC5ULL &&
+          shield_icon == 0x66197423B96FD574ULL &&
+          shield_field == 0xF95AA5D2E055366CULL;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int muralla_release_vm_church_heal(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -2127,6 +2181,7 @@ int main(void) {
                    tumba_release_vm_knight_sword_gates() &&
                    dorado_release_vm_illumination_sword_buy() &&
                    muralla_release_vm_armory_replace_shield() &&
+                   satono_release_vm_stone_shield_buy() &&
                    muralla_release_vm_church_heal() &&
                    esco_release_vm_church_free_heal() &&
                    muralla_release_vm_drug_buy() &&
