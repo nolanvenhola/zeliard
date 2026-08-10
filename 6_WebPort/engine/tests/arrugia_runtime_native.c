@@ -164,7 +164,9 @@ int main(void) {
     ok &= return_game[0x99] == 1;
     ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 320;
 
-    /* MP62 x40/y37 is the exact boundary to selector 17h. */
+    /* MP62 x40/y37 is the exact boundary to selector 17h.  Because MP80 is
+     * another supported cavern, the release VM loads it in place and keeps
+     * running; only a town/external overlay handoff makes the VM inactive. */
     static u8 boundary_game[0x10000], boundary_vga[0x10000];
     prepare_player(boundary_game, 16, 40, 37);
     boundary_game[0xC3] = 0xFF;
@@ -173,15 +175,19 @@ int main(void) {
         boundary_game, sizeof(boundary_game), boundary_vga,
         sizeof(boundary_vga));
     const int boundary = advance_frame(boundary_game, boundary_vga, 1);
-    printf("arrugia_boundary_probe: advanced=%d active=%d operation=%02x "
-           "selector=%02x pos=%02x/%02x\n", boundary,
+    printf("arrugia_boundary_probe: advanced=%d active=%d width=%u area=%u "
+           "operation=%02x selector=%02x pos=%02x/%02x\n", boundary,
            zeliard_fight_masm_vm_active(),
+           zeliard_fight_masm_vm_peek_u16(0xC002),
+           zeliard_fight_masm_vm_peek_u8(0xC012),
            zeliard_fight_masm_vm_exit_operation(),
            zeliard_fight_masm_vm_exit_selector(), boundary_game[0x80],
            boundary_game[0x82]);
-    ok &= boundary && !zeliard_fight_masm_vm_active();
-    ok &= zeliard_fight_masm_vm_exit_operation() == 1;
-    ok &= zeliard_fight_masm_vm_exit_selector() == 0x17;
+    ok &= boundary && zeliard_fight_masm_vm_active();
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 256;
+    ok &= zeliard_fight_masm_vm_peek_u8(0xC012) == 8;
+    ok &= boundary_game[0x80] == 57 - 16;
+    ok &= boundary_game[0x82] == ((57 - 9) & 0x3F);
 
     ok &= first_frame == 0x721F19A2356F535AULL;
     ok &= moving_frame == 0xDBDAA9CDD3F773D7ULL;
