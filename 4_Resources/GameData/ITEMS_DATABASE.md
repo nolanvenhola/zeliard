@@ -56,6 +56,11 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Durability**: Very low - breaks in under a minute
 - **Recommendation**: NOT RECOMMENDED - waste of money, go unshielded instead
 - **Prices**: Muralla/Satono (50), Bosque (5), Esco (2)
+- **MASM equipment tier**: 1 (`shield` byte `0x93`)
+- **State**: current strength is the word at `0x94`; maximum strength is the word at `0x96`. Buying the shield replaces the equipped tier and initializes both words to 30.
+- **Damage/break**: the common shield routine reduces incoming damage according to the equipped tier, drains current strength by the resulting amount, and clears the equipped shield when strength reaches zero.
+- **Repair**: Holy Water of Acero adds the tier-1 amount (80), capped at the persisted maximum of 30.
+- **Persistence**: equipped tier and current/maximum strength survive inventory return, area handoff, death/Sage recovery, and the 256-byte USR save/load record.
 
 ### Wise Man's Shield
 - **Power**: 80

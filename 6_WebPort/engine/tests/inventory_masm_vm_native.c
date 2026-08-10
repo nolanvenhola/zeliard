@@ -170,6 +170,26 @@ int main(void) {
         hero_crest_frame == 0x8742DDA53C8D5CCEULL;
     zeliard_inventory_masm_vm_stop();
 
+    /* Tier 1 is the Clay Shield. Its identity and 30/30 strength render
+     * through the unmodified release inventory path. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x93] = 1;
+    game[0x94] = 30;
+    game[0x96] = 30;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long clay_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_clay_shield: shield=%u hp=%u/%u "
+           "frame=%016llx\n", game[0x93], game[0x94], game[0x96],
+           clay_frame);
+    ok &= game[0x93] == 1 && game[0x94] == 30 && game[0x96] == 30 &&
+        clay_frame == 0xFD80403148D2EDF4ULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* Tier 3 is the Stone Shield.  Its equipped identity and persisted
      * 180/180 strength render through the unmodified 201SELCT/GMMCGA path. */
     memset(game, 0, 0x10000);
@@ -526,6 +546,38 @@ int main(void) {
            magia_matches, game[0xEB60], game[0xEB67], game[0xEB6E],
            game[0xEB75]);
     ok &= game[0xA6] == 0 && game[0xFF4B] == 5 && magia_matches;
+    zeliard_inventory_masm_vm_stop();
+
+    /* Holy Water repairs Clay Shield tier 1 by 80 points, capped to 30. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 6;
+    game[0x93] = 1;
+    game[0x94] = 10;
+    game[0x96] = 30;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 clay_repaired = (u16)(game[0x94] | ((u16)game[0x95] << 8));
+    const u8 clay_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 clay_repair_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_clay_holy_water: shield=%u/30 item=%02x "
+           "result=%02x cue=%02x\n", clay_repaired, game[0xA6],
+           game[0xFF4B], clay_repair_cue);
+    ok &= clay_repaired == 30 && game[0xA6] == 0 &&
+        game[0xFF4B] == 6 && clay_select_cue == 0x0C &&
+        clay_repair_cue == 0x0E;
     zeliard_inventory_masm_vm_stop();
 
     /* Holy Water ID 6 repairs Stone Shield tier 3 by its native 100 points
