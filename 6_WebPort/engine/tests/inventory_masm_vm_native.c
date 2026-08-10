@@ -407,6 +407,71 @@ int main(void) {
     ok &= game[0xA6] == 0 && game[0xFF4B] == 5 && magia_matches;
     zeliard_inventory_masm_vm_stop();
 
+    /* Holy Water ID 6 repairs by the equipped shield tier's native amount
+     * and caps at the player's persisted maximum shield strength. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 6;
+    game[0x93] = 2;
+    game[0x94] = 5;
+    game[0x95] = 0;
+    game[0x96] = 90;
+    game[0x97] = 0;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 holy_shield = (u16)(game[0x94] | ((u16)game[0x95] << 8));
+    const u8 holy_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 holy_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_holy_water: shield=%u/90 item=%02x "
+           "result=%02x cue=%02x\n", holy_shield, game[0xA6],
+           game[0xFF4B], holy_cue);
+    ok &= holy_shield == 90 && game[0xA6] == 0 &&
+        game[0xFF4B] == 6 && holy_select_cue == 0x0C && holy_cue == 0x0E;
+    zeliard_inventory_masm_vm_stop();
+
+    /* Item removal precedes dispatch: with no shield equipped, Holy Water
+     * is consumed and cue 0Eh is posted, but shield strength is untouched. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 6;
+    game[0x93] = 0;
+    game[0x94] = 17;
+    game[0x96] = 80;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u8 empty_holy_select = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 empty_holy_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_holy_water_no_shield: shield=%u item=%02x "
+           "result=%02x cue=%02x\n", game[0x94], game[0xA6],
+           game[0xFF4B], empty_holy_cue);
+    ok &= game[0x94] == 17 && game[0xA6] == 0 && game[0xFF4B] == 6 &&
+        empty_holy_select == 0x0C && empty_holy_cue == 0x0E;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release item ID 7 (Sabre Oil) increments E4h. 200FIGHT consumes that
      * byte in compute_action_anim_idx as the sword attack multiplier. */
     memset(game, 0, 0x10000);
