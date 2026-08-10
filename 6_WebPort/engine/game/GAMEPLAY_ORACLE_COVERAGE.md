@@ -9,7 +9,7 @@ chunk-level execution as a direct procedure proof:
 | Direct procedure oracle | 59 | Named procedure behavior has fixed MASM inputs/outputs or release-byte assertions. |
 | Exact release-byte VM | 311 | The production runtime executes the original overlay bytes; evidence is chunk/integration scoped unless a direct oracle is also listed. |
 | Integration only | 175 | Native frame/state or browser flow covers the composed behavior, not every internal procedure independently. |
-| Out-of-scope non-MCGA | 377 | EGA/CGA/HGC/TGA-only driver procedures are not part of the MCGA web-port target. |
+| Non-MCGA display inventory | 377 | Every EGA/CGA/HGC/TGA GD/GT/GF procedure is bound to a pinned release driver by `test_non_mcga_display_inventory_oracle.py`; the browser's scene-independent presentation conversion is tested separately and does not claim direct execution of the hardware driver internals. |
 
 Browser smoke is tracked independently in the generated `browser_smoke` column.
 It supplements the strongest evidence tier for a procedure; it never promotes an

@@ -1,5 +1,7 @@
 import { firstConnectedGamepad, mapBrowserGamepad,
     type GamepadMask } from './gamepad';
+import { applyDisplayMode, parseDisplayMode,
+    type DisplayMode } from './display';
 
 /*
  * Zeliard web shell — boots the Emscripten engine, copies the 320x200
@@ -92,6 +94,7 @@ const downloadSaveEl = document.getElementById(
     'download-save') as HTMLButtonElement;
 const openSaveEl = document.getElementById('open-save') as HTMLInputElement;
 const audioBackendEl = document.getElementById('audio-backend') as HTMLSelectElement;
+const displayModeEl = document.getElementById('display-mode') as HTMLSelectElement;
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
@@ -229,6 +232,13 @@ async function boot() {
         audioBackendEl.value = String(Module._zeliard_audio_backend());
         if (Module._zeliard_audio_backend_fallback())
             setStatus('selected audio unavailable; using AdLib');
+    });
+    let displayMode: DisplayMode = parseDisplayMode(
+        params.get('display') ?? localStorage.getItem('zeliard.displayMode'));
+    displayModeEl.value = String(displayMode);
+    displayModeEl.addEventListener('change', () => {
+        displayMode = parseDisplayMode(displayModeEl.value);
+        localStorage.setItem('zeliard.displayMode', String(displayMode));
     });
 
     setStatus('initialising engine…');
@@ -427,6 +437,7 @@ async function boot() {
                 out[o + 3] = 255;
             }
         }
+        applyDisplayMode(out, w, h, displayMode);
         ctx.putImageData(imageData, 0, 0);
 
         if (++frameCount === 1) {

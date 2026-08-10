@@ -42,12 +42,12 @@
         #save-controls, #stored-save-controls {
             display: flex; gap: 8px; align-items: center;
         }
-        #save-select, #audio-backend, #load-save, #download-save, #restart, .file-button {
+        #save-select, #audio-backend, #display-mode, #load-save, #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
-        #save-select, #audio-backend { min-width: 160px; padding: 0 8px; }
+        #save-select, #audio-backend, #display-mode { min-width: 160px; padding: 0 8px; }
         #load-save, #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
         }
@@ -67,6 +67,16 @@
                     <option value="1">Roland MT-32</option>
                     <option value="2">PCjr / Tandy</option>
                     <option value="3">PC speaker</option>
+                </select>
+            </label>
+            <label>Display
+                <select id="display-mode" aria-label="Display hardware">
+                    <option value="4">MCGA (default)</option>
+                    <option value="0">EGA</option>
+                    <option value="1">CGA 4-color</option>
+                    <option value="2">CGA 2-color</option>
+                    <option value="3">Hercules</option>
+                    <option value="5">Tandy / PCjr</option>
                 </select>
             </label>
             <button id="restart" type="button" hidden>Restart</button>

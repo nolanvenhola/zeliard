@@ -32,6 +32,8 @@
     "shops:animation-test": "node test_shop_animations_browser.mjs",
     "bank:input-test": "node test_bank_input_browser.mjs",
     "gamepad:test": "node test_gamepad_host.mjs",
+    "display:test": "node test_display_modes_host.mjs",
+    "display:browser-test": "node test_display_modes_browser.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
