@@ -121,7 +121,17 @@ Town MCGA dispatch coverage:
 | `zeliard_gmmcga_prepare_room_tiles` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; exact GMMCGA:2C2A 256-tile banks for King, Omoya, and Sage assets |
 | `zeliard_gtmcga_draw_room_glyph` / `draw_room_tile_grid` | Oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; exact GTMCGA:371C 8x12 and 16x17 room frame composition |
 
-Next gaps to close:
+Town dialog and building-script closure:
 
-- Execute item/NPC dialog bodies after the now-oracle-backed facing scans.
-- Execute building-specific script command dispatch and animated dialogue after the now-oracle-backed King/Sage room prologues.
+- `town_first_dialog_native` executes all 105 release dialog-table entries
+  across the castle and nine towns, including scrolling, waits, prompts,
+  insufficient-state routing, mutations, sound mailboxes, and framebuffer
+  restoration. Dedicated cases pin both Bosque answers, all Llama cape/Elf
+  Crest branches, Pureza's automatic warning, and Esco's persistent control.
+- `town_runtime_native` pins automatic and facing triggers, continued NPC
+  motion, animated-background-safe overlay restoration, guarded dismissal
+  movement, Paguro's approach warning, and representative flows in every town.
+- `felishika_rooms_native` executes the release room overlays for King, Sage,
+  church, armory, witchcraft, bank, and inn menus, including repeat visits,
+  insufficient-state branches, purchases, equipment/stat mutations, save/load,
+  sound cues, and return transitions.

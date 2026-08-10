@@ -63,6 +63,88 @@ static int load_font(u8 *segment) {
     return 1;
 }
 
+static unsigned long long matrix_hash_byte(unsigned long long hash, u8 value) {
+    hash ^= value;
+    return hash * 0x100000001B3ULL;
+}
+
+static int test_all_town_dialog_entries(void) {
+    /* The high-water dialog IDs come directly from each release MDT's NPC
+     * records.  Bosque IDs 12/13 are the two branches of ID 11's Yes/No
+     * control, so include them even though no NPC points at them directly. */
+    static const struct {
+        const char *asset;
+        u8 dialog_count;
+    } towns[] = {
+        {"assets/cmap.mdt", 4}, {"assets/mrmp.mdt", 9},
+        {"assets/stmp.mdt", 7}, {"assets/bsmp.mdt", 14},
+        {"assets/hlmp.mdt", 11}, {"assets/tmmp.mdt", 8},
+        {"assets/drmp.mdt", 12}, {"assets/llmp.mdt", 20},
+        {"assets/prmp.mdt", 13}, {"assets/esmp.mdt", 7},
+    };
+    u8 segment[0x10000], scratch[0x10000], vga[0x10000];
+    u8 background[0x10000];
+    for (size_t i = 0; i < sizeof(background); ++i)
+        background[i] = (u8)(i * 29u + 3u);
+    size_t driver_size = 0;
+    u8 *driver = read_file("assets/gmmcga.bin", &driver_size);
+    int ok = driver && driver_size <= 0xE000;
+    unsigned entries = 0;
+    unsigned long long hash = 0xCBF29CE484222325ULL;
+
+    for (size_t town = 0; ok && town < sizeof(towns) / sizeof(towns[0]);
+         ++town) {
+        for (u8 id = 0; ok && id < towns[town].dialog_count; ++id) {
+            memset(segment, 0, sizeof(segment));
+            memset(scratch, 0, sizeof(scratch));
+            memcpy(vga, background, sizeof(vga));
+            memcpy(segment + 0x2000, driver, driver_size);
+            ok &= load_raw(segment + 0x6000, 0xA000, "assets/town.bin") &&
+                  load_raw(segment + 0xC000, 0x4000, towns[town].asset) &&
+                  load_font(segment);
+            if (!ok) break;
+
+            /* Exercise the insufficient-funds path in Llama's cape script.
+             * The successful purchase, No branch, event mutation, and repeat
+             * visit are pinned separately by test_llama_cape_and_elf_crest. */
+            segment[0x008B] = segment[0x008C] = 0;
+            zeliard_town_dialog_t dialog = {0};
+            const int begun = zeliard_town_dialog_begin_scripted(
+                &dialog, segment, scratch, vga, sizeof(vga), id, 0x0918);
+            ok &= begun == 0 && dialog.active &&
+                  dialog.pending_sound_cue == 0x1E;
+            unsigned steps = 0;
+            while (ok && dialog.active && steps++ < 20000) {
+                if (dialog.scroll_active || dialog.scroll_resume_pending ||
+                    dialog.prompt_cursor_anim_active) {
+                    ok &= zeliard_town_dialog_advance_pit(
+                        &dialog, segment, vga, sizeof(vga)) >= 0;
+                } else if (dialog.waiting) {
+                    segment[0xFF1D] = 0xFF;
+                    ok &= zeliard_town_dialog_continue(
+                        &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+                }
+            }
+            ok &= !dialog.active && steps < 20000 &&
+                  memcmp(vga, background, sizeof(vga)) == 0;
+            hash = matrix_hash_byte(hash, (u8)town);
+            hash = matrix_hash_byte(hash, id);
+            hash = matrix_hash_byte(hash, (u8)dialog.glyph_count);
+            hash = matrix_hash_byte(hash, (u8)(dialog.glyph_count >> 8));
+            hash = matrix_hash_byte(hash, (u8)dialog.scroll_count);
+            hash = matrix_hash_byte(hash, segment[0x0034]);
+            hash = matrix_hash_byte(hash, segment[0x009A]);
+            hash = matrix_hash_byte(hash, segment[0x0004]);
+            ++entries;
+        }
+    }
+    free(driver);
+    ok &= entries == 105 && hash == 0x65FE919F2E9A453FULL;
+    printf("town_dialog_matrix: %s entries=%u hash=%016llx\n",
+           ok ? "PASS" : "FAIL", entries, hash);
+    return ok;
+}
+
 static int test_muralla_multipage_dialog(void) {
     static const unsigned long long expected_scroll_steps[] = {
         0x24CB66E41A5DBC53ULL, 0x2F82EE743B806666ULL,
@@ -502,6 +584,7 @@ int main(void) {
     ok &= test_llama_cape_and_elf_crest();
     ok &= test_pureza_special_door_warning();
     ok &= test_ctrl_8b_persistent_flag();
+    ok &= test_all_town_dialog_entries();
     printf("VERDICT: %s: town dialog MASM parity\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
