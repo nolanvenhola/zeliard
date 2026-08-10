@@ -472,6 +472,41 @@ int main(void) {
         empty_holy_select == 0x0C && empty_holy_cue == 0x0E;
     zeliard_inventory_masm_vm_stop();
 
+    /* Kioku Feather ID 8 consumes itself, posts its distinct 0Fh cue,
+     * waits 120 release timer ticks, fades, and returns result 8 to the
+     * resident fight loop for the last-Sage level reload. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 8;
+    game[0xC5] = 0x84;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    unsigned kioku_batches = 0;
+    while (zeliard_inventory_masm_vm_active() && kioku_batches++ < 20)
+        zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                          200, 0, 0, 0);
+    const u8 kioku_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 kioku_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_kioku: active=%d ip=%04x batches=%u item=%02x "
+           "result=%02x scene=%02x sage=%02x timer=%02x cue=%02x\n",
+           zeliard_inventory_masm_vm_active(),
+           zeliard_inventory_masm_vm_ip(), kioku_batches, game[0xA6],
+           game[0xFF4B], game[0xFF24], game[0xC5], game[0xFF1A], kioku_cue);
+    ok &= !zeliard_inventory_masm_vm_active() && game[0xA6] == 0 &&
+        game[0xFF4B] == 8 && game[0xFF24] == 8 && game[0xC5] == 0x84 &&
+        kioku_select_cue == 0x0C && kioku_cue == 0x0F;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release item ID 7 (Sabre Oil) increments E4h. 200FIGHT consumes that
      * byte in compute_action_anim_idx as the sword attack multiplier. */
     memset(game, 0, 0x10000);
