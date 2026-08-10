@@ -3,12 +3,23 @@
 
 #include "../core/types.h"
 
+typedef enum {
+    ZEL_FIGHT_VM_ERROR_NONE = 0,
+    ZEL_FIGHT_VM_ERROR_ARGUMENT,
+    ZEL_FIGHT_VM_ERROR_BIOS,
+    ZEL_FIGHT_VM_ERROR_AREA_SELECTOR,
+    ZEL_FIGHT_VM_ERROR_ASSET_LOAD,
+    ZEL_FIGHT_VM_ERROR_SWORD_SELECTOR,
+    ZEL_FIGHT_VM_ERROR_BOOTSTRAP,
+} zeliard_fight_vm_error_t;
+
 int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
                                 u8 *vga, size_t vga_size);
 int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
                                   u8 *vga, size_t vga_size,
                                   u32 pit_ticks, u8 direction);
 int zeliard_fight_masm_vm_active(void);
+zeliard_fight_vm_error_t zeliard_fight_masm_vm_last_error(void);
 int zeliard_fight_masm_vm_at_frame(void);
 u16 zeliard_fight_masm_vm_ip(void);
 u8 zeliard_fight_masm_vm_exit_operation(void);

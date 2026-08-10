@@ -32,6 +32,7 @@ enum {
 
 typedef struct {
     u8 active;
+    zeliard_fight_vm_error_t last_error;
     u8 at_frame;
     u8 allow_frame_once;
     u8 direction;
@@ -450,12 +451,17 @@ static void fight_out(void *context, u16 port, u8 value) {
 
 int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
                                 u8 *vga, size_t vga_size) {
-    if (!game_seg || game_size < 0x10000 || !vga || vga_size < 0x10000)
+    memset(&g_fight_vm, 0, sizeof(g_fight_vm));
+    if (!game_seg || game_size < 0x10000 || !vga || vga_size < 0x10000) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_ARGUMENT;
         return 0;
+    }
     size_t bios_size = 0;
     u8 *bios = platform_load_asset("8086tiny-bios.bin", &bios_size);
-    if (!bios) return 0;
-    memset(&g_fight_vm, 0, sizeof(g_fight_vm));
+    if (!bios) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_BIOS;
+        return 0;
+    }
     g_fight_vm.music_chunk = 0xFF;
     zel_fight86_reset(bios, (unsigned)bios_size);
     free(bios);
@@ -466,6 +472,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
     memcpy(memory + linear(VGA_SEG, 0), vga, 0x10000);
     const char *initial_map = map_for_selector(game_seg[0x00C4]);
     if (!initial_map) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_AREA_SELECTOR;
         platform_log("200FIGHT VM unsupported area selector %02X",
                      game_seg[0x00C4]);
         return 0;
@@ -477,11 +484,13 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
         !load_payload_to(memory, fight + 0xC000, initial_map) ||
         !load_fill_to(memory, linear(ASSET_SEG, 0x0000), "magic.grp") ||
         !load_fill_to(memory, linear(ASSET_SEG, 0x1800), "sword.grp")) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_ASSET_LOAD;
         platform_log("200FIGHT VM base asset load failed");
         return 0;
     }
     relocate_words(memory, linear(ASSET_SEG, 0x1800), 3, 0x1800);
     if (!prepare_sword_graphics(memory, game_seg[0x0092])) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_SWORD_SELECTOR;
         platform_log("200FIGHT VM unsupported sword selector %02X",
                      game_seg[0x0092]);
         return 0;
@@ -517,6 +526,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
     g_fight_vm.bootstrap_clock = 0;
     if (!g_fight_vm.at_frame) {
+        g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_BOOTSTRAP;
         platform_log("200FIGHT VM start stopped at %04X after %u instructions; trace:",
                      zel_fight86_ip(), (unsigned)g_fight_vm.instructions);
         for (unsigned i = 0; i < 32; ++i) {
@@ -587,6 +597,9 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
 }
 
 int zeliard_fight_masm_vm_active(void) { return g_fight_vm.active; }
+zeliard_fight_vm_error_t zeliard_fight_masm_vm_last_error(void) {
+    return g_fight_vm.last_error;
+}
 int zeliard_fight_masm_vm_at_frame(void) { return g_fight_vm.at_frame; }
 u16 zeliard_fight_masm_vm_ip(void) { return zel_fight86_ip(); }
 int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
