@@ -83,6 +83,9 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Durability**: Medium-High
 - **Recommendation**: Economical everyday shield for mid-game
 - **Prices**: Helada (9800), Tumba (7840), Dorado/Llama (5880), Pureza (3920), Esco (1960)
+- **MASM equipment tier**: 4; buying initializes current/max strength to 300.
+- **Protection**: incoming shield-eligible damage is shifted by 3 in the common absorption routine before shield drain and remaining player damage are applied.
+- **Repair**: Holy Water of Acero adds 110 strength, capped at the persisted maximum.
 
 ### Light Shield ⭐
 - **Power**: 300 (same as Honor Shield)
@@ -92,12 +95,19 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Recommendation**: **Essential upgrade for Gold Caverns** - Honor Shield breaks too easily there
 - **Description**: "Unbreakable against ordinary weapons"
 - **Prices**: Dorado (14800), Llama (10360), Pureza (7400), Esco (5920)
+- **MASM equipment tier**: 5; current/max strength is initialized to 300.
+- **Special protection**: tier 5 increases the common absorption shift from Honor's 3 to 4. This halves shield drain and passed-through damage relative to Honor for the same raw hit, despite their identical displayed maximum.
+- **Repair**: Holy Water of Acero adds 115 strength, capped at 300.
 
 ### Titanium Shield
 - **Power**: 600
 - **Durability**: Very High
 - **Recommendation**: Best shield, "lasts a lifetime", keeps you protected until final boss
 - **Prices**: Llama (39800), Pureza (31800), Esco (23800)
+- **MASM equipment tier**: 6; current/max strength is initialized to 600.
+- **Protection**: uses absorption shift 4 and the largest native strength pool; zero strength invokes the common break path and clears the equipped tier.
+- **Repair**: Holy Water of Acero adds 120 strength, capped at 600.
+- **Shared persistence**: all three advanced shields use equipped/current/max fields `0x93..0x97`, preserved verbatim by inventory return, area handoff, death/Sage recovery, and USR save/load.
 
 ---
 

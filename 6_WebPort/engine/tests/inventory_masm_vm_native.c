@@ -18,6 +18,61 @@ static int load_player(u8 *memory) {
     return read == 233;
 }
 
+static unsigned long long advanced_shield_frame(
+    u8 *game, u8 *vga, u8 tier, u16 strength) {
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    if (!load_player(game)) return 0;
+    game[0x92] = 1;
+    game[0x93] = tier;
+    game[0x94] = (u8)strength;
+    game[0x95] = (u8)(strength >> 8);
+    game[0x96] = (u8)strength;
+    game[0x97] = (u8)(strength >> 8);
+    game[0x90] = 100;
+    if (!zeliard_inventory_masm_vm_start(
+            game, 0x10000, vga, 0x10000,
+            ZEL_INVENTORY_CONTEXT_CAVERN)) return 0;
+    const unsigned long long frame = fnv1a64(vga, 64000);
+    zeliard_inventory_masm_vm_stop();
+    return frame;
+}
+
+static int advanced_shield_repair(
+    u8 *game, u8 *vga, u8 tier, u16 maximum) {
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    if (!load_player(game)) return 0;
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 6;
+    game[0x93] = tier;
+    const u16 current = (u16)(maximum - 50);
+    game[0x94] = (u8)current;
+    game[0x95] = (u8)(current >> 8);
+    game[0x96] = (u8)maximum;
+    game[0x97] = (u8)(maximum >> 8);
+    if (!zeliard_inventory_masm_vm_start(
+            game, 0x10000, vga, 0x10000,
+            ZEL_INVENTORY_CONTEXT_CAVERN)) return 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u16 repaired = (u16)(game[0x94] | ((u16)game[0x95] << 8));
+    const u8 select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 repair_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const int ok = repaired == maximum && game[0xA6] == 0 &&
+        game[0xFF4B] == 6 && select_cue == 0x0C && repair_cue == 0x0E;
+    zeliard_inventory_masm_vm_stop();
+    return ok;
+}
+
 int main(void) {
     u8 *game = calloc(1, 0x10000);
     u8 *vga = calloc(1, 0x10000);
@@ -208,6 +263,23 @@ int main(void) {
     ok &= game[0x93] == 2 && game[0x94] == 80 && game[0x96] == 80 &&
         wise_shield_frame == 0xFB71979C4E826BCEULL;
     zeliard_inventory_masm_vm_stop();
+
+    const unsigned long long honor_frame =
+        advanced_shield_frame(game, vga, 4, 300);
+    const unsigned long long light_frame =
+        advanced_shield_frame(game, vga, 5, 300);
+    const unsigned long long titanium_frame =
+        advanced_shield_frame(game, vga, 6, 600);
+    const int honor_repair = advanced_shield_repair(game, vga, 4, 300);
+    const int light_repair = advanced_shield_repair(game, vga, 5, 300);
+    const int titanium_repair = advanced_shield_repair(game, vga, 6, 600);
+    printf("inventory_masm_advanced_shields: frames=%016llx/%016llx/%016llx "
+           "repairs=%d/%d/%d\n", honor_frame, light_frame, titanium_frame,
+           honor_repair, light_repair, titanium_repair);
+    ok &= honor_frame == 0x7E570AB0EFE2831CULL &&
+        light_frame == 0x1B447B8A4DB99F55ULL &&
+        titanium_frame == 0x00969B6F61FFC060ULL &&
+        honor_repair && light_repair && titanium_repair;
 
     /* Tier 3 is the Stone Shield.  Its equipped identity and persisted
      * 180/180 strength render through the unmodified 201SELCT/GMMCGA path. */
