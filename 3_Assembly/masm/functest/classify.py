@@ -52,6 +52,27 @@ def parse_lst_offsets(path: Path) -> dict[str, tuple[int, int]]:
     return out
 
 
+def load_committed_lst_offsets() -> dict[tuple[str, str], tuple[int, int]]:
+    """Use checked-in MASM offsets when local, ignored LST files are absent.
+
+    The reconstructed `.LST` files are available in the MASM worktree but are
+    intentionally not shipped in Git.  Keeping their last generated offsets in
+    coverage.csv makes regeneration deterministic in a clean Linux checkout.
+    """
+    out: dict[tuple[str, str], tuple[int, int]] = {}
+    if not OUT.exists():
+        return out
+    with OUT.open(encoding='utf8', newline='') as fp:
+        for row in csv.DictReader(fp):
+            if row.get('size_source') != 'lst' or not row.get('entry_addr'):
+                continue
+            start = int(row['entry_addr'], 16)
+            out[(row['chunk'], row['name'])] = (
+                start, start + int(row['size_bytes'])
+            )
+    return out
+
+
 def body_features(body_lines: list[str]) -> dict:
     text = '\n'.join(body_lines)
     near_calls = re.findall(
@@ -262,6 +283,7 @@ def main() -> None:
     asm_files = sorted(ROOT.rglob('zelres*/code/*.asm'))
     print(f'Scanning {len(asm_files)} asm files...')
     oracle_labels = load_oracle_proc_labels()
+    committed_offsets = load_committed_lst_offsets()
 
     asm_features: dict[Path, dict[str, dict]] = {}
     n_calls_in: dict[str, int] = defaultdict(int)
@@ -283,6 +305,10 @@ def main() -> None:
             no_lst.append(path.name)
         feats = asm_features.get(path, {})
         for name, f in feats.items():
+            if name not in offsets:
+                cached = committed_offsets.get((path.stem, name))
+                if cached:
+                    offsets[name] = cached
             if name in offsets:
                 start, end = offsets[name]
                 size = end - start
