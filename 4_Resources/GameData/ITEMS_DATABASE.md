@@ -33,7 +33,7 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Prices**: Helada (Elf Crest required), Dorado (7840), Llama (5880), Pureza (3920), Esco (1960)
 
 ### Illumination Sword
-- **Base Damage**: 16 (+ level/2)
+- **Base Damage**: 32 (+ level/2; release `200FIGHT` table value `0x20`)
 - **Description**: Top-of-the-line sword with massive range
 - **Strategy**: Best shop sword, very long reach
 - **Prices**: Dorado (69800), Llama (34800), Pureza (32800), Esco (29800)

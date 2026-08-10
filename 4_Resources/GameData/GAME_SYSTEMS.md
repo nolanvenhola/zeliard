@@ -84,7 +84,7 @@ Sword base damage values:
 | Wise Man's Sword | 2 | ~4.6 |
 | Spirit Sword | 4 | ~9.2 |
 | Knight's Sword | 8 | ~18.4 |
-| Illumination Sword | 16 | ~36.8 |
+| Illumination Sword | 32 | ~73.6 |
 | Enchantment Sword | 255 | ~586.5 |
 
 **Level Damage Bonus**:

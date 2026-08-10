@@ -970,6 +970,42 @@ static int tumba_release_vm_knight_sword_gates(void) {
     return ok;
 }
 
+static int dorado_release_vm_illumination_sword_buy(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 6;
+    cs[ZEL_PLAYER_SWORD] = 4;
+    cs[0x85] = 1; cs[0x86] = 0xA0; cs[0x87] = 0x86;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    /* Dorado stocks Spirit, Knight, and Illumination swords. */
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    const unsigned long long sword_frame = frame_rect_hash(
+        vga, 192, 171, 20, 18);
+    printf("dorado_release_vm_illumination_sword: ticks=%u gold=%u "
+           "sword=%u inventory=%02x frame=%016llx\n", ticks, gold,
+           cs[0x92], cs[0xD7], sword_frame);
+    /* 69800-gold purchase less the native 3920-gold Knight trade. */
+    ok &= cs[0x92] == 5 && gold == 34120 && cs[0xD7] == 0x38 &&
+          sword_frame == 0xD6DAEEAFE2A0B1FAULL;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int muralla_release_vm_armory_replace_shield(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -2089,6 +2125,7 @@ int main(void) {
                    bosque_release_vm_spirit_sword_buy() &&
                    tumba_release_vm_knight_sword_trade() &&
                    tumba_release_vm_knight_sword_gates() &&
+                   dorado_release_vm_illumination_sword_buy() &&
                    muralla_release_vm_armory_replace_shield() &&
                    muralla_release_vm_church_heal() &&
                    esco_release_vm_church_free_heal() &&
