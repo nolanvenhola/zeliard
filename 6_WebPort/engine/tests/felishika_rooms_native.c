@@ -822,6 +822,42 @@ static int muralla_release_vm_wise_man_sword_buy(void) {
     return ok;
 }
 
+static int bosque_release_vm_spirit_sword_buy(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0xC006] = 3;
+    cs[ZEL_PLAYER_SWORD] = 2;
+    cs[0x85] = 0; cs[0x86] = 0x20; cs[0x87] = 0x4E;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_ARMORY, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= vm_reach_menu(cs, vga, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    /* Bosque's release inventory exposes Spirit Sword as list entry 3. */
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 0, 1, &ticks);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const u32 gold = ((u32)cs[0x85] << 16) |
+                     ((u32)cs[0x87] << 8) | cs[0x86];
+    const unsigned long long sword_frame = frame_rect_hash(
+        vga, 192, 171, 20, 18);
+    printf("bosque_release_vm_spirit_sword: ticks=%u gold=%u sword=%u "
+           "inventory=%02x frame=%016llx\n", ticks, gold, cs[0x92],
+           cs[0xD4], sword_frame);
+    /* 7500-gold purchase less the native 1450-gold Wise Man trade. */
+    ok &= cs[0x92] == 3 && gold == 13950 && cs[0xD4] == 0xE0 &&
+          sword_frame == 0xA8A66214ADC1AFD1ULL;
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
 static int tumba_release_vm_knight_sword_trade(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -1971,6 +2007,7 @@ int main(void) {
                    muralla_release_vm_armory_exit() &&
                    muralla_release_vm_armory_buy() &&
                    muralla_release_vm_wise_man_sword_buy() &&
+                   bosque_release_vm_spirit_sword_buy() &&
                    tumba_release_vm_knight_sword_trade() &&
                    muralla_release_vm_armory_replace_shield() &&
                    muralla_release_vm_church_heal() &&
