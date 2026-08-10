@@ -8,6 +8,11 @@ on:
       - 3_Assembly/dumps/zeliard_title_image.BIN
       - 3_Assembly/masm/working/zelres1/data/**
       - 3_Assembly/masm/working/zelres1/code/105GDMCA.bin
+      - 3_Assembly/masm/functest/**
+      - 3_Assembly/masm/bin/gmega.bin
+      - 3_Assembly/masm/bin/zelres1/101GDEGA.bin
+      - 3_Assembly/masm/bin/zelres1/107GTEGA.bin
+      - 3_Assembly/masm/bin/zelres2/202GFEGA.bin
       - 3_Assembly/masm/bin/zelres1/100OPDMO.bin
       - 1_OriginalGame/sndadlib.drv
       - 1_OriginalGame/mscadlib.drv
@@ -61,6 +66,11 @@ jobs:
           python 3_Assembly/masm/functest/classify.py
           git diff --exit-code -- 3_Assembly/masm/functest/coverage.csv
           python 3_Assembly/masm/functest/check_evidence_consistency.py
+
+      - name: Run exact display procedure oracles
+        run: |
+          python -m pip install --disable-pip-version-check unicorn==2.1.4
+          python 3_Assembly/masm/functest/run.py --ci --filter '*display_procedure_oracle.py'
 
       - name: Build WASM engine
         run: make -C 6_WebPort/engine wasm
