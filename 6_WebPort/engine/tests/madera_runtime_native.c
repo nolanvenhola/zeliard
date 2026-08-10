@@ -132,6 +132,57 @@ int main(void) {
     ok &= changed_families == 0x0E;
     ok &= moving_frame == 0x473C7472FCC5CA7FULL;
 
+    /* MP30 object 40 is the sword-revealed Hero's Crest.  Confirm its
+     * authored stdply byte-12h/mask-08h link, then prove both that event
+     * byte and the separate 9Ch inventory marker survive a map reload. */
+    static u8 crest_game[0x10000];
+    static u8 crest_vga[0x10000];
+    prepare_player(crest_game);
+    crest_game[0x0080] = 166 - 16;
+    crest_game[0x0082] = (54 - 9) & 0x3F;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        crest_game, sizeof(crest_game), crest_vga, sizeof(crest_vga));
+    const u16 crest_objects =
+        (u16)zeliard_fight_masm_vm_peek_u16(0xC010);
+    const u16 crest_object = (u16)(crest_objects + 40u * 16u);
+    const int crest_link =
+        zeliard_fight_masm_vm_peek_u8((u16)(crest_object + 11u)) == 0x12 &&
+        zeliard_fight_masm_vm_peek_u8((u16)(crest_object + 12u)) == 0x00 &&
+        zeliard_fight_masm_vm_peek_u8((u16)(crest_object + 13u)) == 0x08;
+    const u16 crest_head = zeliard_fight_masm_vm_peek_u16(crest_object);
+    const unsigned long long crest_pre_frame = fnv1a64(crest_vga, 64000);
+
+    static u8 crest_revisit_game[0x10000];
+    static u8 crest_revisit_vga[0x10000];
+    prepare_player(crest_revisit_game);
+    crest_revisit_game[0x0080] = 166 - 16;
+    crest_revisit_game[0x0082] = (54 - 9) & 0x3F;
+    crest_revisit_game[0x12] = 0x08;
+    crest_revisit_game[0x9C] = 0xFF;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        crest_revisit_game, sizeof(crest_revisit_game), crest_revisit_vga,
+        sizeof(crest_revisit_vga));
+    const u16 revisit_objects =
+        (u16)zeliard_fight_masm_vm_peek_u16(0xC010);
+    const u16 revisit_object = (u16)(revisit_objects + 40u * 16u);
+    const u16 revisit_head =
+        zeliard_fight_masm_vm_peek_u16(revisit_object);
+    const u16 revisit_link =
+        zeliard_fight_masm_vm_peek_u16((u16)(revisit_object + 11u));
+    const unsigned long long crest_revisit_frame =
+        fnv1a64(crest_revisit_vga, 64000);
+    printf("madera_hero_crest_persistence: link=%d object=%04x>%04x "
+           "persist=%02x inventory=%02x link_after=%04x "
+           "frame=%016llx>%016llx\n",
+           crest_link, crest_head, revisit_head, crest_revisit_game[0x12],
+           crest_revisit_game[0x9C], revisit_link, crest_pre_frame,
+           crest_revisit_frame);
+    ok &= crest_link && crest_head == 0x00A6 && revisit_head == 0x00A6 &&
+        revisit_link == 0x0012 && crest_revisit_game[0x12] == 0x08 &&
+        crest_revisit_game[0x9C] == 0xFF;
+
     /* The same authored door is bidirectional: MP30 x21/y6 returns to
      * Peligro x205/y47 and restores the area-2 resource family. */
     static u8 return_game[0x10000];

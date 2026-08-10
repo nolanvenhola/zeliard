@@ -122,7 +122,6 @@ def main() -> int:
     ]
     tori = images["311TORI.bin"]
     boss_contract = {
-        "hero_crest_location": riza[0x13:0x16] == bytes.fromhex("bc0015"),
         # TORI applies BX damage to its 16-bit 500-point health word,
         # floors underflow to zero, then calls the release 200FIGHT
         # shutdown callback through DS:603Ch when death is armed.

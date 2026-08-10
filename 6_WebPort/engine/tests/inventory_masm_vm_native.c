@@ -89,6 +89,28 @@ int main(void) {
         lion_key_frame == 0xC75C5285A14628DFULL;
     zeliard_inventory_masm_vm_stop();
 
+    /* Hero's Crest is the third native ability slot at 009Ch.  The
+     * unmodified 201SELCT loop must draw that owned crest in the inventory
+     * panel without synthesizing either of the other two crest slots. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x9A] = 0;
+    game[0x9B] = 0;
+    game[0x9C] = 0xFF;
+    game[0xB2] = 100;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long hero_crest_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_hero_crest: abilities=%02x/%02x/%02x "
+           "frame=%016llx\n", game[0x9A], game[0x9B], game[0x9C],
+           hero_crest_frame);
+    ok &= game[0x9A] == 0 && game[0x9B] == 0 && game[0x9C] == 0xFF &&
+        hero_crest_frame == 0x8742DDA53C8D5CCEULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* Tier 3 is the Stone Shield.  Its equipped identity and persisted
      * 180/180 strength render through the unmodified 201SELCT/GMMCGA path. */
     memset(game, 0, 0x10000);

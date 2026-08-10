@@ -23,7 +23,7 @@ Canonical player-record coverage:
 | `zeliard_town_walk_right_col_full` | Oracle-backed | `proc_equivalence/test_town_walk_right_col.py` |
 | `zeliard_town_walk_left_col` | Oracle-backed | `proc_equivalence/test_town_walk_left_col.py` |
 | `zeliard_town_frame_clear_stat_x9f` | Oracle-backed | `placeholder_id/test_stdply_stat_X9F.py` |
-| `zeliard_entity_success_mark_stat_x9c` | Oracle-backed | `placeholder_id/test_stdply_stat_X9C.py` |
+| `zeliard_entity_success_mark_stat_x9c` | Oracle-backed | `proc_equivalence/test_hero_crest_oracle.py`, `placeholder_id/test_stdply_stat_X9C.py`; exact MP30 object 40 link, 200FIGHT acquisition write/message, and 201SELCT Hero's Crest render slot |
 | `zeliard_inc_map_pos` | Oracle-backed | `regression/test_movement_helpers.py` |
 | `zeliard_dec_map_pos` | Oracle-backed | `regression/test_movement_helpers.py` |
 | `zeliard_inc_row` | Oracle-backed | `regression/test_movement_helpers.py` |
@@ -95,7 +95,7 @@ Town live-runtime coverage:
 | --- | --- | --- |
 | `zeliard_town_advance_pit` | Oracle-backed composition | `proc_equivalence/test_town_live_loop_primitives.py`, walk-left/right oracles, `town_runtime_native` scripted frame hashes |
 | `zeliard_town_detect_facing_targets` | Oracle-backed | `106TOWN` target-scan branches mirrored by `town_facing_targets:right` native fixture |
-| `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`; release-byte memory diffs over active/inactive events and two NPC ticks |
+| `process_town_event_table` / `tick_npcs_dispatch` | Oracle-backed | `proc_equivalence/test_town_live_loop_primitives.py`, `test_hero_crest_oracle.py`; release-byte memory diffs over active/inactive events and two NPC ticks plus Bosque's byte-12h/mask-08h sentry mutation, dialog, and passability contract |
 | `zeliard_room_enter` / `zeliard_room_leave` | Oracle-backed stable frames and transitions | `proc_equivalence/test_felishika_room_frames_oracle.py`, `test_gmmcga_building_fade_oracle.py`; release `210KINGP`/`211OMOYP`/`217KENJP` prologues plus both `106TOWN` building-boundary fades |
 | `zeliard_room_masm_vm` Sage menu, hints, power, spells, and exit | Release-byte executed and oracle-backed | `proc_equivalence/test_felishika_room_frames_oracle.py`; pure tier outputs and all seven spell handlers, plus `felishika_rooms_native` full command flows, first/repeat visits, level/HP/experience/charge diffs |
 | Sage `Record Experience` DOS proxy | Release-byte executed and oracle-backed | `felishika_rooms_native`; exact 8-character editor path, `.usr` suffix, INT 21h create/write/close, 256-byte payload identity, persisted-file identity, and write-failure retry |

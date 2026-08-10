@@ -362,6 +362,7 @@ int main(void) {
     if (record_file) fclose(record_file);
     record[0x02] = 0x40;       /* MP10 collected/opened object state */
     record[0x05] = 0xFF;       /* repeat king script */
+    record[0x12] = 0x08;       /* Hero's Crest cavern event */
     record[0x80] = 0x34;       /* position */
     record[0x85] = 0x01;       /* carried gold high byte */
     record[0x86] = 0x56;
@@ -370,6 +371,7 @@ int main(void) {
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
     record[0x99] = 1;          /* Lion Head's Key */
+    record[0x9C] = 0xFF;       /* Hero's Crest inventory marker */
     record[0xA0] = 4;          /* Tears of Esmesanti */
     record[0x9D] = 3;          /* selected spell */
     record[0xAB] = 24;         /* Espada charge */
@@ -386,6 +388,7 @@ int main(void) {
     const int restored = loaded && zeliard_scene() == 2 &&
         zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x05) == 0xFF &&
+        zeliard_test_game_u8(0x12) == 0x08 &&
         zeliard_test_game_u8(0x80) == 0x34 &&
         zeliard_test_game_u8(0x85) == 0x01 &&
         zeliard_test_game_u8(0x86) == 0x56 &&
@@ -394,6 +397,7 @@ int main(void) {
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
         zeliard_test_game_u8(0x99) == 1 &&
+        zeliard_test_game_u8(0x9C) == 0xFF &&
         zeliard_test_game_u8(0xA0) == 4 &&
          zeliard_test_game_u8(0x9D) == 3 &&
          zeliard_test_game_u8(0xBD) == 0xFF &&
@@ -511,13 +515,19 @@ int main(void) {
         zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_fight_u8(0x99) == 1 &&
         zeliard_test_game_u8(0xA0) == 4 &&
-        zeliard_test_fight_u8(0xA0) == 4;
+        zeliard_test_fight_u8(0xA0) == 4 &&
+        (zeliard_test_game_u8(0x12) & 0x08) != 0 &&
+        (zeliard_test_fight_u8(0x12) & 0x08) != 0 &&
+        zeliard_test_game_u8(0x9C) == 0xFF &&
+        zeliard_test_fight_u8(0x9C) == 0xFF;
     ok &= lion_key_entered_cavern;
     printf("main_controls:progression_cavern_handoff: %s "
-           "lion=%u/%u tears=%u/%u\n",
+           "lion=%u/%u tears=%u/%u crest=%02x/%02x/%02x/%02x\n",
            lion_key_entered_cavern ? "PASS" : "FAIL",
            zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99),
-           zeliard_test_game_u8(0xA0), zeliard_test_fight_u8(0xA0));
+           zeliard_test_game_u8(0xA0), zeliard_test_fight_u8(0xA0),
+           zeliard_test_game_u8(0x12), zeliard_test_fight_u8(0x12),
+           zeliard_test_game_u8(0x9C), zeliard_test_fight_u8(0x9C));
     unsigned malicia_cue_counts[256] = {0};
     for (unsigned settle = 0; settle < 5; ++settle) {
         zeliard_tick(16);
@@ -727,6 +737,8 @@ int main(void) {
         zeliard_test_game_u8(0x9F) == death_saved_frame_scratch &&
         zeliard_test_game_u8(0x99) == 1 &&
         zeliard_test_game_u8(0xA0) == 4 &&
+        (zeliard_test_game_u8(0x12) & 0x08) != 0 &&
+        zeliard_test_game_u8(0x9C) == 0xFF &&
         zeliard_test_game_u8(0xC4) == 0x81 &&
         zeliard_test_game_u8(0xC5) == 0x81 &&
         zeliard_test_game_u16(0x90) == zeliard_test_game_u16(0xB2);
@@ -1076,12 +1088,26 @@ int main(void) {
     record_file = fopen("assets/stdply.bin", "rb");
     ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
     if (record_file) fclose(record_file);
-    record[0x12] &= (u8)~0x08;
     record[0x80] = 0x2B;
     record[0x82] = 0;
     record[0x83] = 0x0D;
     record[0xC4] = 0x83;
     record[0xC5] = 0x83;
+    record[0x12] |= 0x08;
+    record[0x9C] = 0xFF;
+    const int hero_crest_loaded =
+        zeliard_load_record(record, sizeof(record)) &&
+        zeliard_test_game_u8(0x12) == 0x08 &&
+        zeliard_test_game_u8(0x9C) == 0xFF &&
+        zeliard_town_area() == 3;
+    ok &= hero_crest_loaded;
+    printf("main_controls:hero_crest_save_restore: %s state=%02x "
+           "inventory=%02x area=%d\n",
+           hero_crest_loaded ? "PASS" : "FAIL",
+           zeliard_test_game_u8(0x12), zeliard_test_game_u8(0x9C),
+           zeliard_town_area());
+    record[0x12] &= (u8)~0x08;
+    record[0x9C] = 0;
     const int bosque_loaded = zeliard_load_record(record, sizeof(record));
     const unsigned long long bosque_playfield =
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);

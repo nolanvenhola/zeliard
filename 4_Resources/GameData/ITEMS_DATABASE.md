@@ -251,6 +251,11 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **History**: Symbol of Warrior God temple, awarded to martial arts winners
 - **Story**: Stolen by Jashiin when he destroyed temple
 - **Required For**: Getting past sentry in Bosque who blocks boss entrance
+- **Release object**: `MP30` object 40 at world coordinate `166/54`; its persistent link is player/USR byte `0x12`, mask `0x08`
+- **Inventory marker**: `0x9C = 0xFF`; this is drawn by `201SELCT` but is not the Bosque gate by itself
+- **Acquisition**: slashing the authored tree target runs `200FIGHT:entity_fn_e_4`, displays "You get the Hero's Crest.", sets `0x9C`, and deactivates through the object's persistent link
+- **Bosque sentry**: `BSMP` tests `0x12/0x08`, not `0x9C`; without it the Yes/No exchange blocks passage, while owning it changes the sentry to the one-time acceptance dialog and passable state
+- **Persistence**: both the cavern event bit and inventory marker survive inventory, map/town transitions, death/Sage recovery, and the byte-compatible USR save/load path
 
 #### Crest of Glory
 - **Location**: Hidden in chest somewhere in caverns
