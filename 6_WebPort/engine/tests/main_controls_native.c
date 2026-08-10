@@ -370,6 +370,7 @@ int main(void) {
     record[0x92] = 2;          /* sword */
     record[0x93] = 1;          /* shield */
     record[0x99] = 1;          /* Lion Head's Key */
+    record[0xA0] = 4;          /* Tears of Esmesanti */
     record[0x9D] = 3;          /* selected spell */
     record[0xAB] = 24;         /* Espada charge */
     record[0xAD] = 8;          /* Fuego charge */
@@ -393,6 +394,7 @@ int main(void) {
         zeliard_test_game_u8(0x92) == 2 &&
         zeliard_test_game_u8(0x93) == 1 &&
         zeliard_test_game_u8(0x99) == 1 &&
+        zeliard_test_game_u8(0xA0) == 4 &&
          zeliard_test_game_u8(0x9D) == 3 &&
          zeliard_test_game_u8(0xBD) == 0xFF &&
          zeliard_test_game_u8(0xC4) == 0x81 &&
@@ -413,7 +415,7 @@ int main(void) {
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/muralla-before-cavern.ppm", g_framebuf);
     const int restored_muralla_frame =
-        restored_frame == 0x5FE83C6BB1013B40ULL;
+        restored_frame == 0x69540C88F1D2C94CULL;
     const int restored_shield_icon =
         restored_shield == 0x18FDBA10EBC3FCC6ULL;
     const int restored_sword_icon =
@@ -507,11 +509,15 @@ int main(void) {
     ok &= zeliard_test_begin_malicia_combat();
     const int lion_key_entered_cavern =
         zeliard_test_game_u8(0x99) == 1 &&
-        zeliard_test_fight_u8(0x99) == 1;
+        zeliard_test_fight_u8(0x99) == 1 &&
+        zeliard_test_game_u8(0xA0) == 4 &&
+        zeliard_test_fight_u8(0xA0) == 4;
     ok &= lion_key_entered_cavern;
-    printf("main_controls:lion_key_cavern_handoff: %s game=%u fight=%u\n",
+    printf("main_controls:progression_cavern_handoff: %s "
+           "lion=%u/%u tears=%u/%u\n",
            lion_key_entered_cavern ? "PASS" : "FAIL",
-           zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99));
+           zeliard_test_game_u8(0x99), zeliard_test_fight_u8(0x99),
+           zeliard_test_game_u8(0xA0), zeliard_test_fight_u8(0xA0));
     unsigned malicia_cue_counts[256] = {0};
     for (unsigned settle = 0; settle < 5; ++settle) {
         zeliard_tick(16);
@@ -720,6 +726,7 @@ int main(void) {
         death_sage_entry_ip == 0xA006 &&
         zeliard_test_game_u8(0x9F) == death_saved_frame_scratch &&
         zeliard_test_game_u8(0x99) == 1 &&
+        zeliard_test_game_u8(0xA0) == 4 &&
         zeliard_test_game_u8(0xC4) == 0x81 &&
         zeliard_test_game_u8(0xC5) == 0x81 &&
         zeliard_test_game_u16(0x90) == zeliard_test_game_u16(0xB2);

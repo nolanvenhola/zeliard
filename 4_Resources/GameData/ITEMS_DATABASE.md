@@ -235,6 +235,12 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 ### Tears of Esmesanti (Crystals)
 - **Small Tears** (x8): Obtained from defeating 8 main bosses
 - **9th Tear** (Large): Obtained after defeating Jashiin
+- **Release state**: USR byte `0xA0` is the canonical collected count (`0..9`)
+- **Small Tear order**: Cangrejo, Pulpo, Pollo, Agar, Vista, Tarso, Dragon, Alguien
+- **Victory presentation**: shared `ROKADEMO` sequence raises the sword, launches the crystal from the chamber, moves it into the ornamental top HUD, and plays the fanfare
+- **Persistence**: each boss has an independent defeated-state word and Tear bit; the count survives inventory, transitions, death/Sage recovery, and save/load
+- **HUD art**: counts `1..8` use the small crystal in the native non-linear slot order; count `9` adds the large final crystal
+- **Completion**: Jashiin's reward clamps the count to 9 and the completed quest routes the Felishika King dialog to the Princess chamber/ending handoff
 - **Purpose**: Required to destroy Jashiin permanently
 - **Story**: Collect all 9 to complete the game
 
