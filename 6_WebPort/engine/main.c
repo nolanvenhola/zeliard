@@ -1355,6 +1355,9 @@ EXPORT const char      *zeliard_save_name(void) {
 EXPORT const u8        *zeliard_save_record(void) {
     return zeliard_room_masm_vm_save_record();
 }
+EXPORT const u8        *zeliard_player_record(void) {
+    return g_game_segments[0];
+}
 EXPORT int              zeliard_load_record(const u8 *record, int size) {
     u8 snapshot[ZEL_PLAYER_RECORD_SIZE];
     if (!record || size != ZEL_PLAYER_RECORD_SIZE) return 0;
@@ -1396,6 +1399,15 @@ EXPORT int              zeliard_fight_music_chunk(void) {
         ? zeliard_fight_masm_vm_music_chunk()
         : -1;
 }
+EXPORT int              zeliard_ending_active(void) {
+    return zeliard_fight_masm_vm_ending_active();
+}
+EXPORT int              zeliard_ending_finished(void) {
+    return zeliard_fight_masm_vm_ending_finished();
+}
+EXPORT int              zeliard_ending_scene(void) {
+    return zeliard_fight_masm_vm_ending_scene();
+}
 EXPORT int              zeliard_test_restart_fight(
                             int selector, int start_position,
                             int map_scroll_row, int screen_position) {
@@ -1436,6 +1448,15 @@ EXPORT int              zeliard_test_defeat_pulpo(void) {
            zeliard_fight_masm_vm_poke_u8(0xAA9E, 0) &&
            zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
 }
+EXPORT int              zeliard_test_defeat_jashiin(void) {
+    if (!zeliard_fight_masm_vm_active() ||
+        zeliard_fight_masm_vm_peek_u16(0xC002) != 73 ||
+        g_game_segments[0][0xC4] != 0x1E)
+        return 0;
+    return zeliard_fight_masm_vm_poke_u16(0xAC06, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xAC20, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+}
 EXPORT int              zeliard_test_fight_u8(unsigned offset) {
     return zeliard_fight_masm_vm_active() && offset <= 0xFFFF
         ? zeliard_fight_masm_vm_peek_u8((u16)offset) : -1;
@@ -1469,6 +1490,26 @@ EXPORT int zeliard_test_game_set_u8(unsigned offset, unsigned value) {
     if (offset >= sizeof(g_game_segments[0])) return -1;
     g_game_segments[0][offset] = (u8)value;
     return 0;
+}
+
+EXPORT int zeliard_test_restart_town(int area) {
+    if (g_scene != SCENE_GAME || area < ZEL_TOWN_AREA_FELISHIKA ||
+        area > ZEL_TOWN_AREA_ESCO ||
+        !zeliard_town_area_supported((u8)(0x80u | (u8)area)))
+        return 0;
+    zeliard_room_masm_vm_stop();
+    zeliard_inventory_masm_vm_stop();
+    zeliard_fight_masm_vm_stop();
+    zel_input_release_all(&g_input, g_game_segments[0], 1);
+    if (zeliard_town_prepare_level_start(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            (u8)(0x80u | (u8)area)) != 0)
+        return 0;
+    g_game_segments[0][ZEL_PLAYER_SAVE_SAGE] = (u8)(0x80u | (u8)area);
+    g_fight_started = 0;
+    g_cavern_transition.active = 0;
+    g_cavern_transition.complete = 0;
+    return enter_game_scene() ? 1 : 0;
 }
 
 #if !defined(__EMSCRIPTEN__) && !defined(ZELIARD_NO_MAIN)

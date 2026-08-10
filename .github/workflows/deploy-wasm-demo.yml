@@ -114,6 +114,7 @@ jobs:
           done
           curl --fail http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null
           node test_opening_audio_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
+          node test_continuous_playthrough_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
