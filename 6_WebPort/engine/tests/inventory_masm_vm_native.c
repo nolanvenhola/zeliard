@@ -340,6 +340,38 @@ int main(void) {
         elixir_cue == 0x0E;
     zeliard_inventory_masm_vm_stop();
 
+    /* Chikara Powder copies all seven maximum-charge bytes, including
+     * unlearned spell slots, exactly as release REP MOVSB does. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 4;
+    memset(game + 0xAB, 0, 7);
+    for (u8 i = 0; i < 7; ++i) game[0xB4 + i] = (u8)(i + 1);
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u8 chikara_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 chikara_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_chikara: charges=%u/%u/%u/%u/%u/%u/%u "
+           "item=%02x result=%02x cue=%02x\n", game[0xAB], game[0xAC],
+           game[0xAD], game[0xAE], game[0xAF], game[0xB0], game[0xB1],
+           game[0xA6], game[0xFF4B], chikara_cue);
+    ok &= memcmp(game + 0xAB, game + 0xB4, 7) == 0 &&
+        game[0xA6] == 0 && game[0xFF4B] == 4 &&
+        chikara_select_cue == 0x0C && chikara_cue == 0x0E;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release 201SELCT item ID 5 (Magia Stone) seeds 200FIGHT's four
      * seven-byte orbiting-sprite records at EB60h. */
     memset(game, 0, 0x10000);
