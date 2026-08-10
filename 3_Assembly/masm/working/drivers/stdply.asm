@@ -50,8 +50,10 @@ seg_a		segment	byte public
 
 		org	0
 
+; MASM/TLINK needs a FAR entry envelope to emit the raw binary.  This is a
+; packaging declaration only: zeliad loads these bytes as data and never calls
+; this label.  functest/classify.py therefore excludes the whole module.
 run_stdply_main		proc	far
-
 start:
 
 ;--------------------------------------------------------------------------

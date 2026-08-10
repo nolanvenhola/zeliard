@@ -252,7 +252,7 @@ NON_MCGA_CHUNKS = {
     'gmcga', 'gmega', 'gmhgc', 'gmtga',
 }
 BROWSER_SMOKE_CHUNKS = RELEASE_VM_CHUNKS | INTEGRATION_CHUNKS | NON_MCGA_CHUNKS
-DATA_ONLY_CHUNKS = {'stdply'}
+DATA_ONLY_MODULES = {'stdply'}
 
 EXACT_ORACLE_SOURCE = (
     '3_Assembly/masm/functest/proc_equivalence/'
@@ -360,9 +360,6 @@ def evidence_for(row: dict, procedure_evidence: dict) -> tuple[str, str, str, st
         return ('out-of-scope-non-mcga', 'target-scope',
                 '3_Assembly/masm/functest/proc_equivalence/'
                 'test_mole_ympd_mcga_frame_oracle.py', '')
-    if row['chunk'] in DATA_ONLY_CHUNKS:
-        return ('out-of-scope-data-only', 'target-scope',
-                '3_Assembly/masm/working/drivers/stdply.asm', '')
     if row['chunk'] in RELEASE_VM_CHUNKS:
         return ('exact-release-byte-vm', 'chunk/integration',
                 '6_WebPort/shell/test_continuous_playthrough_browser.mjs', '')
@@ -395,6 +392,13 @@ def main() -> None:
     asm_features: dict[Path, dict[str, dict]] = {}
     n_calls_in: dict[str, int] = defaultdict(int)
     for path in asm_files:
+        if path.stem in DATA_ONLY_MODULES:
+            # Some raw data images retain a PROC wrapper solely because the
+            # historical MASM/TLINK pipeline requires an entry symbol.  They
+            # are loaded/replaced as records, never called, so they do not
+            # belong in the executable-procedure denominator.
+            asm_features[path] = {}
+            continue
         feats = parse_asm_features(path)
         asm_features[path] = feats
         for f in feats.values():

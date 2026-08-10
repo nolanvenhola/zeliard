@@ -63,7 +63,7 @@ def main() -> int:
 
     required_chunks = {
         "game", "zeliad", "gmcga", "gmega", "gmhgc", "gmmcga",
-        "gmtga", "stdply", "stick",
+        "gmtga", "stick",
     }
     missing_chunks = required_chunks - {row["chunk"] for row in rows}
     for chunk in sorted(missing_chunks):

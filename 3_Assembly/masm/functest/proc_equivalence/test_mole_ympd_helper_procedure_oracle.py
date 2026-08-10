@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import struct
 from pathlib import Path
 
 from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, UC_PROT_ALL, Uc
@@ -16,6 +17,7 @@ from unicorn.x86_const import (
 MASM_ROOT = Path(__file__).resolve().parents[2]
 MOLE = MASM_ROOT / "bin" / "zelres2" / "207MOLE.bin"
 YMPD = MASM_ROOT / "bin" / "zelres2" / "208YMPD.bin"
+ORIGINAL_SAR = MASM_ROOT.parents[1] / "1_OriginalGame" / "zelres2.sar"
 CODE_SEG, DATA_SEG, STACK_SEG = 0x1000, 0x2000, 0x8000
 RET = 0x7FF0
 
@@ -23,12 +25,25 @@ MCGA_UNPACK, MONO_SCAN, EXTRACT = 0x0315, 0x03E1, 0x0407
 EGA_ROWS, PIXEL_CGA, COPY_28, PIXEL_CGA_ALT = 0x33BC, 0x3553, 0x3639, 0x389D
 
 
+def release_chunk(path: Path, index: int) -> bytes:
+    if path.exists():
+        return path.read_bytes()
+    sar = ORIGINAL_SAR.read_bytes()
+    start = struct.unpack_from("<I", sar, index * 4)[0]
+    size = struct.unpack_from("<I", sar, start)[0]
+    chunk = sar[start:start + 4 + size]
+    if len(chunk) != 4 + size:
+        raise AssertionError(f"short zelres2 chunk {index}")
+    return chunk
+
+
 class Machine:
     def __init__(self) -> None:
         self.mu = Uc(UC_ARCH_X86, UC_MODE_16)
         self.mu.mem_map(0, 0x100000, UC_PROT_ALL)
-        self.mu.mem_write(CODE_SEG << 4, MOLE.read_bytes()[4:])
-        self.mu.mem_write((CODE_SEG << 4) + 0x3300, YMPD.read_bytes()[4:])
+        self.mu.mem_write(CODE_SEG << 4, release_chunk(MOLE, 7)[4:])
+        self.mu.mem_write((CODE_SEG << 4) + 0x3300,
+                          release_chunk(YMPD, 8)[4:])
         self.mu.hook_add(UC_HOOK_CODE, self._stop)
 
     def _stop(self, uc: Uc, _address: int, _size: int, _user: object) -> None:

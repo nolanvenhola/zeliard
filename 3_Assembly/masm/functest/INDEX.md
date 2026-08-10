@@ -230,6 +230,7 @@ The following evidence files are indexed here explicitly and checked by CI:
 - [test_mcga_title_tile_pipeline_oracle.py](proc_equivalence/test_mcga_title_tile_pipeline_oracle.py)
 - [test_mole_ympd_mcga_frame_oracle.py](proc_equivalence/test_mole_ympd_mcga_frame_oracle.py)
 - [test_mole_ympd_helper_procedure_oracle.py](proc_equivalence/test_mole_ympd_helper_procedure_oracle.py) — exact release-byte behavior for the seven executable 207MOLE/208YMPD mode helpers; the eighth inventoried label was proven to be sprite data and removed from the procedure denominator
+- [test_data_only_module_boundaries.py](proc_equivalence/test_data_only_module_boundaries.py) — pins the exact 233-byte `stdply.bin` player-record payload and prevents data-only labels from re-entering procedure coverage
 - [test_opdemo_char_render_proc_oracle.py](proc_equivalence/test_opdemo_char_render_proc_oracle.py)
 - [test_opdemo_exit_jmp.py](proc_equivalence/test_opdemo_exit_jmp.py)
 - [test_opdemo_nec_hou_handoff_memory.py](proc_equivalence/test_opdemo_nec_hou_handoff_memory.py)
