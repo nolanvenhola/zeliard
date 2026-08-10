@@ -273,6 +273,11 @@ All weapons, armor, magic items, consumables, and equipment with prices and loca
 - **Story**: Jashiin's henchmen posed as heroes, causing mistrust
 - **Required For**: NPCs in Llama Town won't speak to you without it
 - **How to Get**: Defeat Paguro (monster in lady's house)
+- **Two-stage release state**: Paguro's `315ZEL2` completion writes defeated byte `0x30`; the complete fight handoff leaves native save bytes `0x30/0x31 = 0xFF` and awards 1,600 Almas, while the hut resident's subsequent gratitude dialog performs the Crest award
+- **Award state**: `106TOWN` control opcode `0x83` sets player/USR byte `0x34`, mask `0x80`, and inventory marker `0x9A = 0xFF`, then immediately reapplies Llama's authored NPC mutations
+- **Duplicate prevention**: the `0x34/0x80` event changes the resident from dialog 1 to dialog 2, so revisits use the thanks/follow-up text and cannot execute the award opcode again
+- **Town recognition**: Paguro completion and Crest award mutate the other Llama NPC dialog IDs from their distrust branches to their post-Crest advice branches
+- **Persistence**: defeat, award, and inventory bytes survive inventory, transitions, death/Sage recovery, and byte-compatible USR save/load
 
 ---
 

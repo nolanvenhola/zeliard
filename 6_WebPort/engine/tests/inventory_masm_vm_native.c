@@ -89,6 +89,26 @@ int main(void) {
         lion_key_frame == 0xC75C5285A14628DFULL;
     zeliard_inventory_masm_vm_stop();
 
+    /* Elf Crest is the first native ability slot at 009Ah. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x92] = 1;
+    game[0x9A] = 0xFF;
+    game[0x9B] = 0;
+    game[0x9C] = 0;
+    game[0xB2] = 100;
+    game[0x90] = 100;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    const unsigned long long elf_crest_frame = fnv1a64(vga, 64000);
+    printf("inventory_masm_elf_crest: abilities=%02x/%02x/%02x "
+           "frame=%016llx\n", game[0x9A], game[0x9B], game[0x9C],
+           elf_crest_frame);
+    ok &= game[0x9A] == 0xFF && game[0x9B] == 0 && game[0x9C] == 0 &&
+        elf_crest_frame == 0xE03E6EAF78609F00ULL;
+    zeliard_inventory_masm_vm_stop();
+
     /* Glory Crest is the second native ability slot at 009Bh. */
     memset(game, 0, 0x10000);
     memset(vga, 0, 0x10000);

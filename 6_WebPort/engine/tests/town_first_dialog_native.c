@@ -349,13 +349,41 @@ static int test_llama_cape_and_elf_crest(void) {
           (segment[0x0034] & 0x80) && segment[0xD0D2] == 2 &&
           segment[0xD0E2] == 16 && segment[0xD0EA] == 11 &&
           crest_award == 0xC053CC50772FD625ULL;
+
+    /* The award event permanently changes the resident from dialog 1 to
+     * dialog 2.  Re-entering the conversation therefore cannot execute the
+     * 83h award opcode a second time. */
+    memset(&dialog, 0, sizeof(dialog));
+    memset(vga, 0, sizeof(vga));
+    const u8 repeat_flags = segment[0x0034];
+    const int crest_repeat_begin = zeliard_town_dialog_begin(
+        &dialog, segment, scratch, vga, sizeof(vga), 0x00DC);
+    for (unsigned guard = 0;
+         guard < 2000 && !dialog.final_wait;
+         ++guard) {
+        if (dialog.scroll_active || dialog.scroll_resume_pending) {
+            ok &= zeliard_town_dialog_advance_pit(
+                &dialog, segment, vga, sizeof(vga)) >= 0;
+        } else if (dialog.waiting) {
+            segment[0xFF1D] = 0xFF;
+            ok &= zeliard_town_dialog_continue(
+                &dialog, segment, scratch, vga, sizeof(vga)) >= 0;
+        }
+    }
+    const unsigned long long crest_repeat = fnv1a64(vga, sizeof(vga));
+    ok &= crest_repeat_begin == 0 && dialog.final_wait &&
+          segment[0x009A] == 0xFF && segment[0x0034] == repeat_flags &&
+          segment[0xD0D2] == 2 &&
+          crest_repeat == 0x88C4D4825B57DB92ULL;
     printf("town_llama_cape_crest: %s prompt=%016llx bought=%016llx "
-           "crest=%016llx almas=%u wearable=%u flags=%02x/%02x "
-           "dialogs=%u/%u/%u\n",
+           "crest=%016llx repeat=%016llx almas=%u wearable=%u "
+           "flags=%02x/%02x "
+           "dialogs=%u/%u/%u repeat_state=%d/%u/%u/%u\n",
            ok ? "PASS" : "FAIL", cape_prompt, cape_bought, crest_award,
-           almas, segment[0x00A1],
+           crest_repeat, almas, segment[0x00A1],
            segment[0x0034], segment[0x009A], segment[0xD0D2],
-           segment[0xD0DA], segment[0xD0E2]);
+           segment[0xD0DA], segment[0xD0E2], crest_repeat_begin,
+           dialog.final_wait, dialog.active, dialog.waiting);
     return ok;
 }
 
