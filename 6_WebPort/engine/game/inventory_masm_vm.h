@@ -19,6 +19,7 @@ int zeliard_inventory_masm_vm_active(void);
 int zeliard_inventory_masm_vm_at_input_poll(void);
 u16 zeliard_inventory_masm_vm_ip(void);
 u8 zeliard_inventory_masm_vm_peek(u16 offset);
+void zeliard_inventory_masm_vm_poke(u16 offset, u8 value);
 u16 zeliard_inventory_masm_vm_itemp_word(u16 offset);
 u8 zeliard_inventory_masm_vm_take_sound_cue(void);
 void zeliard_inventory_masm_vm_stop(void);

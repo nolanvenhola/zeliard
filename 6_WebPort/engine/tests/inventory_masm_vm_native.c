@@ -307,6 +307,39 @@ int main(void) {
         zeliard_inventory_masm_vm_take_sound_cue() == 0;
     zeliard_inventory_masm_vm_stop();
 
+    /* Elixir of Kashi (item ID 3) restores the selected spell to its
+     * per-spell maximum; it does not merely add one charge. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 3;
+    game[0x9D] = 2;
+    game[0xAC] = 1;
+    game[0xB5] = 6;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    zeliard_inventory_masm_vm_poke(0x009D, 2);
+    game[0xFF16] = 1;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 1, 0);
+    game[0xFF16] = 0;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const u8 elixir_select_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    const u8 elixir_cue = zeliard_inventory_masm_vm_take_sound_cue();
+    printf("inventory_masm_elixir: charge=%u/%u item=%02x result=%02x "
+           "cue=%02x\n", game[0xAC], game[0xB5], game[0xA6],
+           game[0xFF4B], elixir_cue);
+    ok &= game[0xAC] == 6 && game[0xB5] == 6 && game[0xA6] == 0 &&
+        game[0xFF4B] == 3 && elixir_select_cue == 0x0C &&
+        elixir_cue == 0x0E;
+    zeliard_inventory_masm_vm_stop();
+
     /* Release 201SELCT item ID 5 (Magia Stone) seeds 200FIGHT's four
      * seven-byte orbiting-sprite records at EB60h. */
     memset(game, 0, 0x10000);

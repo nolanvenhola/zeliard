@@ -303,6 +303,9 @@ u16 zeliard_inventory_masm_vm_ip(void) { return zel_inventory86_ip(); }
 u8 zeliard_inventory_masm_vm_peek(u16 offset) {
     return zel_inventory86_memory()[linear(GAME_SEG, offset)];
 }
+void zeliard_inventory_masm_vm_poke(u16 offset, u8 value) {
+    zel_inventory86_memory()[linear(GAME_SEG, offset)] = value;
+}
 u16 zeliard_inventory_masm_vm_itemp_word(u16 offset) {
     return read_u16(zel_inventory86_memory(), linear(ITEMP_SEG, offset));
 }
