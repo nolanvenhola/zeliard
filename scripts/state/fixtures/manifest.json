@@ -1,0 +1,2119 @@
+{
+  "authoritative_layout": "3_Assembly/masm/working/drivers/stdply.inc",
+  "authoritative_seed_sha256": "c2312fb031230d2cab839ee9f62cca415fbcd414011d884a30a38b66aae44fb8",
+  "fixtures": {
+    "malformed": {
+      "BADBOOL.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "e18bc2528e0601de5997b0eefed8c11856935245b828d27863850b05a8db44e7",
+        "size": 256
+      },
+      "BADHP.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "154038a33c988ae1b5f0692b1a106462a289e77339ae30632ab75e628a4e2014",
+        "size": 256
+      },
+      "BADSAGE.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "52ac285771c32f254a03091c9e02083549b3f05eda71f8ff95420ff71843a0b6",
+        "size": 256
+      },
+      "BADSPELL.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "0bb95ff112f129fd25131be74d7f99ea9ec0ed83023d04c2909b0eb288615c77",
+        "size": 256
+      },
+      "LONG257.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "67d100810b283b2d344e650ca74363bc16c7af93c652ac4a66dc19f5699196fa",
+        "size": 257
+      },
+      "SHORT255.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "436262701daf16770f3809d349b08d77c341a9d5552f5b639d5805925756652e",
+        "size": 255
+      },
+      "X81BAD.USR": {
+        "must_not_run_in_dosbox": true,
+        "sha256": "e92d84d326a7c7a32d6a3fd3b0f94e0a72cedd6e49631cc560b946adc1511096",
+        "size": 256
+      }
+    },
+    "valid": {
+      "BASE.USR": {
+        "sha256": "72f610d07c31fbcb96f7e60c59be97576f3e5318fe48ba67ae4ed4f6470f9ef3",
+        "size": 256
+      },
+      "BOUNDARY.USR": {
+        "sha256": "579a5714ed515f3c2a8fce084963537a5b0f240ac22735f23032db7031ad874c",
+        "size": 256
+      },
+      "CLEAR.USR": {
+        "sha256": "72f610d07c31fbcb96f7e60c59be97576f3e5318fe48ba67ae4ed4f6470f9ef3",
+        "size": 256
+      },
+      "LEAKAGE.USR": {
+        "sha256": "b53b722b913e3926815a93c2a3cb371e352ea523c2e3c39204f05eb071d3c242",
+        "size": 256
+      },
+      "PROGRESS.USR": {
+        "sha256": "b4eda6f5d074daf6d198a29ce2bd41cede66d125f57c9867d128deb2f4fad1fb",
+        "size": 256
+      }
+    }
+  },
+  "format": "zeliard-usr-fixtures-v1",
+  "generator": "scripts/state/zeliard_state.py",
+  "persistent_coverage": [
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.cangrejo_defeated",
+      "offset": 0,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.pulpo_defeated",
+      "offset": 8,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.pollo_defeated",
+      "offset": 16,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.agar_defeated",
+      "offset": 24,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.vista_defeated",
+      "offset": 32,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.tarso_defeated",
+      "offset": 40,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.paguro_defeated",
+      "offset": 48,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFFFF",
+      "name": "boss.dragon_defeated",
+      "offset": 50,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFF",
+      "name": "story.spoke_to_king",
+      "offset": 5,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0xFF",
+      "name": "story.entered_caverns_first_time",
+      "offset": 6,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "malicia.chest_50_gold",
+      "offset": 2,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "malicia.chest_red_potion",
+      "offset": 2,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "malicia.muralla_key",
+      "offset": 2,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "malicia.wall_blue_potion",
+      "offset": 2,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "malicia.cangrejo_key",
+      "offset": 2,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "malicia.cangrejo_door_open",
+      "offset": 3,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "malicia.satono_door_open",
+      "offset": 3,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "malicia.tear",
+      "offset": 3,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "peligro.chest_blue_potion_bat",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "peligro.key_locked_door",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "peligro.key_blue_door",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "peligro.wall_red_potion_far",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "peligro.chest_50_gold",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "peligro.empty_chest",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "peligro.wall_100_almas",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "peligro.chest_red_potion",
+      "offset": 10,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "peligro.blue_door_open",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "peligro.red_door_open",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "peligro.third_dungeon_open",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "peligro.pulpo_key",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "peligro.tear",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "peligro.wall_red_potion_near",
+      "offset": 11,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "madera.red_potion_small_tree",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "madera.key",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "madera.chest_red_potion_crest",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "madera.wall_red_potion_large_tree",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "riza.hero_crest_gate",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "madera.gold_50",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "riza.blue_potion",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "riza.red_potion",
+      "offset": 18,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "riza.red_potion_2",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "riza.chest_blue_potion",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "riza.empty_chest",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "riza.gold_100",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "riza.red_door_open",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "riza.pollo_key",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "riza.tear",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "riza.fourth_dungeon_open",
+      "offset": 19,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "glacial.key",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "glacial.red_potion_door",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "glacial.red_potion_ruzeria",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "glacial.ruzeria_shoes",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "glacial.blue_potion_ruzeria",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "glacial.blue_potion_boss",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "glacial.red_potion_gold",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "glacial.gold_100",
+      "offset": 26,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "escarcha.first_door_open",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "escarcha.agar_door_open",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "escarcha.chest_50_gold",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "escarcha.chest_blue_potion",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "escarcha.helada_key",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "escarcha.red_potion",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "escarcha.blue_potion_boss_key",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "escarcha.boss_key",
+      "offset": 27,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "escarcha.wall_blue_potion",
+      "offset": 28,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "escarcha.wall_red_potion",
+      "offset": 28,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "escarcha.helada_door_open",
+      "offset": 28,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "escarcha.tear",
+      "offset": 28,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "corroer.chest_red_potion",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "corroer.wall_red_potion",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "corroer.chest_500_gold_far",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "corroer.chest_blue_potion",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "cementar.chest_500_gold",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "cementar.chest_50_gold_entry",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "cementar.pirika_shoes",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "cementar.chest_100_gold",
+      "offset": 34,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "corroer.cementar_door_open",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "cementar.wall_blue_potion_right",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "cementar.chest_1000_gold",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "cementar.first_key",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "cementar.chest_50_gold_boss_route",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "cementar.chest_blue_potion_vista",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "cementar.boss_key",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "cementar.chest_red_potion",
+      "offset": 35,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "cementar.crest_glory",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "cementar.wall_100_almas",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "cementar.wall_blue_potion_left",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "cementar.vista_door_open",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "cementar.vista_blue_potion",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "cementar.tear",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "cementar.crest_glory_returned",
+      "offset": 36,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "tesoro.chest_red_potion",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "tesoro.empty_chest",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "tesoro.silkarn_key",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "tesoro.wall_blue_potion",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "tesoro.chest_1000_gold",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "tesoro.silkarn_shoes",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "tesoro.chest_blue_potion_left",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "tesoro.chest_blue_potion_right",
+      "offset": 42,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "tesoro.chest_1000_gold_2",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "tesoro.dorado_key",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "tesoro.caliente_door_open",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "tesoro.arrugia_door_open",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "tesoro.tarso_door_open",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "tesoro.dorado_door_open",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "tesoro.wall_blue_potion_boss",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "tesoro.chest_500_gold",
+      "offset": 43,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "plata.chest_red_potion",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "plata.wall_blue_potion_fire",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "plata.wall_blue_potion",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "plata.wall_red_potion",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "arrugia.enchantment_sword",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "arrugia.feruza_shoes",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "arrugia.gold_1000_3",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "arrugia.gold_1000_2",
+      "offset": 44,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "arrugia.gold_1000_1",
+      "offset": 45,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "arrugia.blue_potion",
+      "offset": 45,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "plata.tarso_key",
+      "offset": 45,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "plata.tear",
+      "offset": 45,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "llama.spoke_to_girl",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "llama.asbestos_cape",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "caliente.first_door_open",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "caliente.dragon_door_open",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "caliente.chest_blue_potion_platform",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "caliente.key_1",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "caliente.chest_blue_potion_wind",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "caliente.key_2",
+      "offset": 52,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "caliente.chest_blue_potion_dragon",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "caliente.chest_1000_gold",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "caliente.second_door_open",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "reaccion.chest_blue_potion",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "reaccion.chest_500_gold",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "correr.chest_blue_potion",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "correr.key_3",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "correr.chest_1000_gold",
+      "offset": 53,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "caliente.tear",
+      "offset": 54,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "absor.ceiling_blue_potion_left",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "absor.ceiling_blue_potion_dragon",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "absor.ceiling_blue_potion_pit",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "absor.chest_500_gold",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "absor.lion_key",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "absor.chest_1000_gold",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "absor.chest_1000_gold_falter",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "absor.empty_chest",
+      "offset": 66,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "absor.chest_500_gold_far",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "absor.first_door_open",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "absor.chest_1000_gold_2",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "absor.ceiling_blue_potion_above",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "absor.ceiling_blue_potion_key",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "absor.key_2",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "absor.boss_key",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "absor.ceiling_blue_potion_esco",
+      "offset": 67,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "milagro.chest_1000_gold",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "milagro.wall_blue_potion",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "milagro.third_door_open",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "milagro.second_door_open",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x08",
+      "name": "milagro.key",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x04",
+      "name": "milagro.ceiling_blue_potion_current",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x02",
+      "name": "milagro.ceiling_blue_potion_above",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x01",
+      "name": "milagro.ceiling_blue_potion_below",
+      "offset": 68,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x80",
+      "name": "esco.teleport_to_dorado",
+      "offset": 69,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x40",
+      "name": "falter.tear",
+      "offset": 69,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x20",
+      "name": "final.jashiin_door_open",
+      "offset": 69,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    },
+    {
+      "clear": "CLEAR.USR",
+      "mask": "0x10",
+      "name": "final.key",
+      "offset": 69,
+      "round_trip": true,
+      "set": "PROGRESS.USR"
+    }
+  ],
+  "scalar_coverage": [
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "starting_position_in_town",
+      "offset": 128,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "map_scroll_row",
+      "offset": 130,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 26,
+      "minimum": 0,
+      "name": "screen_position",
+      "offset": 131,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "fight_player_col",
+      "offset": 132,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 16777215,
+      "minimum": 0,
+      "name": "gold_carried_x65536",
+      "offset": 133,
+      "round_trip": "unit:min+max",
+      "width": 3
+    },
+    {
+      "maximum": 16777215,
+      "minimum": 0,
+      "name": "gold_in_bank_x65536",
+      "offset": 136,
+      "round_trip": "unit:min+max",
+      "width": 3
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "player_almas",
+      "offset": 139,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "hero_level",
+      "offset": 141,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "experience",
+      "offset": 142,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "player_HP",
+      "offset": 144,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 7,
+      "minimum": 0,
+      "name": "sword",
+      "offset": 146,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 6,
+      "minimum": 0,
+      "name": "shield",
+      "offset": 147,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "shield_HP",
+      "offset": 148,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "shield_max_HP",
+      "offset": 150,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "keys_normal",
+      "offset": 152,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "keys_lion",
+      "offset": 153,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "crest_elf",
+      "offset": 154,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "crest_glory",
+      "offset": 155,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "crest_hero",
+      "offset": 156,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 7,
+      "minimum": 0,
+      "name": "selected_spell",
+      "offset": 157,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "selected_accessory",
+      "offset": 158,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 9,
+      "minimum": 0,
+      "name": "tears_of_esmesanti_count",
+      "offset": 160,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "accessory_slot_1",
+      "offset": 161,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "accessory_slot_2",
+      "offset": 162,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "accessory_slot_3",
+      "offset": 163,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "accessory_slot_4",
+      "offset": 164,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 5,
+      "minimum": 0,
+      "name": "accessory_slot_5",
+      "offset": 165,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 8,
+      "minimum": 0,
+      "name": "item_slot_1",
+      "offset": 166,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 8,
+      "minimum": 0,
+      "name": "item_slot_2",
+      "offset": 167,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 8,
+      "minimum": 0,
+      "name": "item_slot_3",
+      "offset": 168,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 8,
+      "minimum": 0,
+      "name": "item_slot_4",
+      "offset": 169,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 8,
+      "minimum": 0,
+      "name": "item_slot_5",
+      "offset": 170,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_espada",
+      "offset": 171,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_saeta",
+      "offset": 172,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_fuego",
+      "offset": 173,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_lanzar",
+      "offset": 174,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_rascar",
+      "offset": 175,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_agua",
+      "offset": 176,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_guerra",
+      "offset": 177,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 65535,
+      "minimum": 1,
+      "name": "player_hp_max",
+      "offset": 178,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_espada",
+      "offset": 180,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_saeta",
+      "offset": 181,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_fuego",
+      "offset": 182,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_lanzar",
+      "offset": 183,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_rascar",
+      "offset": 184,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_agua",
+      "offset": 185,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_charge_max_guerra",
+      "offset": 186,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_espada",
+      "offset": 187,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_saeta",
+      "offset": 188,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_fuego",
+      "offset": 189,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_lanzar",
+      "offset": 190,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_rascar",
+      "offset": 191,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_agua",
+      "offset": 192,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "spell_known_guerra",
+      "offset": 193,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "facing_direction",
+      "offset": 194,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "boss_intro_flag",
+      "offset": 195,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 137,
+      "minimum": 128,
+      "name": "save_sage",
+      "offset": 196,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 137,
+      "minimum": 128,
+      "name": "last_sage_visited",
+      "offset": 197,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 65535,
+      "minimum": 0,
+      "name": "heal_pulse_count",
+      "offset": 198,
+      "round_trip": "unit:min+max",
+      "width": 2
+    },
+    {
+      "maximum": 31,
+      "minimum": 0,
+      "name": "current_level_idx",
+      "offset": 200,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_muralla",
+      "offset": 201,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_satono",
+      "offset": 202,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_bosque",
+      "offset": 203,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_helada",
+      "offset": 204,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_tumba",
+      "offset": 205,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_dorado",
+      "offset": 206,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_llama",
+      "offset": 207,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_pureza",
+      "offset": 208,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "magic_shop_inventory_esco",
+      "offset": 209,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_muralla",
+      "offset": 210,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_satono",
+      "offset": 211,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_bosque",
+      "offset": 212,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_helada",
+      "offset": 213,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_tumba",
+      "offset": 214,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_dorado",
+      "offset": 215,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_llama",
+      "offset": 216,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_pureza",
+      "offset": 217,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_swords_esco",
+      "offset": 218,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_muralla",
+      "offset": 219,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_satono",
+      "offset": 220,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_bosque",
+      "offset": 221,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_helada",
+      "offset": 222,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_tumba",
+      "offset": 223,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_dorado",
+      "offset": 224,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_llama",
+      "offset": 225,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_pureza",
+      "offset": 226,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 252,
+      "minimum": 0,
+      "name": "weapon_shop_shields_esco",
+      "offset": 227,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "sabre_oil_power",
+      "offset": 228,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "sages_spoken_bitmap",
+      "offset": 229,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "scene_trans_request",
+      "offset": 230,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "gvar_pose_idx",
+      "offset": 231,
+      "round_trip": "unit:min+max",
+      "width": 1
+    },
+    {
+      "maximum": 255,
+      "minimum": 0,
+      "name": "init_complete_flag",
+      "offset": 232,
+      "round_trip": "unit:min+max",
+      "width": 1
+    }
+  ]
+}

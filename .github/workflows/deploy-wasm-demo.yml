@@ -30,6 +30,7 @@ on:
       - 1_OriginalGame/mscadlib.drv
       - 6_WebPort/engine/third_party/8086tiny/**
       - 6_WebPort/**
+      - scripts/state/**
   workflow_dispatch:
 
 permissions:
@@ -69,6 +70,12 @@ jobs:
 
       - name: Prepare reconstructed assets
         run: node 6_WebPort/scripts/copy_assets.mjs
+
+      - name: Verify deterministic USR fixtures and editor round trips
+        run: |
+          python scripts/state/zeliard_state.py generate
+          git diff --exit-code -- scripts/state/fixtures
+          python -m unittest discover scripts/state/tests -v
 
       - name: Run native parity suite
         run: make -C 6_WebPort/engine test-native
@@ -146,6 +153,16 @@ jobs:
           curl --fail http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null
           node test_opening_audio_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
           node test_continuous_playthrough_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
+          node test_usr_fixtures_browser.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/
+
+      - name: Upload state checkpoint evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-state-checkpoints
+          path: artifacts/state-checkpoints
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

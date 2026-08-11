@@ -35,6 +35,7 @@
     "display:test": "node test_display_modes_host.mjs",
     "display:browser-test": "node test_display_modes_browser.mjs",
     "sage:save-test": "node test_sage_save_browser.mjs",
+    "usr-fixtures:test": "node test_usr_fixtures_browser.mjs",
     "engine": "$(MAKE) -C ../engine wasm",
     "build:engine": "cd ../engine && make wasm",
     "dev": "vite",

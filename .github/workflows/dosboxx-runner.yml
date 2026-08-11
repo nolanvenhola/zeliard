@@ -6,12 +6,14 @@ on:
       - .github/workflows/dosboxx-runner.yml
       - scripts/capture-opening-dosboxx.ps1
       - scripts/dosboxx/**
+      - scripts/state/**
   push:
     branches: [main]
     paths:
       - .github/workflows/dosboxx-runner.yml
       - scripts/capture-opening-dosboxx.ps1
       - scripts/dosboxx/**
+      - scripts/state/**
   workflow_dispatch:
 
 permissions:
@@ -37,6 +39,27 @@ jobs:
       - name: Run original-game startup smoke
         shell: pwsh
         run: ./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source original
+
+      - name: Load every canonical fixture in original and MASM builds
+        shell: pwsh
+        run: |
+          $fixtures = Get-ChildItem ./scripts/state/fixtures/valid/*.USR
+          foreach ($source in 'original', 'masm') {
+            foreach ($fixture in $fixtures) {
+              $checkpoint = "usr-$source-$($fixture.BaseName.ToLowerInvariant())"
+              ./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source $source `
+                -SaveFile $fixture.FullName -CheckpointName $checkpoint
+            }
+          }
+          $originalBase = Get-ChildItem ./artifacts/dosboxx-runs/original-*/capture/usr-original-base.png |
+            Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          $masmBase = Get-ChildItem ./artifacts/dosboxx-runs/masm-*/capture/usr-masm-base.png |
+            Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          $originalHash = (Get-FileHash $originalBase.FullName -Algorithm SHA256).Hash
+          $masmHash = (Get-FileHash $masmBase.FullName -Algorithm SHA256).Hash
+          if ($originalHash -ne $masmHash) {
+            throw "BASE visual checkpoint differs: original=$originalHash masm=$masmHash"
+          }
 
       - name: Upload smoke evidence
         if: always()

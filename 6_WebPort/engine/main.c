@@ -1418,6 +1418,18 @@ EXPORT const u8        *zeliard_save_record(void) {
 EXPORT const u8        *zeliard_player_record(void) {
     return g_game_segments[0];
 }
+/* Full shared game segment for automated parity checkpoints.  The first 256
+ * bytes are the persistent .USR record; MASM globals, input latches, RNG
+ * working state, and timers live elsewhere in the same 64 KiB segment. */
+EXPORT const u8        *zeliard_game_segment(void) {
+    return g_game_segments[0];
+}
+EXPORT int              zeliard_game_segment_size(void) {
+    return (int)sizeof(g_game_segments[0]);
+}
+EXPORT u32              zeliard_input_subtick_accum(void) {
+    return g_input_subtick_accum;
+}
 EXPORT int              zeliard_load_record(const u8 *record, int size) {
     u8 snapshot[ZEL_PLAYER_RECORD_SIZE];
     if (!record || size != ZEL_PLAYER_RECORD_SIZE) return 0;
