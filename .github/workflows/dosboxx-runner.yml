@@ -40,6 +40,14 @@ jobs:
         shell: pwsh
         run: ./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source original
 
+      - name: Build the canonical MASM release
+        shell: pwsh
+        run: |
+          $provision = (./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Provision | Out-String) |
+            ConvertFrom-Json
+          python ./3_Assembly/masm/build_masm.py --clean --workers 4 `
+            --dosbox $provision.executable
+
       - name: Load every canonical fixture in original and MASM builds
         shell: pwsh
         run: |
@@ -48,7 +56,8 @@ jobs:
             foreach ($fixture in $fixtures) {
               $checkpoint = "usr-$source-$($fixture.BaseName.ToLowerInvariant())"
               ./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source $source `
-                -SaveFile $fixture.FullName -CheckpointName $checkpoint
+                -SaveFile $fixture.FullName -CheckpointName $checkpoint `
+                -CheckpointTimeoutSeconds 60
             }
           }
           $originalBase = Get-ChildItem ./artifacts/dosboxx-runs/original-*/capture/usr-original-base.png |

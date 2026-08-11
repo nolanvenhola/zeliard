@@ -11,6 +11,7 @@ Outputs go to masm/bin/ (release) or masm/bin_debug/ (debug).
 
 Usage:
     python build_masm.py [--verify] [--clean] [--workers N] [--serial] [--debug]
+                         [--dosbox PATH]
 
 Options:
     --verify   Verify SARs against TASM reference (release only)
@@ -18,6 +19,7 @@ Options:
     --workers  Parallel workers (default: 8)
     --serial   Force single worker
     --debug    Build with DEBUG_BUILD=1; output to masm/bin_debug/
+    --dosbox   DOSBox/DOSBox-X executable (defaults to the local TasmRunner copy)
 """
 
 import subprocess, struct, shutil, re, sys, tempfile, argparse, time
@@ -272,13 +274,18 @@ def verify_sars():
 
 
 def main():
+    global DOSBOX
     p = argparse.ArgumentParser(description='MASM 5.1 build for Zeliard')
     p.add_argument('--verify',  action='store_true', help='Verify SARs against TASM reference (release only)')
     p.add_argument('--clean',   action='store_true', help='Clean output dir before build')
     p.add_argument('--workers', type=int, default=DEFAULT_WORKERS)
     p.add_argument('--serial',  action='store_true', help='Force single worker')
     p.add_argument('--debug',   action='store_true', help='Build with DEBUG_BUILD=1; output to masm/bin_debug/')
+    p.add_argument('--dosbox', type=Path, default=DOSBOX,
+                   help='DOSBox or DOSBox-X executable used to run MASM 5.1')
     args = p.parse_args()
+
+    DOSBOX = args.dosbox.resolve()
 
     if not MASM_DIR.exists():
         print(f'FATAL: MASM 5.1 not found at {MASM_DIR}'); sys.exit(2)
