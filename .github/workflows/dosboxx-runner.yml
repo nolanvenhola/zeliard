@@ -1,0 +1,48 @@
+name: DOSBox-X runner
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/dosboxx-runner.yml
+      - scripts/capture-opening-dosboxx.ps1
+      - scripts/dosboxx/**
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/dosboxx-runner.yml
+      - scripts/capture-opening-dosboxx.ps1
+      - scripts/dosboxx/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-pin-and-runner:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Cache approved DOSBox-X archive and executable
+        uses: actions/cache@v5
+        with:
+          path: artifacts/dosboxx-cache
+          key: dosboxx-${{ runner.os }}-${{ hashFiles('scripts/dosboxx/dosboxx-pin.json') }}
+
+      - name: Verify runner logic and pinned DOSBox-X bytes
+        shell: pwsh
+        run: ./scripts/dosboxx/Test-ZeliardDosboxXRunner.ps1 -Provision
+
+      - name: Run original-game startup smoke
+        shell: pwsh
+        run: ./scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source original
+
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dosboxx-runner-smoke
+          path: artifacts/dosboxx-runs
+          if-no-files-found: error
+          retention-days: 14

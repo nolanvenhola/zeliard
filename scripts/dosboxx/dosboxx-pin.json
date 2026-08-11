@@ -1,0 +1,9 @@
+{
+  "version": "2026.08.02",
+  "releaseTag": "dosbox-x-v2026.08.02",
+  "archiveName": "dosbox-x-mingw64-2026.08.02-portable.zip",
+  "downloadUrl": "https://github.com/joncampbell123/dosbox-x/releases/download/dosbox-x-v2026.08.02/dosbox-x-mingw64-2026.08.02-portable.zip",
+  "archiveSha256": "4C5D7E582F8589C6F52C21A0361D24111497A32AAA7748DA07744E0DD8448E01",
+  "executableRelativePath": "mingw-build/mingw/dosbox-x.exe",
+  "executableSha256": "091FD7CA99FB42CE55B2FA8AAA50106DFB7B6E14EC7B6930EFEE6EA715B8F32B"
+}

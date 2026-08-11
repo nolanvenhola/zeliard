@@ -9,15 +9,27 @@ param(
     [ValidateSet('auto', 'fixed 3000', 'fixed 5000')]
     [string]$Cycles = 'auto',
 
-    [string]$OutputDir = (Join-Path $PSScriptRoot '..\artifacts\dosbox-opening')
+    [string]$OutputDir = (Join-Path $PSScriptRoot '..\artifacts\dosbox-opening'),
+
+    [string]$DosboxPath,
+
+    [string]$CacheRoot
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$dosbox = 'C:\DOSBox-X\dosbox-x.exe'
+$runnerRoot = Join-Path $PSScriptRoot 'dosboxx'
+Import-Module (Join-Path $runnerRoot 'Zeliard.DosboxX.psm1') -Force
+$pin = Get-ZeliardDosboxXPin -PinPath (Join-Path $runnerRoot 'dosboxx-pin.json')
+if (-not $CacheRoot) { $CacheRoot = Join-Path $repoRoot 'artifacts\dosboxx-cache' }
+$dosbox = if ($DosboxPath) {
+    Assert-ZeliardDosboxXExecutable -Path $DosboxPath -Pin $pin
+}
+else {
+    Install-ZeliardDosboxX -CacheRoot $CacheRoot -Pin $pin
+}
 $gameDir = if ($Source -eq 'original') { Join-Path $repoRoot '1_OriginalGame' } else { Join-Path $repoRoot '3_Assembly\masm\bin' }
 
-if (-not (Test-Path -LiteralPath $dosbox -PathType Leaf)) { throw "DOSBox-X was not found: $dosbox" }
 if (-not (Test-Path -LiteralPath (Join-Path $gameDir 'zeliad.exe') -PathType Leaf)) { throw "zeliad.exe was not found in $gameDir" }
 if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) { throw 'ffmpeg is required for deterministic DOSBox-X window capture.' }
 
@@ -61,14 +73,13 @@ do {
     Start-Sleep -Milliseconds 100
     $dosboxProcess.Refresh()
     if ($dosboxProcess.HasExited) { throw "DOSBox-X exited before its window became available (exit code $($dosboxProcess.ExitCode))." }
-} until (($dosboxProcess.MainWindowHandle -ne 0 -and $dosboxProcess.MainWindowTitle) -or (Get-Date) -ge $deadline)
-if (-not $dosboxProcess.MainWindowTitle) { throw 'Timed out waiting for the DOSBox-X window title.' }
+} until (($dosboxProcess.MainWindowHandle -ne 0 -and $dosboxProcess.MainWindowTitle -match 'ZELIAD') -or (Get-Date) -ge $deadline)
+if ($dosboxProcess.MainWindowTitle -notmatch 'ZELIAD') { throw 'Timed out waiting for the stable ZELIAD DOSBox-X window.' }
 
 $psi = [System.Diagnostics.ProcessStartInfo]::new()
 $psi.FileName = 'ffmpeg'
 $psi.UseShellExecute = $false
 $psi.RedirectStandardInput = $true
-$psi.RedirectStandardError = $true
 $psi.CreateNoWindow = $true
 $psi.Arguments = '-y -f gdigrab -framerate 60 -i title="{0}" -c:v ffv1 -level 3 "{1}"' -f $dosboxProcess.MainWindowTitle, $videoPath
 $captureProcess = [System.Diagnostics.Process]::new()
