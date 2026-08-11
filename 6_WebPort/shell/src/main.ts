@@ -260,6 +260,68 @@ async function boot() {
     let lastPhaseElapsedBucket = -1;
     let lastPaused = false;
     let lastTerminated = false;
+    let lastPresentedIndices: Uint8Array | null = null;
+    let lastPresentedPalette: Uint8Array | null = null;
+    let visualPresentSequence = 0;
+    type VisualPresentEvent = {
+        sequence: number; op: string; x: number; y: number;
+        width: number; height: number; changedPixels: number;
+        hash: string; paletteHash: string; paletteChanged: boolean;
+        scene: number; phase: number;
+    };
+    const visualPresentTrace: VisualPresentEvent[] = [];
+    const hashBytes = (bytes: Uint8Array): string => {
+        let hash = 0x811c9dc5;
+        for (const byte of bytes) {
+            hash ^= byte;
+            hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        return hash.toString(16).padStart(8, '0');
+    };
+    const recordPresent = (indices: Uint8Array, palette: Uint8Array) => {
+        let minX = w, minY = h, maxX = -1, maxY = -1, changed = 0;
+        if (lastPresentedIndices) {
+            for (let i = 0; i < indices.length; i++) {
+                if (indices[i] === lastPresentedIndices[i]) continue;
+                const x = i % w;
+                const y = Math.floor(i / w);
+                minX = Math.min(minX, x); minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+                changed++;
+            }
+        } else {
+            minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
+            changed = indices.length;
+        }
+        const paletteHash = hashBytes(palette);
+        visualPresentTrace.push({
+            sequence: visualPresentSequence++, op: 'present',
+            x: changed ? minX : 0, y: changed ? minY : 0,
+            width: changed ? maxX - minX + 1 : 0,
+            height: changed ? maxY - minY + 1 : 0,
+            changedPixels: changed, hash: hashBytes(indices), paletteHash,
+            paletteChanged: !lastPresentedPalette ||
+                paletteHash !== hashBytes(lastPresentedPalette),
+            scene: Module._zeliard_scene(), phase: Module._zeliard_phase(),
+        });
+        if (visualPresentTrace.length > 256) visualPresentTrace.shift();
+        lastPresentedIndices = Uint8Array.from(indices);
+        lastPresentedPalette = Uint8Array.from(palette);
+    };
+    (window as any).__zeliardVisualCapture = (checkpoint: string) => ({
+        schemaVersion: 1,
+        checkpoint,
+        runtime: 'wasm',
+        videoMode: 'mcga-320x200x8',
+        width: w,
+        height: h,
+        indices: Array.from(Module.HEAPU8.slice(fbPtr, fbPtr + w * h)),
+        palette: Array.from(Module.HEAPU8.slice(palPtr, palPtr + 256 * 3)),
+        rgbActive: Module._zeliard_rgb_framebuf_active() !== 0,
+        dirtyRect: visualPresentTrace.length
+            ? visualPresentTrace[visualPresentTrace.length - 1] : null,
+        renderTrace: visualPresentTrace.map(event => ({ ...event })),
+    });
     let lastSaveSerial = Module._zeliard_save_serial();
     let lastLoadRequestSerial = Module._zeliard_load_request_serial();
 
@@ -439,6 +501,7 @@ async function boot() {
         }
         applyDisplayMode(out, w, h, displayMode);
         ctx.putImageData(imageData, 0, 0);
+        if (deterministicCapture) recordPresent(fb, pal);
 
         if (++frameCount === 1) {
             // First-frame diagnostics: count distinct paletted indices to
