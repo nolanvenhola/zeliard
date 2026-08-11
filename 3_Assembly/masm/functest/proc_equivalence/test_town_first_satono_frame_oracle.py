@@ -30,6 +30,8 @@ EXPECTED_DPAT_PIXEL_FNV = 0x3F819F76329F575E
 EXPECTED_DPAT_ALPHA_FNV = 0x597550E40F08BCB6
 EXPECTED_CMAN_PIXEL_FNV = 0x44D254E063EEEC7D
 EXPECTED_CMAN_MASK_FNV = 0x4F2D17A7A7837D5F
+EXPECTED_DEFAULT4_FRAME_FNV = 0x0B1DEA3C7D048EDB
+EXPECTED_DEFAULT4_POSITION = bytes.fromhex("98000010")
 
 
 def relocate_words(mu: Uc, segment: int, offset: int, count: int) -> None:
@@ -48,6 +50,7 @@ def main() -> int:
         "gt": MASM_ROOT / "bin" / "zelres1" / "111GTMCA.bin",
         "mole": MASM_ROOT / "bin" / "zelres2" / "207MOLE.bin",
         "ympd": MASM_ROOT / "bin" / "zelres2" / "208YMPD.bin",
+        "ckpd": MASM_ROOT / "bin" / "zelres2" / "209CKPD.bin",
         "stmp": MASM_ROOT / "bin" / "zelres2" / "238STMP.mdt",
         "font": MASM_ROOT / "bin" / "zelres1" / "112FONTG.grp",
         "items": MASM_ROOT / "bin" / "zelres2" / "227ITMSG.grp",
@@ -97,6 +100,7 @@ def main() -> int:
 
     mu.mem_write(MOLE_SEG << 4, payload(paths["mole"]))
     mu.mem_write((YMPD_SEG << 4) + 0x3300, payload(paths["ympd"]))
+    pre_mole_snapshot = bytes(mu.mem_read(0, 0x100000))
     mu.mem_write(game_base + 0x0092, b"\x01\x01\x1e\x00\x1e\x00")
     call_far(mu, MOLE_SEG, 0, 4)
     call_near(mu, 0x254C, ax=1, bx=0x18AB)
@@ -152,6 +156,64 @@ def main() -> int:
     descriptor = bytes(mu.mem_read(game_base + 0xC000, 0x17))
     door_bytes = bytes(mu.mem_read(game_base + 0xC6EF, 0x11))
 
+    # Exact DEFAULT4 saved-game entry reported in Satono. game.asm has just
+    # loaded town.bin, so 106TOWN:init_entry sets town_init_flag. That keeps
+    # portal_check from applying the five-step side-door entrance walk over
+    # the coordinates restored from the USR record.
+    mu.mem_write(0, pre_mole_snapshot)
+    default4 = bytearray(0x100)
+    for offset, value in {
+        0x00: 0xFF, 0x01: 0xFF, 0x02: 0xF8, 0x03: 0xE0,
+        0x05: 0xFF, 0x0A: 0x02, 0x80: 0x98, 0x83: 0x10,
+        0x84: 0x0A, 0x86: 0x20, 0x87: 0x4E, 0x89: 0x50,
+        0x8A: 0xC3, 0x8B: 0x10, 0x8C: 0x27, 0x8D: 0x02,
+        0x8E: 0xC8, 0x8F: 0x01, 0x90: 0xA1, 0x92: 0x01,
+        0x93: 0x02, 0x94: 0x50, 0x96: 0x50, 0x98: 0x01,
+        0xA0: 0x01, 0xA6: 0x06, 0xA7: 0x07, 0xA8: 0x01,
+        0xAA: 0x02, 0xAB: 0x0C, 0xAC: 0x06, 0xAD: 0x08,
+        0xAE: 0x08, 0xAF: 0x03, 0xB0: 0x04, 0xB1: 0x03,
+        0xB2: 0xA0, 0xB4: 0x0C, 0xB5: 0x06, 0xB6: 0x08,
+        0xB7: 0x08, 0xB8: 0x03, 0xB9: 0x04, 0xBA: 0x03,
+        0xC4: 0x82, 0xC5: 0x81, 0xC9: 0x8A, 0xCA: 0xA6,
+        0xCB: 0x6B, 0xCC: 0x75, 0xCD: 0x42, 0xCE: 0x4C,
+        0xCF: 0x4B, 0xD0: 0x01, 0xD1: 0xFF, 0xD2: 0xC0,
+        0xD3: 0xC0, 0xD4: 0xE0, 0xD5: 0xE0, 0xD6: 0x70,
+        0xD7: 0x38, 0xD8: 0x38, 0xD9: 0xF8, 0xDA: 0xF8,
+        0xDB: 0xC0, 0xDC: 0xE0, 0xDD: 0xE0, 0xDE: 0x70,
+        0xDF: 0x30, 0xE0: 0x38, 0xE1: 0x1C, 0xE2: 0x1C,
+        0xE3: 0xFC, 0xE5: 0x80, 0xE7: 0x04,
+    }.items():
+        default4[offset] = value
+    mu.mem_write(game_base, bytes(default4))
+    call_far(mu, MOLE_SEG, 0, 4)
+    call_near(mu, 0x254C, ax=default4[0x92], bx=0x18AB)
+    call_near(mu, 0x25FC, ax=default4[0x98], bx=0x3EA4)
+    call_near(mu, 0x2106)
+    mu.mem_write((YMPD_SEG << 4) + 0x3300, payload(paths["ckpd"]))
+    call_far(mu, YMPD_SEG, 0x3300, 4)
+    call_near(mu, 0x3028)
+    mu.mem_write(game_base + 0x7C45, b"\x01\x02")
+    mu.mem_write(game_base + 0xFF1D, b"\x00\x00")
+    write_u16(mu, GAME_SEG, 0xFF2A, 0xC4D7)
+    for bx, ch in ((0x0204, 0x21), (0x021C, 0x42), (0x481C, 0x42)):
+        call_near(mu, 0x2195, bx=bx, cx=ch << 8)
+    call_near(mu, 0x2385)
+    for address in (0x6C93, 0x6C9B, 0x6CA4, 0x6CAC):
+        call_near(mu, 0x22BF, si=address)
+    for entry in (0x2227, 0x2256, 0x238F, 0x23AC):
+        call_near(mu, entry)
+    call_near(mu, 0x2195, bx=0xC61C, cx=0x1700)
+    call_near(mu, 0x23F5)
+    call_near(mu, 0x22CD, si=0xC6D8)
+    mu.mem_write(game_base + 0xE000, b"\xfe" * 0xE0)
+    call_near(mu, 0x6C2B)
+    call_near(mu, 0x6975)
+    call_near(mu, 0x6950)
+    call_near(mu, 0x3051)
+    default4_frame = bytes(mu.mem_read(VGA_SEG << 4, 0x10000))
+    default4_hash = fnv1a64(default4_frame)
+    default4_position = bytes(mu.mem_read(game_base + 0x80, 4))
+
     expected_descriptor = bytes.fromhex(
         "d3c6d700d8c602e7c6efc600c70cc772cccfc65c000ac7")
     expected_doors = bytes.fromhex(
@@ -170,11 +232,16 @@ def main() -> int:
     )
     if all(expected_hashes):
         ok &= actual_hashes == expected_hashes
+    if EXPECTED_DEFAULT4_FRAME_FNV:
+        ok &= default4_hash == EXPECTED_DEFAULT4_FRAME_FNV
+    ok &= default4_position == EXPECTED_DEFAULT4_POSITION
 
     if os.environ.get("ZELIARD_DUMP"):
         dump_dir = MASM_ROOT / "functest" / "build"
         dump_dir.mkdir(exist_ok=True)
         (dump_dir / "town-satono-masm-frame.bin").write_bytes(frame)
+        (dump_dir / "town-satono-default4-masm-frame.bin").write_bytes(
+            default4_frame)
 
     print("town_first_satono_frame: " + ("PASS" if ok else "FAIL") +
           f" frame={frame_hash:016x} playfield={playfield_hash:016x} "
@@ -186,6 +253,8 @@ def main() -> int:
           f"masks={cman_mask_hash:016x}")
     print(f"town_satono_descriptor: {descriptor.hex()} "
           f"doors={door_bytes.hex()} npcs={npc_bytes.hex()}")
+    print(f"town_satono_default4: frame={default4_hash:016x} "
+          f"position={default4_position.hex()}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +
           ": release-MASM first stable Satono frame")
     return 0 if ok else 1

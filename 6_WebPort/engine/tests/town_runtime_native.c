@@ -146,6 +146,70 @@ static unsigned long long npc_state_hash(const u8 *segment) {
     return fnv1a64(segment + at, size);
 }
 
+static int dirty_town_entry_matches_clean(u8 area_id,
+                                          unsigned long long *frame_hash) {
+    static u8 clean_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                            [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 dirty_segments[ZELIARD_GAME_SEGMENT_COUNT]
+                            [ZELIARD_GAME_SEGMENT_SIZE];
+    static u8 clean_vga[0x10000];
+    static u8 dirty_vga[0x10000];
+    zeliard_game_exec_state_t clean_game = {0};
+    zeliard_game_exec_state_t dirty_game = {0};
+    zeliard_town_runtime_t clean_town = {0};
+    zeliard_town_runtime_t dirty_town = {0};
+
+    memset(clean_segments, 0, sizeof(clean_segments));
+    memset(dirty_segments, 0, sizeof(dirty_segments));
+    memset(clean_vga, 0, sizeof(clean_vga));
+    memset(dirty_vga, 0xA5, sizeof(dirty_vga));
+    for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
+        clean_game.segment[i] = clean_segments[i];
+        clean_game.segment_size[i] = sizeof(clean_segments[i]);
+        dirty_game.segment[i] = dirty_segments[i];
+        dirty_game.segment_size[i] = sizeof(dirty_segments[i]);
+    }
+    const int clean_loaded =
+        load_direct(clean_segments[0], sizeof(clean_segments[0]),
+                    "assets/stdply.bin") &&
+        load_direct(clean_segments[0] + 0x2000, 0xE000,
+                    "assets/gmmcga.bin") &&
+        load_raw(clean_segments[0] + 0x6000, 0xA000,
+                 "assets/town.bin") &&
+        load_raw(clean_segments[3], sizeof(clean_segments[3]),
+                 "assets/mole.bin") &&
+        load_font(clean_segments[0]) && load_item_panel(clean_segments[1]);
+    if (!clean_loaded) return 0;
+    memcpy(dirty_segments, clean_segments, sizeof(clean_segments));
+    for (unsigned copy = 0; copy < 2; ++copy) {
+        u8 *player = copy ? dirty_segments[0] : clean_segments[0];
+        player[0x00C4] = area_id;
+        player[0x00C5] = area_id;
+        player[ZEL_PLAYER_START_POSITION] = 0x20;
+        player[ZEL_PLAYER_START_POSITION + 1] = 0;
+        player[ZEL_PLAYER_MAP_SCROLL_ROW] = 0;
+        player[ZEL_PLAYER_SCREEN_POSITION] = 0x0D;
+        player[ZEL_PLAYER_INIT_COMPLETE] = 0xFF;
+        player[ZEL_PLAYER_SWORD] = 1;
+        player[ZEL_PLAYER_SHIELD] = 1;
+        player[ZEL_PLAYER_SHIELD_HP] = 30;
+        player[ZEL_PLAYER_SHIELD_HP_MAX] = 30;
+    }
+    const int clean_result = zeliard_town_enter_first_frame(
+        &clean_town, &clean_game, clean_vga, sizeof(clean_vga));
+    const int dirty_result = zeliard_town_enter_first_frame(
+        &dirty_town, &dirty_game, dirty_vga, sizeof(dirty_vga));
+    /* A cavern return re-enters 106TOWN with the already-executed town
+     * overlay resident. It must still match a pristine first invocation. */
+    memset(dirty_vga, 0x5A, sizeof(dirty_vga));
+    const int repeated_result = zeliard_town_enter_first_frame(
+        &dirty_town, &dirty_game, dirty_vga, sizeof(dirty_vga));
+    if (frame_hash) *frame_hash = fnv1a64(dirty_vga, sizeof(dirty_vga));
+    return clean_result == 0 && dirty_result == 0 && repeated_result == 0 &&
+        clean_town.area == dirty_town.area &&
+        memcmp(clean_vga, dirty_vga, sizeof(clean_vga)) == 0;
+}
+
 int main(void) {
     u8 segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE] = {{0}};
     u8 vga[0x10000] = {0};
@@ -842,11 +906,11 @@ int main(void) {
     ok &= satono_result == 0 && satono->area == ZEL_TOWN_AREA_SATONO;
     ok &= satono->music_index == 1 && satono->map_side == 1 &&
           satono->palette_index == 2 && satono->town_text_record == 0xC6D8;
-    ok &= satono_frame == 0xE184784D846DEB35ULL &&
-          satono_playfield == 0xB1E7BBB56077297AULL &&
+    ok &= satono_frame == 0xA017DD4B4A88F9B8ULL &&
+          satono_playfield == 0x44CA66C7D16E925AULL &&
           satono_capture == 0xAB3088CF79795EEDULL &&
           satono_state == 0xA44A7ECC9A5C610DULL &&
-          satono_npcs == 0xB6CF2444E8970735ULL;
+          satono_npcs == 0x49A89CB0912C308FULL;
     ok &= satono_dpat_pixels == 0x3F819F76329F575EULL &&
           satono_dpat_alpha == 0x597550E40F08BCB6ULL &&
           satono_cman_pixels == 0x44D254E063EEEC7DULL &&
@@ -964,8 +1028,8 @@ int main(void) {
     const int satono_right_frames = zeliard_town_advance_pit(
         satono, &satono_game, satono_vga, sizeof(satono_vga), 20, 0);
     ok &= satono_right_frames > 0 && satono->cavern_exit_requested;
-    ok &= satono_segments[0][0x0080] == 0xF6 &&
-          satono_segments[0][0x0081] == 0xFF &&
+    ok &= satono_segments[0][0x0080] == 0xD6 &&
+          satono_segments[0][0x0081] == 0x00 &&
           satono_segments[0][0x0082] == 0x34 &&
           satono_segments[0][0x00C3] == 0 &&
           satono_segments[0][0x00C4] == 2;
@@ -1344,11 +1408,11 @@ int main(void) {
     ok &= helada_result == 0 && helada->area == ZEL_TOWN_AREA_HELADA;
     ok &= helada->music_index == 1 && helada->map_side == 1 &&
           helada->palette_index == 2 && helada->town_text_record == 0xC738;
-    ok &= helada_frame == 0xC678692E5219DD1DULL &&
-          helada_playfield == 0x33725D1F0BED744BULL &&
+    ok &= helada_frame == 0xC1E9F964D6BC4E9EULL &&
+          helada_playfield == 0x3E652144F91393CBULL &&
           helada_capture == 0xAB3088CF79795EEDULL &&
           helada_state == 0xA2987CCC98EC7C27ULL &&
-          helada_npcs == 0x8B7DD19459FB8D09ULL;
+          helada_npcs == 0x3BFEA3AEA757B08EULL;
     ok &= helada_story_before[0] == 0x80 &&
           helada_story_before[1] == 3 &&
           helada_story_before[2] == 2 &&
@@ -1485,11 +1549,11 @@ int main(void) {
     ok &= tumba_result == 0 && tumba->area == ZEL_TOWN_AREA_TUMBA;
     ok &= tumba->music_index == 3 && tumba->map_side == 1 &&
           tumba->palette_index == 2 && tumba->town_text_record == 0xC890;
-    ok &= tumba_frame == 0xB3F1DFA357CFB7DFULL &&
-          tumba_playfield == 0xABB9D188BA3587BAULL &&
+    ok &= tumba_frame == 0xB2ED8F2244E27CF5ULL &&
+          tumba_playfield == 0x11FF4AA993181A6FULL &&
           tumba_capture == 0xAB3088CF79795EEDULL &&
           tumba_state == 0xA3DE3DCC9A00D3BAULL &&
-          tumba_npcs == 0xAED5E95756A0FAB5ULL;
+          tumba_npcs == 0x4BD4AC92306C323AULL;
     ok &= tumba_story_before[0] == 2 && tumba_story_before[1] == 3 &&
           tumba_story_before[2] == 7;
 
@@ -1661,11 +1725,11 @@ int main(void) {
     ok &= dorado_result == 0 && dorado->area == ZEL_TOWN_AREA_DORADO;
     ok &= dorado->music_index == 3 && dorado->map_side == 1 &&
           dorado->palette_index == 2 && dorado->town_text_record == 0xC6D8;
-    ok &= dorado_frame == 0x4F9C6F31DC340AFBULL &&
-          dorado_playfield == 0xCF1F7F8B8128A908ULL &&
+    ok &= dorado_frame == 0x45C2F6EDBB2C189FULL &&
+          dorado_playfield == 0x9C76E0D0BFF78CCDULL &&
           dorado_capture == 0xAB3088CF79795EEDULL &&
           dorado_state == 0xA44A7ECC9A5C610DULL &&
-          dorado_npcs == 0xC72AB76FC09C998BULL;
+          dorado_npcs == 0x25A3DA737241664DULL;
     ok &= dorado_story_before[0] == 4 && dorado_story_before[1] == 5;
 
     static u8 dorado_snapshot[sizeof(dorado_segments) + sizeof(dorado_vga)];
@@ -1868,8 +1932,8 @@ int main(void) {
     }
     ok &= !llama->dialog.active && llama_segments[0][0x009A] == 0;
 
-    /* Door type 8 uses route record 0: the wrapped start value is authored
-     * by 106TOWN's unconditional destination-10h subtraction. */
+    /* Door type 8 uses route record 0. 106TOWN loads MP70 before applying
+     * destination-10h, then wraps the negative result by MP70's width. */
     llama_segments[0][0x0080] = 252;
     llama_segments[0][0x0081] = 0;
     llama_segments[0][0x0083] = 13;
@@ -1880,7 +1944,7 @@ int main(void) {
         llama, &llama_game, llama_vga, sizeof(llama_vga), 20, 1);
     ok &= llama_route_0 > 0 && llama->cavern_exit_requested &&
           (u16)(llama_segments[0][0x0080] |
-                ((u16)llama_segments[0][0x0081] << 8)) == 0xFFF1 &&
+                ((u16)llama_segments[0][0x0081] << 8)) == 0x00C1 &&
           llama_segments[0][0x0082] == 0x0C &&
           llama_segments[0][0x00C3] == 0 &&
           llama_segments[0][0x00C4] == 0x12;
@@ -2037,11 +2101,11 @@ int main(void) {
     ok &= pureza_result == 0 && pureza->area == ZEL_TOWN_AREA_PUREZA;
     ok &= pureza->music_index == 1 && pureza->map_side == 1 &&
           pureza->palette_index == 2 && pureza->town_text_record == 0xCA20;
-    ok &= pureza_frame == 0x15D4E858E270C2D6ULL &&
-          pureza_playfield == 0x13DAF9E648F65FF6ULL &&
+    ok &= pureza_frame == 0x316F4F9EEC134576ULL &&
+          pureza_playfield == 0x08EAD07F074662FFULL &&
           pureza_capture == 0xAB3088CF79795EEDULL &&
           pureza_state == 0xA2987BCC98EC7A74ULL &&
-          pureza_npcs == 0x737F75CF48604F3BULL;
+          pureza_npcs == 0x7F0E494064868DA3ULL;
     ok &= pureza_segments[0][0xD090] == 5 &&
           (u16)(pureza_segments[0][0xD0B1] |
                 ((u16)pureza_segments[0][0xD0B2] << 8)) == 0x0124;
@@ -2269,6 +2333,19 @@ int main(void) {
            "gardens=%d/84/00bf/1a\n", esco_tunnel, esco_gardens);
     ok &= esco_ok;
     free(esco);
+    unsigned long long dirty_entry_hash = 0xCBF29CE484222325ULL;
+    int all_town_surfaces_clean = 1;
+    for (u8 area_id = 0x80; area_id <= 0x89; ++area_id) {
+        unsigned long long area_hash = 0;
+        const int area_clean = dirty_town_entry_matches_clean(
+            area_id, &area_hash);
+        all_town_surfaces_clean &= area_clean;
+        dirty_entry_hash ^= area_hash;
+        dirty_entry_hash *= 0x100000001B3ULL;
+    }
+    ok &= all_town_surfaces_clean;
+    printf("town_dirty_surface_reentry_all_selectors: %s hash=%016llx\n",
+           all_town_surfaces_clean ? "PASS" : "FAIL", dirty_entry_hash);
     printf("town_muralla_entry: frames=%d frame=%016llx playfield=%016llx state=%016llx "
            "npc=%016llx mpat=%016llx/%016llx area=%02x text=%04x\n",
            muralla_frames, muralla_frame_hash, muralla_playfield_hash,

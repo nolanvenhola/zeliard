@@ -85,11 +85,18 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
                                    zeliard_game_exec_state_t *game,
                                    u8 *vga, size_t vga_size);
 
+/* game.asm saved-game bootstrap enters a freshly loaded 106TOWN overlay.
+ * Its init_entry sets town_init_flag, suppressing the side-door walk. */
+int zeliard_town_enter_saved_first_frame(zeliard_town_runtime_t *town,
+                                         zeliard_game_exec_state_t *game,
+                                         u8 *vga, size_t vga_size);
+
 /* 200FIGHT:next_level_start + level_start town-coordinate handoff. */
 int zeliard_town_prepare_level_start(u8 *game_seg, size_t game_size,
                                      u8 area_id);
 
-/* 200FIGHT:boss_check loader-1 return followed by compute_scroll_pos. */
+/* 200FIGHT town return after reverse transition and level_start's final
+ * compute_scroll_offset_b viewport conversion. */
 int zeliard_town_prepare_cavern_door_return(
     u8 *game_seg, size_t game_size, u8 area_id,
     u16 scroll_count, u8 scroll_dir, u8 player_y);

@@ -22,4 +22,8 @@
  */
 u8* fill_buffer_decompress(const u8 *file_data, size_t file_size, size_t *out_size);
 
+/* Release SAR mode 1's cavern selector table.  Town exits and the fight VM
+ * must resolve the same MDT before applying map-width-dependent placement. */
+const char *zeliard_cavern_map_asset(u8 selector);
+
 #endif

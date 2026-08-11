@@ -149,6 +149,13 @@ try {
     };
     const finishLifeDiff = rectDiff(84, 163, 100, 6);
     const finishSwordDiff = rectDiff(192, 171, 20, 18);
+    /* MOLE's stone chrome contains masked OR passes.  MASM enters 106TOWN
+       from a black framebuffer, so none of the preceding FIGHT/ROKA pixels
+       may survive in the top or side borders.  These regions are invariant
+       across a same-town round trip even though the playfield and HUD move. */
+    let finishChromeDiff = rectDiff(0, 0, 320, 14);
+    finishChromeDiff += rectDiff(0, 14, 48, 146);
+    finishChromeDiff += rectDiff(272, 14, 48, 146);
     const rectHash = (x, y, width, height) => {
       let hash = 0xcbf29ce484222325n;
       for (let row = 0; row < height; ++row)
@@ -169,7 +176,7 @@ try {
     return { ...entry, returned: {
       exitTicks, returnTicks,
       finishDiff, finishLifeDiff, finishSwordDiff,
-      finishLifeHash, finishSwordHash, finishTransition,
+      finishLifeHash, finishSwordHash, finishChromeDiff, finishTransition,
       area: m._zeliard_town_area(),
       fight: m.ccall('zeliard_fight_active', 'number'),
       transition: m._zeliard_cavern_transition_active(),
@@ -199,19 +206,73 @@ try {
       returned.transition || returned.finishTransition ||
       returned.hp !== 0x40 || returned.finishDiff < 1 ||
       returned.finishLifeDiff < 1 ||
+      returned.finishChromeDiff !== 0 ||
       returned.finishLifeHash !== '814e303d8c7e90bd' ||
       returned.finishSwordHash !== '077a65acb967926d' ||
-      returned.startLo !== result.startLo ||
-      returned.startHi !== result.startHi ||
-      returned.scroll !== result.scroll ||
-      returned.column !== result.column)
-    throw new Error(`cavern return failed: ${JSON.stringify(returned)}`);
+      returned.startLo !== 0xB3 || returned.startHi !== 0 ||
+      returned.scroll !== 0x36 || returned.column !== 0x16)
+    throw new Error(`cavern return failed: ${JSON.stringify({result, returned})}`);
+  const satonoRoundTrip = await page.evaluate(() => {
+    const m = window.__zeliard;
+    if (!m._zeliard_test_restart_town(2))
+      return {error: 'Satono restart failed'};
+    for (let settle = 0; settle < 10; ++settle) m._zeliard_tick(16);
+    const before = Uint8Array.from(m.HEAPU8.subarray(
+      m._zeliard_framebuf(), m._zeliard_framebuf() + 64000));
+    m._zeliard_test_game_set_u8(0x83, 0xff);
+    m._zeliard_tick(90);
+    let departureTicks = 0;
+    while (m._zeliard_cavern_transition_active() &&
+           departureTicks++ < 1000) m._zeliard_tick(16);
+    if (!m._zeliard_fight_active()) m._zeliard_tick(16);
+    const enteredMalicia = m._zeliard_fight_active() &&
+      m._zeliard_fight_map_width() === 240;
+    m._zeliard_test_game_set_u8(0x98, 1);
+    const staged = m._zeliard_test_restart_fight(
+      0, 128 - 16, (32 - 9) & 0x3f, 0);
+    m._zeliard_key_down(38);
+    let doorTicks = 0;
+    while (!m._zeliard_cavern_transition_active() && doorTicks++ < 100)
+      m._zeliard_tick(16);
+    m._zeliard_key_up(38);
+    let returnTicks = 0;
+    while ((m._zeliard_fight_active() ||
+            m._zeliard_cavern_transition_active()) &&
+           returnTicks++ < 1000) m._zeliard_tick(16);
+    m._zeliard_tick(16);
+    const after = m.HEAPU8.subarray(
+      m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
+    let chromeDiff = 0;
+    for (let y = 0; y < 160; ++y)
+      for (let x = 0; x < 320; ++x) {
+        if (y >= 14 && x >= 48 && x < 272) continue;
+        chromeDiff += before[y * 320 + x] !== after[y * 320 + x];
+      }
+    return {
+      enteredMalicia, staged, departureTicks, doorTicks, returnTicks,
+      chromeDiff, area: m._zeliard_town_area(),
+      fight: m._zeliard_fight_active(),
+      transition: m._zeliard_cavern_transition_active(),
+    };
+  });
+  if (capturePrefix) {
+    await page.waitForTimeout(20);
+    await page.locator('#screen').screenshot({
+      path: `${capturePrefix}-satono-after.png`,
+    });
+  }
+  if (satonoRoundTrip.error || !satonoRoundTrip.enteredMalicia ||
+      !satonoRoundTrip.staged || satonoRoundTrip.area !== 2 ||
+      satonoRoundTrip.fight || satonoRoundTrip.transition ||
+      satonoRoundTrip.chromeDiff !== 0)
+    throw new Error(`Satono round trip failed: ${JSON.stringify(satonoRoundTrip)}`);
   if (errors.length) throw new Error(`browser errors: ${JSON.stringify(errors)}`);
   console.log(`cavern_transition_browser: PASS route=${result.ticks} ` +
     `entry=${result.transitionTicks} return=${returned.returnTicks} ` +
     `steps=${result.step} paletteDiff=${returned.paletteDiff} ` +
-    `finishDiff=${returned.finishDiff} frameDiff=${returned.frameDiff}`);
-  console.log('VERDICT: PASS: Muralla -> cavern -> reverse transition -> Muralla');
+    `finishDiff=${returned.finishDiff} frameDiff=${returned.frameDiff} ` +
+    `satonoChromeDiff=${satonoRoundTrip.chromeDiff}`);
+  console.log('VERDICT: PASS: clean Muralla and Satono cavern round trips');
 } finally {
   await browser.close();
 }

@@ -295,8 +295,8 @@ static void finish_cavern_return_to_town(void) {
     g_town_runtime.facing_npc_position = 0xFFFF;
     /* Loader mode 1 selects the town encoded by the cavern door, which may
      * differ from the town where the cavern journey began. Re-enter 106TOWN
-     * after applying compute_scroll_pos so the destination scenery, actors,
-     * HUD, and player placement all agree. */
+     * after the reverse transition's final compute_scroll_offset_b so the
+     * destination scenery, actors, HUD, and viewport all agree. */
     if (zeliard_town_enter_first_frame(
             &g_town_runtime, &g_game_exec, g_game_vga,
             sizeof(g_game_vga)) != 0) {
@@ -684,8 +684,12 @@ static bool enter_game_scene(void) {
         platform_log("game bootstrap: game.asm execution failed");
         return false;
     }
-    if (zeliard_town_enter_first_frame(&g_town_runtime, &g_game_exec,
-                                        g_game_vga, sizeof(g_game_vga)) != 0) {
+    /* The saved-game path has just loaded town.bin at CS:6000. Release
+     * 106TOWN:init_entry therefore sets town_init_flag and does not run the
+     * five-step side-door entrance animation over the restored coordinates. */
+    if (zeliard_town_enter_saved_first_frame(
+            &g_town_runtime, &g_game_exec, g_game_vga,
+            sizeof(g_game_vga)) != 0) {
         platform_log("game bootstrap: first 106TOWN castle frame failed");
         return false;
     }

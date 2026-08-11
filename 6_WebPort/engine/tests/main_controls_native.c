@@ -54,6 +54,7 @@ int zeliard_test_fight_u8(unsigned offset);
 void zeliard_opening_set_phase_for_test(int phase);
 int zeliard_load_record(const u8 *record, int size);
 int zeliard_town_area(void);
+const u8 *zeliard_game_segment(void);
 
 static unsigned long long fnv1a64(const u8 *data, size_t size) {
     unsigned long long hash = 0xCBF29CE484222325ULL;
@@ -62,6 +63,18 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
         hash *= 0x100000001B3ULL;
     }
     return hash;
+}
+
+static unsigned frame_chrome_diff(const u8 *before, const u8 *after) {
+    unsigned differences = 0;
+    for (unsigned y = 0; y < 160; ++y) {
+        for (unsigned x = 0; x < ZELIARD_WIDTH; ++x) {
+            if (y >= 14 && x >= 48 && x < 272) continue;
+            differences += before[y * ZELIARD_WIDTH + x] !=
+                after[y * ZELIARD_WIDTH + x];
+        }
+    }
+    return differences;
 }
 
 static int write_frame_ppm(const char *path, const u8 *frame) {
@@ -982,6 +995,8 @@ int main(void) {
         frame_rect_hash(84, 163, 100, 6);
     const unsigned long long reverse_return_sword =
         frame_rect_hash(192, 171, 20, 18);
+    const unsigned reverse_chrome_differences = frame_chrome_diff(
+        reverse_reference_frame, g_framebuf);
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/muralla-cavern-return.ppm", g_framebuf);
     zeliard_tick(16);
@@ -990,22 +1005,23 @@ int main(void) {
         reverse_fade_peak == 64 && zeliard_music_track() == 3 &&
         !zeliard_fight_active() && !zeliard_cavern_transition_active() &&
         zeliard_town_area() == 1 && zeliard_test_game_u8(0xC4) == 0x81 &&
-        zeliard_test_game_u8(0x80) == 0xBD &&
+        zeliard_test_game_u8(0x80) == 0xB3 &&
         zeliard_test_game_u8(0x82) == 0x36 &&
-        zeliard_test_game_u8(0x83) == 0x0C &&
+        zeliard_test_game_u8(0x83) == 0x16 &&
         zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x0A) == 0x05 &&
         zeliard_test_game_u16(0x90) == 0x0040 &&
-        reverse_return_life == 0xBDB83C5FCD36CAF8ULL &&
+        reverse_return_life == 0x814E303D8C7E90BDULL &&
         reverse_return_life != reverse_reference_life &&
         reverse_return_sword == reverse_reference_sword &&
+        reverse_chrome_differences == 0 &&
         reverse_restore_differences > 0 &&
         (zeliard_test_game_u8(0xC2) & 1);
     ok &= reverse_returned;
     printf("main_controls:malicia_reverse_cavern_return: %s ticks=%u "
            "area=%d pos=%02x/%02x/%02x facing=%02x hp=%04x diff=%u "
            "life=%016llx>%016llx sword=%016llx/%016llx "
-           "state=%02x/%02x music=%d/%u/%d fade=%d\n",
+           "state=%02x/%02x music=%d/%u/%d fade=%d chrome=%u\n",
            reverse_returned ? "PASS" : "FAIL", return_ticks,
            zeliard_town_area(), zeliard_test_game_u8(0x80),
            zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
@@ -1015,7 +1031,8 @@ int main(void) {
            reverse_reference_sword, reverse_return_sword,
            zeliard_test_game_u8(0x02), zeliard_test_game_u8(0x0A),
            reverse_music_continued, reverse_music_samples,
-           zeliard_music_track(), reverse_fade_peak);
+           zeliard_music_track(), reverse_fade_peak,
+           reverse_chrome_differences);
 
     /* The same main.c death/re-entry path must remain area-independent when
      * the exact VM is running Peligro rather than Malicia. */
@@ -1041,6 +1058,126 @@ int main(void) {
            zeliard_test_game_u8(0xC5), zeliard_test_game_u16(0x90),
            zeliard_test_game_u16(0xB2));
 
+    /* Reproduce the reported DEFAULT4 Satono westbound freeze with the
+     * exact persistent bytes from that save. */
+    static const u8 default4_record[0x100] = {
+        [0x00] = 0xFF, [0x01] = 0xFF, [0x02] = 0xF8, [0x03] = 0xE0,
+        [0x05] = 0xFF, [0x0A] = 0x02,
+        [0x80] = 0x98, [0x83] = 0x10, [0x84] = 0x0A,
+        [0x86] = 0x20, [0x87] = 0x4E, [0x89] = 0x50,
+        [0x8A] = 0xC3, [0x8B] = 0x10, [0x8C] = 0x27,
+        [0x8D] = 0x02, [0x8E] = 0xC8, [0x8F] = 0x01,
+        [0x90] = 0xA1, [0x92] = 0x01, [0x93] = 0x02,
+        [0x94] = 0x50, [0x96] = 0x50, [0x98] = 0x01,
+        [0xA0] = 0x01, [0xA6] = 0x06, [0xA7] = 0x07,
+        [0xA8] = 0x01, [0xAA] = 0x02, [0xAB] = 0x0C,
+        [0xAC] = 0x06, [0xAD] = 0x08, [0xAE] = 0x08,
+        [0xAF] = 0x03, [0xB0] = 0x04, [0xB1] = 0x03,
+        [0xB2] = 0xA0, [0xB4] = 0x0C, [0xB5] = 0x06,
+        [0xB6] = 0x08, [0xB7] = 0x08, [0xB8] = 0x03,
+        [0xB9] = 0x04, [0xBA] = 0x03,
+        [0xC4] = 0x82, [0xC5] = 0x81, [0xC9] = 0x8A,
+        [0xCA] = 0xA6, [0xCB] = 0x6B, [0xCC] = 0x75,
+        [0xCD] = 0x42, [0xCE] = 0x4C, [0xCF] = 0x4B,
+        [0xD0] = 0x01, [0xD1] = 0xFF, [0xD2] = 0xC0,
+        [0xD3] = 0xC0, [0xD4] = 0xE0, [0xD5] = 0xE0,
+        [0xD6] = 0x70, [0xD7] = 0x38, [0xD8] = 0x38,
+        [0xD9] = 0xF8, [0xDA] = 0xF8, [0xDB] = 0xC0,
+        [0xDC] = 0xE0, [0xDD] = 0xE0, [0xDE] = 0x70,
+        [0xDF] = 0x30, [0xE0] = 0x38, [0xE1] = 0x1C,
+        [0xE2] = 0x1C, [0xE3] = 0xFC, [0xE5] = 0x80,
+        [0xE7] = 0x04,
+    };
+    const int default4_loaded =
+        zeliard_load_record(default4_record, sizeof(default4_record));
+    if (getenv("ZELIARD_DUMP")) {
+        write_frame_ppm("build/default4-satono-loaded.ppm", g_framebuf);
+        write_frame_raw("build/default4-satono-loaded.bin", g_framebuf);
+    }
+    zeliard_key_down(37);
+    unsigned default4_steps = 0;
+    while (zeliard_test_game_u16(0x80) > 0x0094 &&
+           default4_steps++ < 200)
+        zeliard_tick(90);
+    zeliard_key_up(37);
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/default4-satono-west.ppm", g_framebuf);
+    const u8 *default4_cs = zeliard_game_segment();
+    const u16 default4_npc_list = (u16)(default4_cs[0xC00F] |
+        ((u16)default4_cs[0xC010] << 8));
+    const u16 default4_width = (u16)(default4_cs[0xC002] |
+        ((u16)default4_cs[0xC003] << 8));
+    int default4_markers_valid = 1;
+    for (u16 position = 0; position < default4_width; ++position) {
+        if (default4_cs[(u16)(0xC01C + position * 8u)] != 0xFD) continue;
+        int found = 0;
+        for (u16 npc_at = default4_npc_list; npc_at <= 0xFFF7;
+             npc_at = (u16)(npc_at + 8)) {
+            const u16 npc_position = (u16)(default4_cs[npc_at] |
+                ((u16)default4_cs[(u16)(npc_at + 1)] << 8));
+            if (npc_position == 0xFFFF) break;
+            if (npc_position == position) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) default4_markers_valid = 0;
+    }
+    const int default4_west_passed = default4_loaded &&
+        zeliard_town_area() == 2 &&
+        zeliard_test_game_u16(0x80) <= 0x0094 &&
+        default4_markers_valid;
+    ok &= default4_west_passed;
+    printf("main_controls:default4_satono_west: loaded=%d steps=%u "
+           "pos=%04x/%02x area=%d markers=%d %s\n",
+           default4_loaded, default4_steps,
+           zeliard_test_game_u16(0x80), zeliard_test_game_u8(0x83),
+           zeliard_town_area(), default4_markers_valid,
+           default4_west_passed ? "PASS" : "FAIL");
+
+    /* SATONO.usr differs from DEFAULT4 only in these persistent fields.  It
+     * is an original sage save whose left-facing entrance path previously
+     * exposed invalid town/NPC state during bootstrap. */
+    u8 satono_record[sizeof(default4_record)];
+    memcpy(satono_record, default4_record, sizeof(satono_record));
+    satono_record[0x80] = 0x4E;
+    satono_record[0x83] = 0x0A;
+    satono_record[0x86] = 0xC7;
+    satono_record[0x87] = 0x42;
+    satono_record[0x93] = 0x03;
+    satono_record[0x94] = 0xB4;
+    satono_record[0x96] = 0xB4;
+    satono_record[0x9D] = 0x01;
+    satono_record[0xBB] = 0xFF;
+    satono_record[0xC2] = 0x01;
+    satono_record[0xE5] = 0xC0;
+    const int exact_satono_loaded =
+        zeliard_load_record(satono_record, sizeof(satono_record));
+    if (getenv("ZELIARD_DUMP")) {
+        write_frame_ppm("build/satono-exact-loaded.ppm", g_framebuf);
+        write_frame_raw("build/satono-exact-loaded.bin", g_framebuf);
+    }
+    const unsigned long long exact_satono_load_frame =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    zeliard_tick(90);
+    const unsigned long long exact_satono_live_frame =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    const int exact_satono_live_ok = exact_satono_loaded &&
+        zeliard_town_area() == 2 &&
+        zeliard_test_game_u16(0x80) == 0x004E &&
+        zeliard_test_game_u8(0x83) == 0x0A &&
+        zeliard_test_game_u8(0xC2) == 0x01 &&
+        exact_satono_load_frame == 0x90CC297F5CE97317ULL &&
+        exact_satono_live_frame == 0x16BCE2EF25D47633ULL;
+    ok &= exact_satono_live_ok;
+    printf("main_controls:satono_exact_load: %s loaded=%d pos=%04x/%02x "
+           "facing=%02x area=%d frame=%016llx>%016llx\n",
+           exact_satono_live_ok ? "PASS" : "FAIL",
+           exact_satono_loaded, zeliard_test_game_u16(0x80),
+           zeliard_test_game_u8(0x83), zeliard_test_game_u8(0xC2),
+           zeliard_town_area(), exact_satono_load_frame,
+           exact_satono_live_frame);
+
     /* A saved Satono game must bootstrap the authored town selector as one
      * transaction: STMP/DPAT/CMAN, UGM1, and the saved player coordinates. */
     memset(record, 0, sizeof(record));
@@ -1057,10 +1194,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int satono_bootstrap = satono_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 2 && zeliard_test_game_u8(0xC4) == 0x82 &&
-        zeliard_test_game_u8(0x80) == 0x4D &&
-        zeliard_test_game_u8(0x83) == 0x10 &&
+        zeliard_test_game_u8(0x80) == 0x4B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 5 &&
-        satono_playfield == 0xB1E7BBB56077297AULL;
+        satono_playfield == 0x86EBFC1F0FD99B84ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/satono-save-bootstrap.ppm", g_framebuf);
     ok &= satono_bootstrap;
@@ -1155,15 +1292,23 @@ int main(void) {
         zeliard_test_game_u8(0x83) != 0x1C &&
         !(zeliard_test_game_u8(0xC2) & 1);
     for (unsigned settle = 0; settle < 10; ++settle) zeliard_tick(16);
+    if (getenv("ZELIARD_DUMP"))
+        write_frame_ppm("build/satono-malicia-round-trip.ppm", g_framebuf);
+    const unsigned long long satono_return_frame =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     const int satono_return_stable = satono_returned &&
         !zeliard_fight_active() && !zeliard_cavern_transition_active() &&
-        zeliard_town_area() == 2;
+        zeliard_town_area() == 2 &&
+        zeliard_test_game_u16(0x80) == 0x0000 &&
+        zeliard_test_game_u8(0x83) == 0x05 &&
+        satono_return_frame == 0x5A0D572D5B228DADULL;
     ok &= satono_departure_started && malicia_entered &&
         satono_door_staged && satono_return_transition &&
         satono_return_stable;
     printf("main_controls:satono_malicia_round_trip: %s depart=%d/%u "
            "malicia=%d door=%d/%u reverse=%d return=%d/%u "
-           "area=%d pos=%02x/%02x/%02x facing=%02x stable=%d\n",
+           "area=%d pos=%02x/%02x/%02x facing=%02x stable=%d "
+           "frame=%016llx\n",
            satono_departure_started && malicia_entered &&
                satono_door_staged && satono_return_transition &&
                satono_return_stable ? "PASS" : "FAIL",
@@ -1172,7 +1317,41 @@ int main(void) {
            satono_return_transition, satono_returned, satono_return_ticks,
            zeliard_town_area(), zeliard_test_game_u8(0x80),
            zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
-           zeliard_test_game_u8(0xC2), satono_return_stable);
+           zeliard_test_game_u8(0xC2), satono_return_stable,
+           satono_return_frame);
+
+    /* Satono's opposite boundary enters Peligro at authored x=6.  In
+     * 106TOWN:pf30_exec, SAR mode 1 installs MP20 before destination-10h;
+     * the signed underflow therefore wraps by MP20's 224-column width to
+     * D6h.  FFF6h makes the fight VM read unrelated memory as map tiles and
+     * collision data, producing a corrupt, nearly immobile cavern. */
+    zeliard_test_game_set_u8(0x83, 0x1C);
+    zeliard_tick(90);
+    const int peligro_departure_started =
+        zeliard_cavern_transition_active() &&
+        zeliard_test_game_u16(0x80) == 0x00D6 &&
+        zeliard_test_game_u8(0xC4) == 2;
+    unsigned peligro_departure_ticks = 0;
+    while (zeliard_cavern_transition_active() &&
+           peligro_departure_ticks++ < 1000)
+        zeliard_tick(16);
+    if (!zeliard_fight_active()) zeliard_tick(16);
+    const int peligro_entered = zeliard_fight_active() &&
+        zeliard_fight_map_width() == 224 &&
+        zeliard_test_game_u16(0x80) == 0x00D6;
+    unsigned peligro_visible = 0;
+    for (unsigned y = 12; y < 160; ++y)
+        for (unsigned x = 48; x < 272; ++x)
+            peligro_visible += g_framebuf[y * ZELIARD_WIDTH + x] != 0;
+    ok &= peligro_departure_started && peligro_entered &&
+        peligro_visible > 12000;
+    printf("main_controls:satono_peligro_entry: %s depart=%d/%u "
+           "active=%d width=%d pos=%04x visible=%u\n",
+           peligro_departure_started && peligro_entered &&
+               peligro_visible > 12000 ? "PASS" : "FAIL",
+           peligro_departure_started, peligro_departure_ticks,
+           zeliard_fight_active(), zeliard_fight_map_width(),
+           zeliard_test_game_u16(0x80), peligro_visible);
 
     /* Riza's town handoff and a Bosque .USR restore must select BSMP,
      * MPAT/MMAN, and MGT2 as one transaction. */
@@ -1235,10 +1414,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int helada_bootstrap = helada_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 4 && zeliard_test_game_u8(0xC4) == 0x84 &&
-        zeliard_test_game_u8(0x80) == 0x1D &&
-        zeliard_test_game_u8(0x83) == 0x10 &&
+        zeliard_test_game_u8(0x80) == 0x1B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 5 &&
-        helada_playfield == 0x33725D1F0BED744BULL;
+        helada_playfield == 0x96043C0B6DC8FDD8ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/helada-save-bootstrap.ppm", g_framebuf);
     ok &= helada_bootstrap;
@@ -1266,10 +1445,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int tumba_bootstrap = tumba_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 5 && zeliard_test_game_u8(0xC4) == 0x85 &&
-        zeliard_test_game_u8(0x80) == 0x71 &&
-        zeliard_test_game_u8(0x83) == 0x10 &&
+        zeliard_test_game_u8(0x80) == 0x6F &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 6 &&
-        tumba_playfield == 0xABB9D188BA3587BAULL;
+        tumba_playfield == 0xFF30543F3E5817A4ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/tumba-save-bootstrap.ppm", g_framebuf);
     ok &= tumba_bootstrap;
@@ -1296,10 +1475,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int dorado_bootstrap = dorado_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 6 && zeliard_test_game_u8(0xC4) == 0x86 &&
-        zeliard_test_game_u8(0x80) == 0x4D &&
-        zeliard_test_game_u8(0x83) == 0x10 &&
+        zeliard_test_game_u8(0x80) == 0x4B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 6 &&
-        dorado_playfield == 0xCF1F7F8B8128A908ULL;
+        dorado_playfield == 0x060B67C28AF7A3D7ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/dorado-save-bootstrap.ppm", g_framebuf);
     ok &= dorado_bootstrap;
@@ -1358,10 +1537,10 @@ int main(void) {
         fnv1a64(g_framebuf, 160u * ZELIARD_WIDTH);
     const int pureza_bootstrap = pureza_loaded && zeliard_scene() == 2 &&
         zeliard_town_area() == 8 && zeliard_test_game_u8(0xC4) == 0x88 &&
-        zeliard_test_game_u8(0x80) == 0x3D &&
-        zeliard_test_game_u8(0x83) == 0x10 &&
+        zeliard_test_game_u8(0x80) == 0x3B &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 5 &&
-        pureza_playfield == 0x13DAF9E648F65FF6ULL;
+        pureza_playfield == 0xEC70F0243DB3CAA1ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/pureza-save-bootstrap.ppm", g_framebuf);
     ok &= pureza_bootstrap;

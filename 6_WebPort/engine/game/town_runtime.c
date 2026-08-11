@@ -322,13 +322,29 @@ int zeliard_town_prepare_cavern_door_return(
                                     game_size - TOWN_DESCRIPTOR, NULL))
         return -2;
 
-    /* 200FIGHT:compute_scroll_pos runs immediately after loader mode 1
-     * installs the town MDT. AX wraps against the destination map width;
-     * the vertical row is derived from the door's scroll_dir and player_y. */
-    u16 start = (u16)(scroll_count - 0x10u);
-    if ((int16_t)start < 0)
-        start = (u16)(start + read_u16(cs, 0xC002));
+    /* boss_link_check first runs compute_scroll_pos for the reverse ROKA
+     * animation.  Once check_map_flag reaches level_start, MASM replaces
+     * that wrapped coordinate with compute_scroll_offset_b's town viewport.
+     * Stopping at the loader boundary and retaining the wrapped value makes
+     * Satono x=4 become start=CBh and reads beyond STMP's tile array. */
+    const u16 width = read_u16(cs, 0xC002);
+    u16 start = scroll_count;
+    u8 column = 0x0D;
+    const u16 remaining = (u16)(width - 0x0D);
+    if (remaining < scroll_count) {
+        start = (u16)(width - 0x24);
+        const u16 carry = width >= 0x24;
+        const u16 cx = (u16)(scroll_count - start - carry);
+        column = (u8)((u8)cx - 3u);
+    } else {
+        start = (u16)(start - 0x11);
+        if (start & 0xFF00u) {
+            start = 0;
+            column = (u8)((u8)scroll_count - 4u);
+        }
+    }
     write_u16(cs, TOWN_START_POSITION, start);
+    cs[TOWN_PLAYER_COLUMN] = column;
     cs[ZEL_PLAYER_MAP_SCROLL_ROW] =
         (u8)((scroll_dir + 1u - player_y) & 0x3Fu);
     return 0;
@@ -370,9 +386,10 @@ static int load_pattern_bank(zeliard_game_exec_state_t *game,
 static int move_player(u8 *cs, const u8 *game_data, u8 *vga,
                        size_t vga_size, u8 direction);
 
-int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
-                                   zeliard_game_exec_state_t *game,
-                                   u8 *vga, size_t vga_size) {
+static int town_enter_first_frame(zeliard_town_runtime_t *town,
+                                  zeliard_game_exec_state_t *game,
+                                  u8 *vga, size_t vga_size,
+                                  int fresh_town_overlay) {
     if (!town || !game || !vga || vga_size < 0x10000)
         return -1;
     for (size_t i = 0; i < ZELIARD_GAME_SEGMENT_COUNT; ++i) {
@@ -440,6 +457,21 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
             area_assets->pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2}))
         return -4;
 
+    /* game.asm loads 207MOLE as a fresh overlay before invoking its entry.
+     * MOLE deliberately rewrites its own dispatch flags and decode scratch;
+     * invoking a suspended copy a second time interprets its first compressed
+     * stream with the final-pass flags and corrupts the entire stone chrome.
+     * Reload the pristine overlay at this same service boundary. */
+    if (!load_raw_chunk("mole.bin", cs_3000, 0x10000, NULL))
+        return -5;
+    /* Every release path that transfers control from FIGHT back to 106TOWN
+     * first completes GMMCGA:2130's fade-to-black.  MOLE is not an opaque
+     * full-screen blit: its final chrome pass ORs mask bits into VGA, so
+     * entering it with the cavern/ROKA image still resident preserves stale
+     * pixels in the top and side borders.  Make that loader-boundary
+     * precondition explicit here so every town selector gets the same clean
+     * transaction, including direct returns that bypass the ROKA room. */
+    memset(vga, 0, 0x10000);
     if (zeliard_mole_render_mcga(cs_3000, 0x10000, vga, vga_size) ||
         !append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_RUN_207MOLE, "game.asm:loaded_code_a", "mole.bin",
@@ -550,26 +582,39 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
         return -12;
 
     /* 106TOWN:portal_check invokes the direction-selected walk routine five
-     * times when a side-1 map is entered with init_complete clear, pumping
-     * an NPC frame between the first four calls. */
-    if (town->map_side == 1 &&
+     * times when a side-1 map is entered with init_complete clear.  It first
+     * calls tick_npcs_then_pump once, then pumps another NPC frame after each
+     * of the first four walks.  That entry falls through draw_and_pump_input,
+     * including mark_player_col_in_cursor_buf between actor composition and
+     * the update.  Omitting that mark leaves an old 8x24 player strip on the
+     * town background.  tick_npcs_dispatch already owns the complete
+     * restore/move/stamp transaction; stamping again here corrupts an NPC's
+     * saved floor byte with FD and leaves a phantom marker after it moves. */
+    if (!fresh_town_overlay && town->map_side == 1 &&
         !zeliard_player_read_u8(&player, ZEL_PLAYER_INIT_COMPLETE)) {
         const u8 direction =
             (zeliard_player_read_u8(&player, ZEL_PLAYER_FACING_DIRECTION) & 1u)
                 ? 4u : 8u;
+        zeliard_town_tick_npcs(cs);
+        if (zeliard_gtmcga_render_town_actors(
+                cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
+                vga, vga_size))
+            return -13;
+        mark_player_col_in_cursor_buf(cs);
+        if (zeliard_gtmcga_update_town_frame(
+                cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
+                vga, vga_size))
+            return -13;
         for (u8 step = 0; step < 5; ++step) {
-            restore_tiles_under_npcs(cs);
             move_player(cs, cs_1000, vga, vga_size, direction);
-            if (step < 4) zeliard_town_tick_npcs(cs);
-            stamp_npcs_save_tiles(cs);
+            if (step == 4) break;
+            zeliard_town_tick_npcs(cs);
             const int actor_result = zeliard_gtmcga_render_town_actors(
                 cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
                 vga, vga_size);
-            /* The fifth MASM walk has no following tick/pump.  A newly
-             * exposed FD tile can therefore lack a post-tick NPC entry; it
-             * is the normal final-walk handoff, not an initialization error. */
-            if (actor_result == -2 && step == 4) break;
-            if (actor_result || zeliard_gtmcga_update_town_frame(
+            if (actor_result) return -13;
+            mark_player_col_in_cursor_buf(cs);
+            if (zeliard_gtmcga_update_town_frame(
                     cs, 0x10000, cs_1000, 0x10000, cs_2000, 0x10000,
                     vga, vga_size))
                 return -13;
@@ -578,6 +623,18 @@ int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
 
     palette_set_game_mcga();
     return 0;
+}
+
+int zeliard_town_enter_first_frame(zeliard_town_runtime_t *town,
+                                   zeliard_game_exec_state_t *game,
+                                   u8 *vga, size_t vga_size) {
+    return town_enter_first_frame(town, game, vga, vga_size, 0);
+}
+
+int zeliard_town_enter_saved_first_frame(zeliard_town_runtime_t *town,
+                                         zeliard_game_exec_state_t *game,
+                                         u8 *vga, size_t vga_size) {
+    return town_enter_first_frame(town, game, vga, vga_size, 1);
 }
 
 static u16 player_world_position(const u8 *cs) {
@@ -820,9 +877,23 @@ static void request_cavern_exit(zeliard_town_runtime_t *town, u8 *cs,
     const u16 record = (u16)(read_u16(cs, 0xC00B) +
                              (u16)destination_index * 5u);
     const u16 destination = read_u16(cs, record);
+    const u8 destination_area = cs[(u16)(record + 4)];
+    u16 start = (u16)(destination - 0x10u);
+    /* 106TOWN:pf30_exec calls SAR mode 1 before this calculation, so
+     * town_map_width at C002 is already the destination cavern's width.
+     * The host defers that load until after the ROKA transition; obtain the
+     * same width explicitly before applying MASM's signed-underflow wrap. */
+    if ((int16_t)start < 0) {
+        const char *asset = zeliard_cavern_map_asset(destination_area);
+        size_t file_size = 0;
+        u8 *file = asset ? platform_load_asset(asset, &file_size) : NULL;
+        /* MDT files carry a four-byte payload length; map_width is C002. */
+        if (file && file_size >= 8)
+            start = (u16)(start + read_u16(file, 6));
+        free(file);
+    }
     zeliard_player_write_u16(
-        &player, ZEL_PLAYER_START_POSITION,
-        (u16)(destination - 0x10u));
+        &player, ZEL_PLAYER_START_POSITION, start);
     zeliard_player_write_u8(
         &player, ZEL_PLAYER_MAP_SCROLL_ROW,
         (u8)((cs[(u16)(record + 2)] - 0x0Au) & 0x3Fu));
@@ -830,7 +901,7 @@ static void request_cavern_exit(zeliard_town_runtime_t *town, u8 *cs,
         &player, ZEL_PLAYER_BOSS_INTRO_FLAG,
         (u8)((cs[(u16)(record + 3)] & 1u) ? 0xFF : 0));
     zeliard_player_write_u8(
-        &player, PLAYER_CURRENT_AREA, cs[(u16)(record + 4)]);
+        &player, PLAYER_CURRENT_AREA, destination_area);
     town->cavern_exit_requested = 1;
 }
 

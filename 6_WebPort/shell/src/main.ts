@@ -81,7 +81,6 @@ type ZeliardModule = EngineExports & {
 
 type ModuleFactory = (overrides?: Partial<ZeliardModule>) => Promise<ZeliardModule>;
 
-const statusEl = document.getElementById('status')!;
 const startButton = document.getElementById('start') as HTMLButtonElement;
 const canvas = document.getElementById('screen') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
@@ -187,10 +186,10 @@ class OpeningMusic {
     }
 }
 
-function setStatus(msg: string) {
-    statusEl.textContent = msg;
-    console.log('[zeliard]', msg);
-}
+/* Status strings used to be rendered below the game and mirrored to the
+ * console.  Keep call sites as internal state annotations without exposing
+ * the development feed in the player UI. */
+function setStatus(_msg: string) {}
 
 async function loadEngineModule(cacheBust: string): Promise<ModuleFactory> {
     /* The engine .js / .wasm / .data triple lives under engine/ in the
@@ -212,7 +211,7 @@ async function boot() {
 
     setStatus('instantiating WASM…');
     const Module = await factory({
-        print:    (s: string) => console.log('[wasm]', s),
+        print:    () => {},
         printErr: (s: string) => console.error('[wasm]', s),
         locateFile: (path: string) => {
             const assetUrl = new URL(path, engineBaseUrl);
@@ -254,7 +253,6 @@ async function boot() {
 
     const imageData = ctx.createImageData(w, h);
     let last = performance.now();
-    let frameCount = 0;
     let lastScene = -1;
     let lastPhase = -1;
     let lastPhaseElapsedBucket = -1;
@@ -503,17 +501,6 @@ async function boot() {
         ctx.putImageData(imageData, 0, 0);
         if (deterministicCapture) recordPresent(fb, pal);
 
-        if (++frameCount === 1) {
-            // First-frame diagnostics: count distinct paletted indices to
-            // confirm the engine actually wrote something interesting.
-            const seen = new Set<number>();
-            let nonzero = 0;
-            for (let i = 0; i < fb.length; i++) {
-                if (fb[i] !== 0) nonzero++;
-                seen.add(fb[i]);
-            }
-            console.log(`[zeliard] first frame: ${nonzero} non-zero pixels, ${seen.size} distinct indices`);
-        }
     }
 
     paintFrame();
@@ -669,7 +656,6 @@ async function boot() {
             const recordPointer = Module._zeliard_save_record();
             const record = Array.from(Module.HEAPU8.subarray(
                 recordPointer, recordPointer + 0x100));
-            console.log(`[zeliard] saved ${name} (${record.length} bytes)`);
             refreshSaveControls();
             downloadRecord(name, record);
         }

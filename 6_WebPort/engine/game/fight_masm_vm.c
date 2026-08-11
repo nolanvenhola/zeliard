@@ -287,59 +287,7 @@ static int ending_poll_instruction(const u8 *memory, size_t instruction) {
 }
 
 static const char *map_for_selector(u8 selector) {
-    switch (selector) {
-        case 0x00: return "mp10.mdt";
-        case 0x01: return "mp1d.mdt";
-        case 0x02: return "mp20.mdt";
-        case 0x03: return "mp21.mdt";
-        case 0x04: return "mp2d.mdt";
-        case 0x05: return "mp30.mdt";
-        case 0x06: return "mp31.mdt";
-        case 0x07: return "mp3d.mdt";
-        case 0x08: return "mp40.mdt";
-        case 0x09: return "mp41.mdt";
-        /* MP4D is Agar's chamber.  The release engine reaches it through
-         * MP40's x224/y18 door, then owns the directional ROKA run and the
-         * complete ENCOUNTER! wipe before dispatching ZELA. */
-        case 0x0A: return "mp4d.mdt";
-        case 0x0B: return "mp50.mdt";
-        case 0x0C: return "mp51.mdt";
-        /* MP5D is Vista's chamber, reached from Cementar's x157/y16
-         * authored boss door through the standard ROKA/ENCOUNTER flow. */
-        case 0x0D: return "mp5d.mdt";
-        case 0x0E: return "mp60.mdt";
-        case 0x0F: return "mp61.mdt";
-        /* MP62 is Arrugia's secret treasure cavern, reached through
-         * Tesoro's x31/y5 Lion-keyed door and exited through x62/y13. */
-        case 0x10: return "mp62.mdt";
-        /* MP6D is Tarso's chamber.  Tesoro's x309/y41 boss door owns the
-         * standard ROKA run and ENCOUNTER! wipe before dispatching LEGA. */
-        case 0x11: return "mp6d.mdt";
-        /* MP70 is Caliente's heat-damage map.  The release frame loop
-         * applies its periodic Area-7 damage unless accessory 5 (the
-         * Asbestos Cape) is selected. */
-        case 0x12: return "mp70.mdt";
-        case 0x13: return "mp71.mdt";
-        case 0x14: return "mp72.mdt";
-        case 0x15: return "mp73.mdt";
-        /* MP7D is Dragon's chamber.  Caliente's x199/y33 boss door owns
-         * the directional ROKA run and ENCOUNTER! wipe before DRGN. */
-        case 0x16: return "mp7d.mdt";
-        /* Area 8 is the complete late-game chain: Absor, Milagro,
-         * Desleal, Falter, Final, then Alguien's chamber and the first
-         * final-boss chamber. MPA0 is selector 1Eh: scene_transition in
-         * release 200FIGHT loads it explicitly after MAO1 requests the
-         * second final-boss phase. */
-        case 0x17: return "mp80.mdt";
-        case 0x18: return "mp81.mdt";
-        case 0x19: return "mp82.mdt";
-        case 0x1A: return "mp83.mdt";
-        case 0x1B: return "mp84.mdt";
-        case 0x1C: return "mp8d.mdt";
-        case 0x1D: return "mp90.mdt";
-        case 0x1E: return "mpa0.mdt";
-        default: return NULL;
-    }
+    return zeliard_cavern_map_asset(selector);
 }
 
 static int load_fill_to(u8 *memory, size_t destination, const char *name) {

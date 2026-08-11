@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -32,12 +31,9 @@ u8* platform_load_asset(const char *name, size_t *out_size) {
 }
 
 void platform_log(const char *fmt, ...) {
-    char buf[1024];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    EM_ASM({ console.log(UTF8ToString($0)); }, buf);
+    /* Runtime tracing is useful in native parity tests, but the browser build
+     * should not flood the player's developer console during normal play. */
+    (void)fmt;
 }
 
 EM_JS(int, platform_save_record_js,

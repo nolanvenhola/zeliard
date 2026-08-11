@@ -13,6 +13,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char *zeliard_cavern_map_asset(u8 selector) {
+    static const char *const assets[] = {
+        "mp10.mdt", "mp1d.mdt", "mp20.mdt", "mp21.mdt", "mp2d.mdt",
+        "mp30.mdt", "mp31.mdt", "mp3d.mdt", "mp40.mdt", "mp41.mdt",
+        "mp4d.mdt", "mp50.mdt", "mp51.mdt", "mp5d.mdt", "mp60.mdt",
+        "mp61.mdt", "mp62.mdt", "mp6d.mdt", "mp70.mdt", "mp71.mdt",
+        "mp72.mdt", "mp73.mdt", "mp7d.mdt", "mp80.mdt", "mp81.mdt",
+        "mp82.mdt", "mp83.mdt", "mp84.mdt", "mp8d.mdt", "mp90.mdt",
+        "mpa0.mdt"
+    };
+    return selector < sizeof(assets) / sizeof(assets[0])
+        ? assets[selector] : NULL;
+}
+
 /* ---- grow-on-demand output buffer --------------------------------------- */
 typedef struct { u8 *buf; size_t n; size_t cap; } out_t;
 
