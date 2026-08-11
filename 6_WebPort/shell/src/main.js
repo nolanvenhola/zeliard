@@ -57,6 +57,67 @@ async function boot() {
     let lastScene = -1;
     let lastPhase = -1;
     let lastPhaseElapsedBucket = -1;
+    let lastPresentedIndices = null;
+    let lastPresentedPalette = null;
+    let visualPresentSequence = 0;
+    const visualPresentTrace = [];
+    function hashBytes(bytes) {
+        let hash = 0x811c9dc5;
+        for (const byte of bytes) {
+            hash ^= byte;
+            hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        return hash.toString(16).padStart(8, '0');
+    }
+    function recordPresent(indices, palette) {
+        let minX = w, minY = h, maxX = -1, maxY = -1, changed = 0;
+        if (lastPresentedIndices) {
+            for (let i = 0; i < indices.length; i++) {
+                if (indices[i] === lastPresentedIndices[i]) continue;
+                const x = i % w;
+                const y = (i / w) | 0;
+                minX = Math.min(minX, x); minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+                changed++;
+            }
+        } else {
+            minX = 0; minY = 0; maxX = w - 1; maxY = h - 1; changed = indices.length;
+        }
+        visualPresentTrace.push({
+            sequence: visualPresentSequence++,
+            op: 'present',
+            x: changed ? minX : 0,
+            y: changed ? minY : 0,
+            width: changed ? maxX - minX + 1 : 0,
+            height: changed ? maxY - minY + 1 : 0,
+            changedPixels: changed,
+            hash: hashBytes(indices),
+            paletteHash: hashBytes(palette),
+            paletteChanged: !lastPresentedPalette ||
+                hashBytes(palette) !== hashBytes(lastPresentedPalette),
+            scene: Module._zeliard_scene(),
+            phase: Module._zeliard_phase(),
+        });
+        if (visualPresentTrace.length > 256) visualPresentTrace.shift();
+        lastPresentedIndices = Uint8Array.from(indices);
+        lastPresentedPalette = Uint8Array.from(palette);
+    }
+    /* Raw capture API used by the parity harness. Copies detach the artifact
+     * from mutable WASM memory and retain palette indices independently from
+     * the DAC, unlike a canvas or host-window screenshot. */
+    window.__zeliardVisualCapture = (checkpoint) => ({
+        schemaVersion: 1,
+        checkpoint,
+        runtime: 'wasm',
+        videoMode: 'mcga-320x200x8',
+        width: w,
+        height: h,
+        indices: Array.from(Module.HEAPU8.slice(fbPtr, fbPtr + w * h)),
+        palette: Array.from(Module.HEAPU8.slice(palPtr, palPtr + 256 * 3)),
+        rgbActive: Module._zeliard_rgb_framebuf_active() !== 0,
+        dirtyRect: visualPresentTrace.length ? visualPresentTrace.at(-1) : null,
+        renderTrace: visualPresentTrace.map(event => ({ ...event })),
+    });
     function sceneName(scene) {
         switch (scene) {
             case 0: return 'title';
@@ -104,6 +165,7 @@ async function boot() {
             }
         }
         ctx.putImageData(imageData, 0, 0);
+        if (deterministicCapture) recordPresent(fb, pal);
         if (++frameCount === 1) {
             // First-frame diagnostics: count distinct paletted indices to
             // confirm the engine actually wrote something interesting.

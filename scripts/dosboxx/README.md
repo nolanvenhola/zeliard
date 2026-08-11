@@ -18,6 +18,16 @@ Run the original-game smoke scenario:
 pwsh -File scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source original
 ```
 
+On an unattended desktop (such as CI), require DOSBox-X's indexed raw capture:
+
+```powershell
+pwsh -File scripts/dosboxx/Invoke-ZeliardDosboxX.ps1 -Action Smoke -Source original -CaptureRawVisual
+```
+
+This switch briefly focuses DOSBox-X because its SDL mapper only accepts the
+raw-capture shortcut from the foreground window. It is opt-in and is never
+needed for local builds.
+
 Run the same scenario against a freshly built MASM tree:
 
 ```powershell
@@ -37,11 +47,12 @@ Every smoke run creates a unique directory under `artifacts/dosboxx-runs/` with:
 - a PNG captured at the named checkpoint;
 - `result.json`, containing lifecycle status, hashes, host metadata, and artifact paths.
 
-The PNG is captured from the launched DOSBox-X window's client device context.
+The smoke PNG is captured from the launched DOSBox-X window's client device context.
 Restricted sessions fall back to a labeled screen capture that serializes capture
 and raises the target window first, so parallel runs retain isolated evidence.
-Exact guest-frame synchronization and raw VGA capture are tracked separately by
-#202 and #201.
+With `-CaptureRawVisual`, DOSBox-X's own F11+Ctrl+P `raw1.png` is normalized by
+`scripts/visual/parity_artifact.py`. Exact guest-time acquisition is supplied
+by the deterministic input/checkpoint work in #202.
 
 The lifecycle status distinguishes `startup-failure`, `premature-exit`, `hang`,
 and `normal-completion`. A smoke run stops only the DOSBox-X process it launched.

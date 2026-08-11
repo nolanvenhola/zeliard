@@ -19,6 +19,8 @@ param(
 
     [string]$CheckpointWindowPattern = 'ZELIAD',
 
+    [switch]$CaptureRawVisual,
+
     [string]$SaveFile,
 
     [string]$DosboxPath,
@@ -61,6 +63,7 @@ $gameStage = Join-Path $runDirectory 'game'
 $captureDirectory = Join-Path $runDirectory 'capture'
 $configPath = Join-Path $runDirectory 'dosbox-x.conf'
 $screenshotPath = Join-Path $captureDirectory "$CheckpointName.png"
+$rawVisualDirectory = Join-Path $captureDirectory "$CheckpointName-raw"
 $resultPath = Join-Path $runDirectory 'result.json'
 $eventLogPath = Join-Path $runDirectory 'events.jsonl'
 New-Item -ItemType Directory -Path $gameStage, $captureDirectory | Out-Null
@@ -235,13 +238,51 @@ namespace ZeliardDosboxX {
         [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
         [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr hWnd, ref POINT point);
         [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
+        [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int command);
+        [DllImport("user32.dll")] public static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extraInfo);
         [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr hWnd);
         [DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr hWnd, IntPtr hdc);
         [DllImport("gdi32.dll")] public static extern bool BitBlt(IntPtr destination, int x, int y, int width, int height, IntPtr source, int sourceX, int sourceY, uint rasterOperation);
     }
 }
 '@
+    }
+
+    if ($CaptureRawVisual) {
+        # Raw capture intentionally requires explicit opt-in because DOSBox-X's
+        # SDL mapper accepts the host shortcut only from the foreground window.
+        # CI uses its disposable desktop; normal local smoke runs never focus it.
+        $rawBefore = @(Get-ChildItem -LiteralPath $captureDirectory -Filter '*.raw1.png' -ErrorAction SilentlyContinue | ForEach-Object FullName)
+        [ZeliardDosboxX.NativeWindow]::SetForegroundWindow($dosboxProcess.MainWindowHandle) | Out-Null
+        Start-Sleep -Milliseconds 100
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x7A, 0x57, 0, [UIntPtr]::Zero) # F11 down
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x11, 0x1D, 0, [UIntPtr]::Zero) # Ctrl down
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x50, 0x19, 0, [UIntPtr]::Zero) # P down
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x50, 0x19, 2, [UIntPtr]::Zero) # P up
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x11, 0x1D, 2, [UIntPtr]::Zero) # Ctrl up
+        [ZeliardDosboxX.NativeWindow]::keybd_event(0x7A, 0x57, 2, [UIntPtr]::Zero) # F11 up
+        $rawDeadline = [DateTime]::UtcNow.AddSeconds(5)
+        $rawCapture = $null
+        while ([DateTime]::UtcNow -lt $rawDeadline -and -not $rawCapture) {
+            Start-Sleep -Milliseconds 100
+            $rawCapture = Get-ChildItem -LiteralPath $captureDirectory -Filter '*.raw1.png' -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notin $rawBefore } |
+                Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+        }
+        if (-not $rawCapture) { throw 'DOSBox-X did not produce its indexed raw1.png capture.' }
+        $visualTool = Join-Path $repoRoot 'scripts\visual\parity_artifact.py'
+        & python $visualTool capture --mode dosboxx-indexed-png --memory $rawCapture.FullName `
+            --checkpoint $CheckpointName --runtime "dosboxx-$Source" --output $rawVisualDirectory
+        if ($LASTEXITCODE -ne 0) { throw "Raw DOSBox-X capture normalization failed: $($rawCapture.FullName)" }
+        $result.artifacts.rawIndexedPng = $rawCapture.FullName
+        $result.artifacts.rawVisual = $rawVisualDirectory
+        $result.artifacts.rawVisualManifest = Join-Path $rawVisualDirectory 'manifest.json'
+        Write-RunEvent -Name 'raw-visual-captured' -Data @{
+            source = $rawCapture.FullName
+            manifest = $result.artifacts.rawVisualManifest
+            method = 'dosboxx-indexed-png-explicit-foreground'
+        }
     }
 
     # Read the target window's client DC so overlapping runs remain isolated.
