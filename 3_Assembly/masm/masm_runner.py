@@ -20,6 +20,19 @@ LINK_DIR  = ROOT / 'tool/tlink'
 DOSBOX    = ROOT / 'TasmRunner/bin/Debug/net8.0/dosbox/dosbox.exe'
 
 
+def background_process_options():
+    """Run the assembler emulator without a focus-stealing GUI window."""
+    if sys.platform != 'win32':
+        return {}
+    startup = subprocess.STARTUPINFO()
+    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startup.wShowWindow = subprocess.SW_HIDE
+    return {
+        'startupinfo': startup,
+        'creationflags': subprocess.CREATE_NO_WINDOW,
+    }
+
+
 def strip_mz(data):
     hdr = struct.unpack_from('<H', data, 8)[0]
     return data[hdr * 16:]
@@ -68,7 +81,8 @@ def build(asm_path: Path, output_dir: Path, want_bin: bool, link: bool) -> tuple
         conf.write_text('\n'.join(lines) + '\n')
 
         subprocess.run([str(DOSBOX), '-conf', str(conf), '-exit'],
-                       capture_output=True, text=True, timeout=120)
+                       capture_output=True, text=True, timeout=120,
+                       **background_process_options())
 
         out_txt = (tmp / 'OUT.TXT')
         if not out_txt.exists():

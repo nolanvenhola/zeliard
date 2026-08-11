@@ -42,6 +42,25 @@ DEFAULT_WORKERS  = 8
 PER_FILE_TIMEOUT = 180
 
 
+def background_process_options():
+    """Keep the per-module DOSBox process from stealing desktop focus.
+
+    MASM itself is a console program, so the build never needs the emulator's
+    SDL window. STARTF_USESHOWWINDOW applies to the first ShowWindow call made
+    by Windows GUI applications; CREATE_NO_WINDOW also suppresses a console
+    host when a DOSBox build happens to be console-linked.
+    """
+    if sys.platform != 'win32':
+        return {}
+    startup = subprocess.STARTUPINFO()
+    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startup.wShowWindow = subprocess.SW_HIDE
+    return {
+        'startupinfo': startup,
+        'creationflags': subprocess.CREATE_NO_WINDOW,
+    }
+
+
 def output_ext(stem):
     s = stem.upper()
     if re.match(r'^[123]\d{2}MP', s): return '.mdt'
@@ -118,7 +137,8 @@ def compile_one_masm(asm, dest_dir):
 
         try:
             subprocess.run([str(DOSBOX), '-conf', str(conf), '-exit'],
-                           capture_output=True, text=True, timeout=PER_FILE_TIMEOUT)
+                           capture_output=True, text=True, timeout=PER_FILE_TIMEOUT,
+                           **background_process_options())
         except subprocess.TimeoutExpired:
             return (asm, False, f'TIMEOUT after {PER_FILE_TIMEOUT}s', None)
         except Exception as e:
