@@ -40,6 +40,9 @@ jobs:
         shell: pwsh
         run: ./scripts/dosboxx/Test-ZeliardDosboxXRunner.ps1 -Provision
 
+      - name: Verify deterministic replay contract
+        run: python -m unittest discover scripts/replay/tests -v
+
       - name: Verify raw framebuffer and palette diagnostics
         run: python -m unittest discover scripts/visual/tests -v
 

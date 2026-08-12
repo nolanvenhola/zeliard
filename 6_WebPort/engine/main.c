@@ -68,6 +68,9 @@ static zeliard_town_runtime_t g_town_runtime;
 static zeliard_cavern_transition_t g_cavern_transition;
 static zel_input_state_t g_input;
 static u32 g_input_subtick_accum;
+/* Monotonic count of the same 0x13B1-divisor PIT interrupts consumed by
+ * stick.asm.  Automated replay uses this clock instead of host wall time. */
+static u32 g_guest_tick_count;
 static u8 g_fight_music_chunk = 0xFF;
 static u8 g_fight_connector_music_fade;
 static u8 g_fight_boundary_selector = 0xFF;
@@ -722,6 +725,7 @@ EXPORT void zeliard_init(void) {
     g_gamepad_buttons = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
+    g_guest_tick_count = 0;
     zel_opening_audio_init();
     opening_set_sound_cue_sink(zel_opening_audio_write_cue);
     opening_init();
@@ -735,6 +739,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
     const int was_paused = g_paused;
     const u32 input_ticks =
         zel_timer_advance_ms(&g_input_subtick_accum, dt_ms);
+    g_guest_tick_count += input_ticks;
     apply_input_actions(zel_input_advance_pit(
         &g_input, g_game_segments[0], input_ticks));
     if (was_paused) {
@@ -1434,6 +1439,9 @@ EXPORT int              zeliard_game_segment_size(void) {
 EXPORT u32              zeliard_input_subtick_accum(void) {
     return g_input_subtick_accum;
 }
+EXPORT u32              zeliard_guest_tick(void) {
+    return g_guest_tick_count;
+}
 EXPORT int              zeliard_load_record(const u8 *record, int size) {
     u8 snapshot[ZEL_PLAYER_RECORD_SIZE];
     if (!record || size != ZEL_PLAYER_RECORD_SIZE) return 0;
@@ -1449,6 +1457,7 @@ EXPORT int              zeliard_load_record(const u8 *record, int size) {
     g_restore_menu_active = 0;
     g_session_terminated = 0;
     g_input_subtick_accum = 0;
+    g_guest_tick_count = 0;
     if (!enter_game_scene()) return 0;
     return 1;
 }

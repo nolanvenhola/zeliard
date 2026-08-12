@@ -68,6 +68,9 @@ type EngineExports = {
     _zeliard_save_name(): number;
     _zeliard_save_record(): number;
     _zeliard_load_record(record: number, size: number): number;
+    _zeliard_guest_tick(): number;
+    _zeliard_game_segment(): number;
+    _zeliard_game_segment_size(): number;
     _malloc(size: number): number;
     _free(pointer: number): void;
 };

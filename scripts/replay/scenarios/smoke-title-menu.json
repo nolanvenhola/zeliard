@@ -1,0 +1,17 @@
+{
+  "format": "zeliard-replay-v1",
+  "name": "title-menu-input-smoke",
+  "events": [
+    { "action": "wait", "ticks": 48 },
+    { "action": "checkpoint", "name": "title-ready" },
+    { "action": "key_down", "key": "space" },
+    { "action": "wait", "ticks": 2 },
+    { "action": "key_up", "key": "space" },
+    { "action": "wait", "ticks": 12 },
+    { "action": "key_down", "key": "down" },
+    { "action": "wait", "ticks": 4 },
+    { "action": "key_up", "key": "down" },
+    { "action": "wait", "ticks": 2 },
+    { "action": "checkpoint", "name": "menu-moved" }
+  ]
+}

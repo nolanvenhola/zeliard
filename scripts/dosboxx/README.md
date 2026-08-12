@@ -51,8 +51,10 @@ The smoke PNG is captured from the launched DOSBox-X window's client device cont
 Restricted sessions fall back to a labeled screen capture that serializes capture
 and raises the target window first, so parallel runs retain isolated evidence.
 With `-CaptureRawVisual`, DOSBox-X's own F11+Ctrl+P `raw1.png` is normalized by
-`scripts/visual/parity_artifact.py`. Exact guest-time acquisition is supplied
-by the deterministic input/checkpoint work in #202.
+`scripts/visual/parity_artifact.py`. Exact guest-time input and stable
+post-present checkpoints are provided by
+[`scripts/replay`](../replay/README.md). The smoke runner remains a startup and
+capture diagnostic; deterministic parity scenarios use `run_replay.py`.
 
 The lifecycle status distinguishes `startup-failure`, `premature-exit`, `hang`,
 and `normal-completion`. A smoke run stops only the DOSBox-X process it launched.
