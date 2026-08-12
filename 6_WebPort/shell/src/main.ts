@@ -49,6 +49,7 @@ type EngineExports = {
     _zeliard_audio_opl_write_count(): number;
     _zeliard_audio_generated_peak(): number;
     _zeliard_audio_cue_serial(): number;
+    _zeliard_audio_reset_serial(): number;
     _zeliard_exact_music_driver(): number;
     _zeliard_audio_set_backend(backend: number): number;
     _zeliard_audio_backend(): number;
@@ -97,6 +98,20 @@ const downloadSaveEl = document.getElementById(
 const openSaveEl = document.getElementById('open-save') as HTMLInputElement;
 const audioBackendEl = document.getElementById('audio-backend') as HTMLSelectElement;
 const displayModeEl = document.getElementById('display-mode') as HTMLSelectElement;
+const musicToggleEl = document.getElementById('music-toggle') as HTMLButtonElement;
+const soundToggleEl = document.getElementById('sound-toggle') as HTMLButtonElement;
+const gameSpeedEl = document.getElementById('game-speed') as HTMLSelectElement;
+const playerLevelEl = document.getElementById('player-level') as HTMLOutputElement;
+const playerExperienceEl = document.getElementById(
+    'player-experience') as HTMLOutputElement;
+const playerExperienceNeededEl = document.getElementById(
+    'player-experience-needed') as HTMLOutputElement;
+/* 217KENJP sage_hp_thresh at A28Ch. Experience is spent on growth, so this
+ * is the remaining amount required by the next blessing. */
+const experienceThresholds = [
+    50, 150, 300, 420, 1000, 1500, 3000, 5000,
+    6000, 8000, 10000, 15000, 20000, 40000, 50000, 60000,
+];
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.href);
 const engineBaseUrl = new URL('engine/', appBaseUrl);
 
@@ -106,6 +121,7 @@ class OpeningMusic {
     private readonly pumpFrames = 3072;
     private activeTrack = -1;
     private cueSerial = 0;
+    private resetSerial = 0;
     readonly stats = {
         callbacks: 0,
         requestedFrames: 0,
@@ -123,6 +139,7 @@ class OpeningMusic {
                         private readonly context: AudioContext) {
         this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
         this.cueSerial = this.module._zeliard_audio_cue_serial();
+        this.resetSerial = this.module._zeliard_audio_reset_serial();
         this.pcmPointer = this.module._malloc(
             this.pumpFrames * 2 * Int16Array.BYTES_PER_ELEMENT);
         this.node = new AudioWorkletNode(this.context, 'zeliard-pcm', {
@@ -175,8 +192,10 @@ class OpeningMusic {
     }
 
     sync(track: number, enabled: boolean, paused: boolean, attenuation: number): void {
-        if (track !== this.activeTrack) {
+        const resetSerial = this.module._zeliard_audio_reset_serial();
+        if (track !== this.activeTrack || resetSerial !== this.resetSerial) {
             this.activeTrack = track;
+            this.resetSerial = resetSerial;
             this.node.port.postMessage({ type: 'reset' });
             this.stats.callbacks = 0;
             this.stats.requestedFrames = 0;
@@ -557,8 +576,65 @@ async function boot() {
         requestAnimationFrame(frame);
     }
 
+    function refreshGameControls() {
+        const musicEnabled = Module._zeliard_music_enabled() !== 0;
+        const soundEnabled = Module._zeliard_sound_enabled() !== 0;
+        musicToggleEl.textContent = `Music: ${musicEnabled ? 'On' : 'Off'}`;
+        musicToggleEl.setAttribute('aria-pressed', String(musicEnabled));
+        soundToggleEl.textContent = `Sound FX: ${soundEnabled ? 'On' : 'Off'}`;
+        soundToggleEl.setAttribute('aria-pressed', String(soundEnabled));
+        gameSpeedEl.value = String(Module._zeliard_game_speed_digit());
+        gameSpeedEl.disabled = Module._zeliard_scene() !== 2 ||
+            Module._zeliard_paused() !== 0;
+
+        if (Module._zeliard_scene() === 2) {
+            const player = Module._zeliard_game_segment();
+            const level = Module.HEAPU8[player + 0x8D];
+            const experience =
+                Module.HEAPU8[player + 0x8E] |
+                (Module.HEAPU8[player + 0x8F] << 8);
+            const threshold = experienceThresholds[Math.min(level, 15)];
+            playerLevelEl.value = String(level);
+            playerExperienceEl.value = String(experience);
+            playerExperienceNeededEl.value = String(
+                Math.max(0, threshold - experience));
+        } else {
+            playerLevelEl.value = '—';
+            playerExperienceEl.value = '—';
+            playerExperienceNeededEl.value = '—';
+        }
+    }
+
+    musicToggleEl.addEventListener('click', async () => {
+        await startPlayback();
+        Module._zeliard_key(112); // F1: stick.asm music toggle
+        music?.sync(Module._zeliard_music_track(),
+            Module._zeliard_music_enabled() !== 0,
+            Module._zeliard_paused() !== 0,
+            Module._zeliard_music_attenuation());
+        refreshGameControls();
+    });
+    soundToggleEl.addEventListener('click', async () => {
+        await startPlayback();
+        Module._zeliard_key(113); // F2: stick.asm sound-effects toggle
+        refreshGameControls();
+    });
+    gameSpeedEl.addEventListener('change', () => {
+        if (Module._zeliard_scene() !== 2 || Module._zeliard_paused()) {
+            refreshGameControls();
+            return;
+        }
+        /* Use the original F9 dialog path so the browser control and the
+         * keyboard option update the same shared FF33h speed byte. */
+        Module._zeliard_key(120);
+        Module._zeliard_text_key(gameSpeedEl.value.charCodeAt(0));
+        Module._zeliard_key(32);
+        refreshGameControls();
+    });
+
     startButton.hidden = false;
     startButton.addEventListener('click', () => void startPlayback());
+    refreshGameControls();
     window.addEventListener('keydown', (e: KeyboardEvent) => {
         const keycodes: Record<string, number> = {
             Enter: 13,
@@ -672,6 +748,7 @@ async function boot() {
             Module._zeliard_paused() !== 0,
             Module._zeliard_music_attenuation());
         music?.pump();
+        refreshGameControls();
         paintFrame();
         requestAnimationFrame(frame);
     }

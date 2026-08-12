@@ -65,6 +65,15 @@ try {
           }
           return hash.toString(16).padStart(16, '0').toUpperCase();
         };
+        const crc16 = bytes => {
+          let crc = 0xffff;
+          for (const byte of bytes) {
+            crc ^= byte;
+            for (let bit = 0; bit < 8; bit++)
+              crc = (crc & 1) ? ((crc >>> 1) ^ 0xa001) : (crc >>> 1);
+          }
+          return crc.toString(16).padStart(4, '0').toUpperCase();
+        };
         const state = () => {
           const segment = m._zeliard_game_segment();
           const start = m.HEAPU8[segment + 0x80] |
@@ -150,17 +159,23 @@ try {
               const segmentSize = m._zeliard_game_segment_size();
               const framebufferPointer = m._zeliard_framebuf();
               const palettePointer = m._zeliard_palette();
+              const segmentBytes = m.HEAPU8.subarray(segmentPointer,
+                segmentPointer + segmentSize);
+              const framebufferBytes = m.HEAPU8.subarray(framebufferPointer,
+                framebufferPointer + 64000);
+              const paletteBytes = m.HEAPU8.subarray(palettePointer,
+                palettePointer + 768);
               checkpoints.push({
                 name: event.name,
                 sequence: event.sequence,
                 state: state(),
                 hashes: {
-                  segment: fnv(m.HEAPU8.subarray(segmentPointer,
-                    segmentPointer + segmentSize)),
-                  framebuffer: fnv(m.HEAPU8.subarray(framebufferPointer,
-                    framebufferPointer + 64000)),
-                  palette: fnv(m.HEAPU8.subarray(palettePointer,
-                    palettePointer + 768)),
+                  segment: fnv(segmentBytes),
+                  framebuffer: fnv(framebufferBytes),
+                  palette: fnv(paletteBytes),
+                  segmentCrc16: crc16(segmentBytes),
+                  framebufferCrc16: crc16(framebufferBytes),
+                  paletteCrc16: crc16(paletteBytes),
                 },
               });
               break;

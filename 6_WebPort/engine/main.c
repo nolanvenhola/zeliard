@@ -54,10 +54,6 @@ static u32 g_load_request_serial;
 static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
-static u8 g_speed_cavern_frame[ZELIARD_FB_SIZE];
-static u8 g_speed_cavern_rgb[ZELIARD_FB_SIZE * 3];
-static u8 g_speed_cavern_frame_valid;
-static u8 g_speed_cavern_rgb_active;
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_to_fight;
 static u8 g_inventory_player_before[ZEL_PLAYER_RECORD_SIZE];
@@ -78,6 +74,7 @@ static u32 g_guest_tick_count;
 static u8 g_fight_music_chunk = 0xFF;
 static u8 g_fight_connector_music_fade;
 static u8 g_fight_boundary_selector = 0xFF;
+
 static u8 g_fight_started;
 static u8 g_fight_death_pending;
 static u8 g_fight_death_return_pending;
@@ -211,6 +208,13 @@ static void sync_fight_music(void) {
         platform_log("200FIGHT: exact music chunk %u start failed",
                      (unsigned)chunk);
     g_fight_music_chunk = chunk;
+}
+
+static void sync_fight_audio_globals(void) {
+    /* 200FIGHT and SNDADLIB share FF08h in the original game segment.
+     * Our two interpreters use separate address spaces, so mirror the byte
+     * at the same frame boundary at which 200FIGHT publishes it. */
+    zel_opening_audio_set_heartbeat_volume(g_game_segments[0][0xFF08]);
 }
 
 static int redraw_cavern_return_hud(u8 *vga, size_t vga_size, u8 *cs) {
@@ -435,8 +439,6 @@ static void terminate_session(void) {
     zeliard_fight_masm_vm_stop();
     g_fight_music_chunk = 0xFF;
     g_fight_boundary_selector = 0xFF;
-    g_speed_cavern_frame_valid = 0;
-    g_speed_cavern_rgb_active = 0;
     g_fight_started = 0;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
@@ -604,25 +606,20 @@ static void apply_input_actions(u32 actions) {
             g_game_segments[0][0xFF1D] = 0;
             g_game_segments[0][0xFF29] = 0;
             opening_speed_overlay_hide();
-            /* The fight VM's resident VGA is not always identical to the
-             * last page presented by the host (HUD overlays and display
-             * boundaries can leave it one page behind). Restore the exact
-             * full frame captured when F9 opened, not g_game_vga's stale
-             * page, then synchronize the resident indexed page. */
-            if (g_speed_cavern_frame_valid) {
-                memcpy(g_framebuf, g_speed_cavern_frame,
-                       sizeof(g_speed_cavern_frame));
-                memcpy(g_game_vga, g_speed_cavern_frame,
-                       sizeof(g_speed_cavern_frame));
-                memcpy(g_rgb_framebuf, g_speed_cavern_rgb,
-                       sizeof(g_speed_cavern_rgb));
-                g_rgb_framebuf_active = g_speed_cavern_rgb_active;
-                if (zeliard_fight_masm_vm_active() &&
-                    !zeliard_inventory_masm_vm_active())
-                    zeliard_fight_masm_vm_restore_vga(
-                        g_game_vga, sizeof(g_game_vga));
-                g_speed_cavern_frame_valid = 0;
-            }
+            if (actions & ZEL_INPUT_ACTION_ENTER)
+                zel_input_consume_key(&g_input, g_game_segments[0],
+                                      ZEL_INPUT_KEY_ENTER);
+            else if (actions & ZEL_INPUT_ACTION_SPACE)
+                zel_input_consume_key(&g_input, g_game_segments[0],
+                                      ZEL_INPUT_KEY_SPACE);
+            else if (actions & ZEL_INPUT_ACTION_ESCAPE)
+                zel_input_consume_key(&g_input, g_game_segments[0],
+                                      ZEL_INPUT_KEY_ESCAPE);
+            else if (actions & ZEL_INPUT_ACTION_SPEED_MENU)
+                zel_input_consume_key(&g_input, g_game_segments[0],
+                                      ZEL_INPUT_KEY_F9);
+            /* STICK's modal restores only its saved rectangle. 200FIGHT's
+             * resident VGA page remains untouched and resumes normally. */
             g_speed_menu_active = 0;
             g_speed_menu_selected = 0;
             g_paused = 0;
@@ -634,17 +631,6 @@ static void apply_input_actions(u32 actions) {
         u8 speed = g_game_segments[0][0xFF33];
         if (speed < 1u || speed > 10u)
             speed = 5u;
-        g_speed_cavern_frame_valid = (u8)(
-            g_gameplay_location == GAMEPLAY_LOCATION_CAVERN ||
-            g_cavern_transition.active ||
-            zeliard_fight_masm_vm_active());
-        if (g_speed_cavern_frame_valid) {
-            memcpy(g_speed_cavern_frame, g_framebuf,
-                   sizeof(g_speed_cavern_frame));
-            memcpy(g_speed_cavern_rgb, g_rgb_framebuf,
-                   sizeof(g_speed_cavern_rgb));
-            g_speed_cavern_rgb_active = (u8)g_rgb_framebuf_active;
-        }
         opening_speed_overlay_show_game(g_game_segments[0], 0x10000,
                                         (u8)(10u - speed));
         g_game_segments[0][0xFF75] = 2;
@@ -831,6 +817,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 g_fight_regen_frames = 0;
                 g_fight_boundary_selector = 0xFF;
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                sync_fight_audio_globals();
                 sync_fight_music();
             }
             zel_opening_audio_tick(dt_ms);
@@ -984,6 +971,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             }
             if (frames > 0)
                 memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+            sync_fight_audio_globals();
             if (frames > 0)
                 framebuf_rgb_disable();
             u8 fight_cue;
@@ -1326,6 +1314,7 @@ EXPORT void             zeliard_audio_set_sample_rate(int sample_rate) { zel_ope
 EXPORT u32              zeliard_audio_opl_write_count(void) { return zel_opening_audio_opl_write_count(); }
 EXPORT u32              zeliard_audio_generated_peak(void) { return zel_opening_audio_generated_peak(); }
 EXPORT u32              zeliard_audio_cue_serial(void) { return zel_opening_audio_cue_serial(); }
+EXPORT u32              zeliard_audio_reset_serial(void) { return zel_opening_audio_reset_serial(); }
 EXPORT int              zeliard_audio_set_backend(int backend) { return zel_opening_audio_set_backend(backend); }
 EXPORT int              zeliard_audio_backend(void) { return zel_opening_audio_backend(); }
 EXPORT int              zeliard_audio_backend_fallback(void) { return zel_opening_audio_backend_fallback(); }
@@ -1558,6 +1547,7 @@ EXPORT int              zeliard_test_restart_fight(
             sizeof(g_game_vga)))
         return 0;
     memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    sync_fight_audio_globals();
     sync_fight_music();
     return 1;
 }

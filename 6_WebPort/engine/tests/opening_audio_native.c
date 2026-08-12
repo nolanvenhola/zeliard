@@ -147,6 +147,59 @@ static int expect_dialog_sfx_continuity(void) {
     return ok;
 }
 
+static unsigned heartbeat_pcm_peak(int muted, u32 *writes) {
+    short pcm[480 * 2];
+    unsigned peak = 0;
+    zel_opening_audio_init();
+    if (muted) zel_opening_audio_toggle_sound();
+    zel_opening_audio_tick(10);
+    (void)zel_opening_audio_read_pcm(pcm, 480);
+    const u32 before = zel_opening_audio_opl_write_count();
+    zel_opening_audio_set_heartbeat_volume(15);
+    for (int block = 0; block < 100; ++block) {
+        zel_opening_audio_tick(10);
+        const size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+        for (size_t i = 0; i < frames * 2; ++i) {
+            const unsigned magnitude = pcm[i] < 0 ?
+                (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+            if (magnitude > peak) peak = magnitude;
+        }
+    }
+    *writes = zel_opening_audio_opl_write_count() - before;
+    return peak;
+}
+
+static int expect_heartbeat_stops_with_score(void) {
+    short pcm[480 * 2];
+    unsigned peak = 0;
+    zel_opening_audio_init();
+    zel_opening_audio_set_heartbeat_volume(15);
+    for (int block = 0; block < 20; ++block) {
+        zel_opening_audio_tick(10);
+        (void)zel_opening_audio_read_pcm(pcm, 480);
+    }
+    zel_opening_audio_stop();
+    /* SNDADLIB calls MSCADLIB service 6 when FF08 falls to zero. The OPL
+     * release envelope may ring briefly, but it must not retrigger. */
+    for (int block = 0; block < 20; ++block) {
+        zel_opening_audio_tick(10);
+        (void)zel_opening_audio_read_pcm(pcm, 480);
+    }
+    for (int block = 0; block < 100; ++block) {
+        zel_opening_audio_tick(10);
+        const size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+        for (size_t i = 0; i < frames * 2; ++i) {
+            const unsigned magnitude = pcm[i] < 0 ?
+                (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+            if (magnitude > peak) peak = magnitude;
+        }
+    }
+    const int ok = peak <= 2;
+    printf("opening_audio:boss_heartbeat_stops_on_handoff: %s peak=%u\n",
+           ok ? "PASS" : "FAIL", peak);
+    return ok;
+}
+
 int main(void) {
     int ok = 1;
 
@@ -232,12 +285,31 @@ int main(void) {
     ok &= expect_gameplay_track_load("mus5", ZEL_MUSIC_MUS5);
     ok &= expect_gameplay_track_load("mus6", ZEL_MUSIC_MUS6);
     static const u8 sfx_pcm_cues[] = {
-        0x02, 0x04, 0x07, 0x09, 0x16, 0x1E,
+        0x02, 0x04, 0x07, 0x09, 0x11, 0x14, 0x16, 0x1E,
         0x3D, 0x3E, 0x3F, 0x40, 0x41
     };
     for (size_t i = 0; i < sizeof(sfx_pcm_cues); ++i)
         ok &= expect_sfx_pcm(sfx_pcm_cues[i]);
+    /* Roland music still routes ordinary FF75h effects through the release
+     * SNDADLIB driver. Boss-door heartbeat uses FF08h, tested separately. */
+    ok &= zel_opening_audio_set_backend(ZEL_AUDIO_MT32);
+    ok &= expect_sfx_pcm(0x14);
+    ok &= zel_opening_audio_set_backend(ZEL_AUDIO_ADLIB);
     ok &= expect_dialog_sfx_continuity();
+
+    u32 heartbeat_writes = 0, heartbeat_muted_writes = 0;
+    const unsigned heartbeat_peak = heartbeat_pcm_peak(0, &heartbeat_writes);
+    const unsigned heartbeat_muted_peak =
+        heartbeat_pcm_peak(1, &heartbeat_muted_writes);
+    const int heartbeat_pcm_ok = heartbeat_peak > 256 &&
+        heartbeat_muted_peak == 0 && heartbeat_writes > heartbeat_muted_writes;
+    printf("opening_audio:boss_heartbeat_ff08_f2_pcm: %s "
+           "peak=%u/%u writes=%u/%u\n",
+           heartbeat_pcm_ok ? "PASS" : "FAIL", heartbeat_peak,
+           heartbeat_muted_peak, heartbeat_writes, heartbeat_muted_writes);
+    ok &= heartbeat_pcm_ok;
+    ok &= expect_heartbeat_stops_with_score();
+    zel_opening_audio_init();
 
     zel_opening_audio_write_cue(0x3F);
     if (zel_opening_audio_take_cue() != 0x3F || zel_opening_audio_take_cue() != 0) {
@@ -259,11 +331,13 @@ int main(void) {
     ok &= control_ok;
 
     control_ok = 1;
+    const u32 muted_serial = zel_opening_audio_cue_serial();
     zel_opening_audio_toggle_sound();
     control_ok &= !zel_opening_audio_sound_enabled();
     control_ok &= zel_opening_audio_take_cue() == 0;
-    zel_opening_audio_write_cue(0x3F);
+    zel_opening_audio_write_cue(0x14);
     control_ok &= zel_opening_audio_take_cue() == 0;
+    control_ok &= zel_opening_audio_cue_serial() == muted_serial;
     zel_opening_audio_toggle_sound();
     control_ok &= zel_opening_audio_sound_enabled();
     control_ok &= zel_opening_audio_take_cue() == 1;
@@ -302,6 +376,7 @@ int main(void) {
             } expected[] = {
                 {0x02, 0xFF, 0x1915, 0x201F, 0x1923},
                 {0x04, 0x00, 0x193E, 0x194A, 0x1955},
+                {0x11, 0x09, 0x1ABC, 0x1ABC, 0x1ACA},
                 {0x3D, 0xFF, 0x1FEC, 0x201F, 0x1FF6},
                 {0x3E, 0xFF, 0x1FF7, 0x201F, 0x1FF6},
                 {0x3F, 0xFF, 0x2001, 0x201F, 0x1FF6},

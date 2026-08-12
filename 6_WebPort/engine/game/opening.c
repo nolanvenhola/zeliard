@@ -6591,7 +6591,7 @@ void opening_init(void) {
 static void pause_overlay_set_pixel(int x, int y, u8 index) {
     size_t pixel = (size_t)y * ZELIARD_WIDTH + (size_t)x;
     g_framebuf[pixel] = index;
-    if (g_pause_rgb_active) {
+    if (g_pause_rgb_active || g_speed_rgb_active) {
         g_rgb_framebuf[pixel * 3u + 0u] = g_palette[index].r;
         g_rgb_framebuf[pixel * 3u + 1u] = g_palette[index].g;
         g_rgb_framebuf[pixel * 3u + 2u] = g_palette[index].b;

@@ -44,6 +44,7 @@ static size_t g_pcm_write;
 static u32 g_opl_write_count;
 static u32 g_generated_peak;
 static u32 g_cue_serial;
+static u32 g_reset_serial;
 
 typedef struct {
     double phase;
@@ -409,6 +410,9 @@ void zel_opening_audio_init(void) {
                                             sfx_driver_size);
     }
     if (g_exact_driver) {
+        /* zeliad.asm initializes FF09h to FFh before installing SNDADLIB.
+         * Its heartbeat path requires that exact shared exit-state value. */
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF09, 0xFF);
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF27, 0);
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, 0);
     }
@@ -436,6 +440,15 @@ void zel_opening_audio_sync_phase(int phase) {
 
 void zel_opening_audio_stop(void) {
     if (g_exact_driver) {
+        /* game.asm clears FF08h when the resident gameplay chunk changes.
+         * Clear it before stopping the score so SNDADLIB cannot retain the
+         * last boss-distance value across a load or town handoff. */
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF08, 0);
+        /* The FF08 transition is consumed by SNDADLIB's timer entry, not by
+         * MSCADLIB service 1.  Run that exact timer entry once so the active
+         * heartbeat operator is keyed off before the next scene starts. */
+        zel_mscadlib_vm_tick(&g_mscadlib);
+        apply_driver_writes();
         zel_mscadlib_vm_service(&g_mscadlib, 1, 0);
         apply_driver_writes();
     }
@@ -444,6 +457,10 @@ void zel_opening_audio_stop(void) {
     g_transition_fade = 0;
     clear_pcm_ring();
     g_attenuation = 0;
+    /* PCM already posted to an AudioWorklet is outside the DOS driver's
+     * address space. Mark this game-audio discontinuity so the browser
+     * adapter also discards the stale queued sound. */
+    g_reset_serial++;
 }
 
 int zel_opening_audio_music_track(void) {
@@ -533,6 +550,14 @@ void zel_opening_audio_tick(u32 dt_ms) {
     }
 }
 
+void zel_opening_audio_set_heartbeat_volume(u8 volume) {
+    /* 200FIGHT:compute_target_dist writes the boss-door proximity
+     * attenuation to FF08h. SNDADLIB's PIT handler reads that shared byte
+     * directly; FF27h remains the driver's authoritative F2 mute gate. */
+    if (g_exact_driver)
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF08, volume);
+}
+
 int zel_opening_audio_attenuation(void) {
     return g_attenuation;
 }
@@ -602,7 +627,11 @@ void zel_opening_audio_write_cue(u8 cue) {
          * without deleting music that the OPL has already rendered. */
         g_cue_serial++;
     if (g_exact_driver)
-        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75, cue);
+        /* SNDADLIB normally consumes and discards the mailbox while FF27h
+         * is muted. Gate it here as well between the host toggle and the
+         * next emulated driver service. */
+        zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75,
+                                   g_sound_enabled ? cue : 0);
 }
 
 u8 zel_opening_audio_take_cue(void) {
@@ -682,4 +711,8 @@ u32 zel_opening_audio_generated_peak(void) {
 
 u32 zel_opening_audio_cue_serial(void) {
     return g_cue_serial;
+}
+
+u32 zel_opening_audio_reset_serial(void) {
+    return g_reset_serial;
 }

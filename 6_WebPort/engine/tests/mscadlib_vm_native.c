@@ -134,6 +134,76 @@ int main(void) {
                zel_mscadlib_vm_global(&vm, 0xFF27));
         ok &= cue_match;
     }
+
+    /* 200FIGHT supplies boss proximity through FF08h. The release
+     * SNDADLIB PIT handler generates the heartbeat without an FF75h cue and
+     * gates the entire path on the normal F2 byte at FF27h. */
+    int heartbeat_ok = zel_mscadlib_vm_init(&vm, driver, driver_size,
+                                             bios, bios_size);
+    heartbeat_ok &= zel_mscadlib_vm_load_sfx_driver(
+        &vm, sfx_driver, sfx_driver_size);
+    zel_mscadlib_vm_set_global(&vm, 0xFF09, 0xFF);
+    zel_mscadlib_vm_set_global(&vm, 0xFF27, 0);
+    heartbeat_ok &= zel_mscadlib_vm_tick(&vm);
+    (void)zel_mscadlib_vm_take_writes(&vm, writes,
+                                      sizeof(writes) / sizeof(writes[0]));
+    zel_mscadlib_vm_set_global(&vm, 0xFF08, 15);
+    for (unsigned i = 0; heartbeat_ok && i < 256; ++i)
+        heartbeat_ok &= zel_mscadlib_vm_tick(&vm);
+    const size_t heartbeat_writes = zel_mscadlib_vm_take_writes(
+        &vm, writes, sizeof(writes) / sizeof(writes[0]));
+    unsigned heartbeat_events = 0, heartbeat_unique_ticks = 0;
+    unsigned heartbeat_min_delta = 0xFFFFFFFFu;
+    unsigned heartbeat_max_delta = 0, heartbeat_last_tick = 0;
+    u8 heartbeat_key_state[9] = {0};
+    for (size_t i = 0; i < heartbeat_writes; ++i) {
+        if (writes[i].reg < 0xB0 || writes[i].reg > 0xB8) continue;
+        const unsigned channel = writes[i].reg - 0xB0;
+        const u8 keyed = (u8)(writes[i].value & 0x20u);
+        if (keyed && !heartbeat_key_state[channel]) {
+            if (!heartbeat_unique_ticks ||
+                writes[i].tick != heartbeat_last_tick) {
+                if (heartbeat_unique_ticks) {
+                    const unsigned delta =
+                        writes[i].tick - heartbeat_last_tick;
+                    if (delta < heartbeat_min_delta)
+                        heartbeat_min_delta = delta;
+                    if (delta > heartbeat_max_delta)
+                        heartbeat_max_delta = delta;
+                }
+                heartbeat_last_tick = writes[i].tick;
+                ++heartbeat_unique_ticks;
+            }
+            ++heartbeat_events;
+        }
+        heartbeat_key_state[channel] = keyed;
+    }
+
+    int heartbeat_muted_ok = zel_mscadlib_vm_init(
+        &vm, driver, driver_size, bios, bios_size);
+    heartbeat_muted_ok &= zel_mscadlib_vm_load_sfx_driver(
+        &vm, sfx_driver, sfx_driver_size);
+    zel_mscadlib_vm_set_global(&vm, 0xFF09, 0xFF);
+    zel_mscadlib_vm_set_global(&vm, 0xFF27, 0xFF);
+    heartbeat_muted_ok &= zel_mscadlib_vm_tick(&vm);
+    (void)zel_mscadlib_vm_take_writes(&vm, writes,
+                                      sizeof(writes) / sizeof(writes[0]));
+    zel_mscadlib_vm_set_global(&vm, 0xFF08, 15);
+    for (unsigned i = 0; heartbeat_muted_ok && i < 256; ++i)
+        heartbeat_muted_ok &= zel_mscadlib_vm_tick(&vm);
+    const size_t heartbeat_muted_writes = zel_mscadlib_vm_take_writes(
+        &vm, writes, sizeof(writes) / sizeof(writes[0]));
+    const int heartbeat_match = heartbeat_ok && heartbeat_muted_ok &&
+        heartbeat_writes > heartbeat_muted_writes &&
+        heartbeat_unique_ticks > 1 && heartbeat_min_delta == 4 &&
+        heartbeat_max_delta == 4;
+    printf("sndadlib_vm:heartbeat_ff08_f2_gate: %s writes=%zu muted=%zu "
+           "events=%u ticks=%u delta=%u..%u\n",
+           heartbeat_match ? "PASS" : "FAIL", heartbeat_writes,
+           heartbeat_muted_writes, heartbeat_events, heartbeat_unique_ticks,
+           heartbeat_min_delta == 0xFFFFFFFFu ? 0 : heartbeat_min_delta,
+           heartbeat_max_delta);
+    ok &= heartbeat_match;
     puts(ok ? "VERDICT: PASS" : "VERDICT: FAIL");
     free(driver); free(sfx_driver); free(bios); free(score); free(score2);
     return ok ? 0 : 1;

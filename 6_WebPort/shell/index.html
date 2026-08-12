@@ -38,17 +38,29 @@
         #start:hover { background: #222; border-color: #fff; }
         #start:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
         [hidden] { display: none !important; }
-        #save-controls, #stored-save-controls {
+        #save-controls, #stored-save-controls, #game-controls {
             display: flex; gap: 8px; align-items: center;
         }
-        #save-select, #audio-backend, #display-mode, #load-save, #download-save, #restart, .file-button {
+        #game-controls {
+            flex-wrap: wrap; justify-content: center;
+        }
+        #game-stats {
+            display: flex; gap: 14px; padding: 5px 10px;
+            border: 1px solid #555; background: #080808;
+        }
+        #save-select, #audio-backend, #display-mode, #game-speed,
+        #music-toggle, #sound-toggle, #load-save, #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
         #save-select, #audio-backend, #display-mode { min-width: 160px; padding: 0 8px; }
-        #load-save, #download-save, #restart, .file-button {
+        #game-speed { min-width: 52px; padding: 0 6px; }
+        #music-toggle, #sound-toggle, #load-save, #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
+        }
+        #music-toggle[aria-pressed="false"], #sound-toggle[aria-pressed="false"] {
+            color: #999; border-color: #555;
         }
     </style>
 </head>
@@ -57,6 +69,24 @@
         <div id="screen-wrap">
             <canvas id="screen" width="320" height="200"></canvas>
             <button id="start" type="button" title="Start opening demo" aria-label="Start opening demo" hidden>&#9654;</button>
+        </div>
+        <div id="game-controls" aria-label="Game settings and player status">
+            <button id="music-toggle" type="button" aria-pressed="true">Music: On</button>
+            <button id="sound-toggle" type="button" aria-pressed="true">Sound FX: On</button>
+            <label>Speed
+                <select id="game-speed" aria-label="Game speed">
+                    <option value="0">0</option><option value="1">1</option>
+                    <option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option>
+                    <option value="6">6</option><option value="7">7</option>
+                    <option value="8">8</option><option value="9">9</option>
+                </select>
+            </label>
+            <span id="game-stats">
+                <span>Level <output id="player-level">0</output></span>
+                <span>Experience <output id="player-experience">0</output></span>
+                <span>Next level <output id="player-experience-needed">0</output></span>
+            </span>
         </div>
         <div id="save-controls">
             <label>Audio

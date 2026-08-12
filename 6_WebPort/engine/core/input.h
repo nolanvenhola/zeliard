@@ -55,6 +55,8 @@ enum {
 void zel_input_init(zel_input_state_t *state, u8 *game_seg);
 u32 zel_input_key_down(zel_input_state_t *state, u8 *game_seg, int keycode);
 void zel_input_key_up(zel_input_state_t *state, u8 *game_seg, int keycode);
+void zel_input_consume_key(zel_input_state_t *state, u8 *game_seg,
+                           int keycode);
 u32 zel_input_gamepad_update(zel_input_state_t *state, u8 *game_seg,
                              u8 directions, u8 buttons);
 u32 zel_input_advance_pit(zel_input_state_t *state, u8 *game_seg, u32 ticks);

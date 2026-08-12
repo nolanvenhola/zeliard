@@ -91,17 +91,17 @@ int main(void) {
     static u8 vga[0x10000];
     int ok = 1;
 
-    /* Release MASM's method-1 decoder produces 1,044 bytes here.  Its
-     * lookup scan intentionally overlaps the encoded stream; treating the
-     * first FFh as the lookup bound truncates and garbles ENCOUNTER!. */
+    /* Release MASM's method-1 decoder skips key/value pairs until an FFh
+     * key. ENCNT.GRP begins with 60h,FFh: the FFh value must not be mistaken
+     * for the terminator or the four-frame title data is shifted/garbled. */
     size_t encounter_file_size = 0, encounter_art_size = 0;
     u8 *encounter_file = platform_load_asset("encnt.grp", &encounter_file_size);
     u8 *encounter_art = encounter_file ? fill_buffer_decompress(
         encounter_file, encounter_file_size, &encounter_art_size) : NULL;
     const unsigned long long encounter_art_hash = encounter_art
         ? fnv1a64(encounter_art, encounter_art_size) : 0;
-    const int encounter_art_ok = encounter_art_size == 1044 &&
-        encounter_art_hash == 0xC4F6B9CD746DEC02ULL;
+    const int encounter_art_ok = encounter_art_size == 1040 &&
+        encounter_art_hash == 0xCEE54C916F8A4C77ULL;
     printf("pulpo_encounter_art_decode: %s size=%zu hash=%016llx\n",
            encounter_art_ok ? "PASS" : "FAIL", encounter_art_size,
            encounter_art_hash);
@@ -374,8 +374,8 @@ int main(void) {
     ok &= encounter_finish == 112 && encounter_game[0xC3] == 0x40;
     ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 52;
     ok &= zeliard_fight_masm_vm_music_chunk() == 94;
-    ok &= encounter_text_hash == 0x9D637B544A931E9AULL;
-    ok &= encounter_stack_hash == 0x9D637B544A931E9AULL;
+    ok &= encounter_text_hash == 0xE55AD9EFE2E447E8ULL;
+    ok &= encounter_stack_hash == 0xE55AD9EFE2E447E8ULL;
     ok &= chamber_reveal_hash == 0xF77D900D9AEA259CULL;
     ok &= pulpo_emerge_hash == 0x08A2C95C6F7D8E6FULL;
     ok &= chamber_ready_hash == 0xC5C665325BCFA9B6ULL;

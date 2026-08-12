@@ -65,13 +65,16 @@ static u8* method0(const u8 *d, size_t n, size_t *out_size) {
 /* Table: [key, val] pairs where key & 0x0F == 0; terminator byte 0xFF.
  * Stream bytes: if hi-nibble matches a table key, expand count×val. */
 static u8* method1(const u8 *d, size_t n, size_t *out_size) {
-    /* MASM records BP at the table start and scans SI past the first 0xFF,
-     * but the per-byte lookup is not bounded by that terminator.  It rescans
-     * from BP until a key with a nonzero low nibble is encountered.  The
-     * encoded stream can therefore overlap the lookup entries; ENCNT.GRP
-     * relies on this original behavior. */
+    /* MASM records BP at the table start. The per-byte lookup scans pairs
+     * until a key has a nonzero low nibble. Before decoding, stick.asm's
+     * dcmp_skip_loop advances over key/value pairs and tests only
+     * the key loaded by LODSB. A value of FFh is data (ENCNT.GRP's first
+     * pair is 60h,FFh), not the table terminator. */
     size_t stream = 0;
-    while (stream < n && d[stream] != 0xFF) stream++;
+    while (stream < n && d[stream] != 0xFF) {
+        if (stream + 1 >= n) { stream = n; break; }
+        stream += 2;
+    }
     size_t si = (stream < n) ? stream + 1 : stream;
 
     out_t o; if (out_init(&o, n * 3 + 64)) { *out_size = 0; return NULL; }

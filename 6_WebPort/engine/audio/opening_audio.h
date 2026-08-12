@@ -48,6 +48,7 @@ void zel_opening_audio_begin_transition_fade(void);
 void zel_opening_audio_begin_gameplay_transition_fade(void);
 void zel_opening_audio_begin_gameplay_death_fade(void);
 void zel_opening_audio_tick(u32 dt_ms);
+void zel_opening_audio_set_heartbeat_volume(u8 volume);
 int zel_opening_audio_attenuation(void);
 int zel_opening_audio_ready_for_transition(void);
 int zel_opening_audio_music_enabled(void);
@@ -69,5 +70,6 @@ int zel_opening_audio_backend_fallback(void);
 u32 zel_opening_audio_opl_write_count(void);
 u32 zel_opening_audio_generated_peak(void);
 u32 zel_opening_audio_cue_serial(void);
+u32 zel_opening_audio_reset_serial(void);
 
 #endif

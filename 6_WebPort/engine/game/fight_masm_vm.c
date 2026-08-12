@@ -320,16 +320,20 @@ static int fight_step(void *context, u16 cs, u16 ip) {
          * Observe execution of that instruction, not the duration for which
          * the byte remains nonzero. A spike pit repeats because it executes
          * the damage path repeatedly; a single hit executes it once. */
-        if (memory[instruction] == 0xC6 &&
-            memory[instruction + 1] == 0x06 &&
-            memory[instruction + 2] == 0x75 &&
-            memory[instruction + 3] == 0xFF)
-            post_sound_cue(state, memory[instruction + 4]);
-        if (!state->ending_mode && memory[instruction] == 0xC6 &&
-            memory[instruction + 1] == 0x06 &&
-            memory[instruction + 2] == 0x30 &&
-            memory[instruction + 3] == 0xFF &&
-            memory[instruction + 4] == 0xFF &&
+        size_t opcode = instruction;
+        if (memory[opcode] == 0x26 || memory[opcode] == 0x2E ||
+            memory[opcode] == 0x36 || memory[opcode] == 0x3E)
+            ++opcode;
+        if (memory[opcode] == 0xC6 &&
+            memory[opcode + 1] == 0x06 &&
+            memory[opcode + 2] == 0x75 &&
+            memory[opcode + 3] == 0xFF)
+            post_sound_cue(state, memory[opcode + 4]);
+        if (!state->ending_mode && memory[opcode] == 0xC6 &&
+            memory[opcode + 1] == 0x06 &&
+            memory[opcode + 2] == 0x30 &&
+            memory[opcode + 3] == 0xFF &&
+            memory[opcode + 4] == 0xFF &&
             memory[linear(FIGHT_SEG, 0x00C4)] == 0x1E)
             state->ending_requested = 1;
         if (state->bootstrap_clock &&
@@ -682,6 +686,7 @@ int zeliard_fight_masm_vm_restore_vga(const u8 *vga, size_t vga_size) {
     memcpy(zel_fight86_memory() + linear(VGA_SEG, 0), vga, 0x10000);
     return 1;
 }
+
 u8 zeliard_fight_masm_vm_exit_operation(void) {
     return g_fight_vm.exit_operation;
 }

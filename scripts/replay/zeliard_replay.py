@@ -67,6 +67,7 @@ class Scenario:
     events: tuple[Event, ...]
     setup: dict[str, Any]
     breakpoints: dict[str, int]
+    comparison: dict[str, Any]
     source: Path | None = None
 
     def checkpoint_names(self) -> list[str]:
@@ -134,6 +135,21 @@ def parse_scenario(document: Any, source: Path | None = None) -> Scenario:
         _integer(byte, f"setup patch {offset}")
         if byte > 0xFF:
             raise ScenarioError(f"setup patch byte is out of range: {offset}")
+
+    comparison = document.get("comparison", {})
+    if not isinstance(comparison, dict):
+        raise ScenarioError("scenario comparison policy must be an object")
+    if set(comparison) - {"stopOnFirstDivergence", "tickTolerance"}:
+        raise ScenarioError("scenario comparison policy contains unsupported fields")
+    stop_on_first = comparison.get("stopOnFirstDivergence", True)
+    if not isinstance(stop_on_first, bool):
+        raise ScenarioError("stopOnFirstDivergence must be boolean")
+    tick_tolerance = _integer(
+        comparison.get("tickTolerance", 0), "comparison tickTolerance")
+    comparison = {
+        "stopOnFirstDivergence": stop_on_first,
+        "tickTolerance": tick_tolerance,
+    }
 
     events: list[Event] = []
     cursor = 0
@@ -236,7 +252,7 @@ def parse_scenario(document: Any, source: Path | None = None) -> Scenario:
     if not checkpoints:
         raise ScenarioError("scenario must contain at least one checkpoint")
     return Scenario(name.strip(), tuple(events), dict(setup), breakpoints,
-                    source)
+                    comparison, source)
 
 
 def canonical_document(scenario: Scenario) -> dict[str, Any]:
@@ -246,6 +262,7 @@ def canonical_document(scenario: Scenario) -> dict[str, Any]:
         **({"setup": scenario.setup} if scenario.setup else {}),
         **({"breakpoints": scenario.breakpoints}
            if scenario.breakpoints else {}),
+        "comparison": scenario.comparison,
         "events": [
             {
                 "sequence": event.sequence,

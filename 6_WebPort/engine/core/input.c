@@ -151,6 +151,19 @@ void zel_input_key_up(zel_input_state_t *state, u8 *mem, int keycode) {
     apply_binding(mem, binding, 0);
 }
 
+void zel_input_consume_key(zel_input_state_t *state, u8 *mem, int keycode) {
+    const key_binding_t *binding = find_binding(keycode);
+    if (!state || !mem || !binding)
+        return;
+    /* A blocking STICK/DOS modal consumes its terminating make code before
+     * returning to 200FIGHT. Browser keydown delivery is asynchronous, so
+     * synthesize the corresponding released state at that boundary; the
+     * later physical keyup is then harmless. */
+    state->held_keys &= (u16)~binding->held_bit;
+    state->gamepad_keys &= (u16)~binding->held_bit;
+    apply_binding(mem, binding, 0);
+}
+
 u32 zel_input_gamepad_update(zel_input_state_t *state, u8 *mem,
                              u8 directions, u8 buttons) {
     u16 desired = 0;
