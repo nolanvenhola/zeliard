@@ -54,6 +54,10 @@ static u32 g_load_request_serial;
 static int g_session_terminated;
 static u8 g_game_segments[ZELIARD_GAME_SEGMENT_COUNT][ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_game_vga[ZELIARD_GAME_SEGMENT_SIZE];
+static u8 g_speed_cavern_frame[ZELIARD_FB_SIZE];
+static u8 g_speed_cavern_rgb[ZELIARD_FB_SIZE * 3];
+static u8 g_speed_cavern_frame_valid;
+static u8 g_speed_cavern_rgb_active;
 static u8 g_inventory_return_vga[ZELIARD_GAME_SEGMENT_SIZE];
 static u8 g_inventory_return_to_fight;
 static u8 g_inventory_player_before[ZEL_PLAYER_RECORD_SIZE];
@@ -431,6 +435,8 @@ static void terminate_session(void) {
     zeliard_fight_masm_vm_stop();
     g_fight_music_chunk = 0xFF;
     g_fight_boundary_selector = 0xFF;
+    g_speed_cavern_frame_valid = 0;
+    g_speed_cavern_rgb_active = 0;
     g_fight_started = 0;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
@@ -598,16 +604,24 @@ static void apply_input_actions(u32 actions) {
             g_game_segments[0][0xFF1D] = 0;
             g_game_segments[0][0xFF29] = 0;
             opening_speed_overlay_hide();
-            /* 200FIGHT owns a resident VGA page independently of the host
-             * presentation buffer.  The F9 wait can span a browser frame in
-             * which that presentation buffer is cleared or replaced; merely
-             * restoring the dialog rectangle then leaves the cavern black.
-             * Republish the complete current cavern/inventory page, matching
-             * the next release display boundary.  Towns retain stick.asm's
-             * exact saved-rectangle restoration above. */
-            if (g_gameplay_location == GAMEPLAY_LOCATION_CAVERN) {
-                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
-                framebuf_rgb_disable();
+            /* The fight VM's resident VGA is not always identical to the
+             * last page presented by the host (HUD overlays and display
+             * boundaries can leave it one page behind). Restore the exact
+             * full frame captured when F9 opened, not g_game_vga's stale
+             * page, then synchronize the resident indexed page. */
+            if (g_speed_cavern_frame_valid) {
+                memcpy(g_framebuf, g_speed_cavern_frame,
+                       sizeof(g_speed_cavern_frame));
+                memcpy(g_game_vga, g_speed_cavern_frame,
+                       sizeof(g_speed_cavern_frame));
+                memcpy(g_rgb_framebuf, g_speed_cavern_rgb,
+                       sizeof(g_speed_cavern_rgb));
+                g_rgb_framebuf_active = g_speed_cavern_rgb_active;
+                if (zeliard_fight_masm_vm_active() &&
+                    !zeliard_inventory_masm_vm_active())
+                    zeliard_fight_masm_vm_restore_vga(
+                        g_game_vga, sizeof(g_game_vga));
+                g_speed_cavern_frame_valid = 0;
             }
             g_speed_menu_active = 0;
             g_speed_menu_selected = 0;
@@ -620,6 +634,17 @@ static void apply_input_actions(u32 actions) {
         u8 speed = g_game_segments[0][0xFF33];
         if (speed < 1u || speed > 10u)
             speed = 5u;
+        g_speed_cavern_frame_valid = (u8)(
+            g_gameplay_location == GAMEPLAY_LOCATION_CAVERN ||
+            g_cavern_transition.active ||
+            zeliard_fight_masm_vm_active());
+        if (g_speed_cavern_frame_valid) {
+            memcpy(g_speed_cavern_frame, g_framebuf,
+                   sizeof(g_speed_cavern_frame));
+            memcpy(g_speed_cavern_rgb, g_rgb_framebuf,
+                   sizeof(g_speed_cavern_rgb));
+            g_speed_cavern_rgb_active = (u8)g_rgb_framebuf_active;
+        }
         opening_speed_overlay_show_game(g_game_segments[0], 0x10000,
                                         (u8)(10u - speed));
         g_game_segments[0][0xFF75] = 2;

@@ -634,9 +634,13 @@ int main(void) {
     }
     const unsigned long long cavern_before_speed =
         fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    const unsigned long long cavern_speed_playfield_before =
+        frame_rect_hash(48, 14, 224, 145);
     unsigned cavern_speed_before_nonzero = 0;
-    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
-        cavern_speed_before_nonzero += g_framebuf[pixel] != 0;
+    for (unsigned y = 14; y < 159; ++y)
+        for (unsigned x = 48; x < 272; ++x)
+            cavern_speed_before_nonzero +=
+                g_framebuf[(size_t)y * ZELIARD_WIDTH + x] != 0;
     zeliard_key_down(120);
     zeliard_tick(16);
     zeliard_key_up(120);
@@ -654,19 +658,41 @@ int main(void) {
     zeliard_tick(16);
     const unsigned long long cavern_after_speed =
         fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    const unsigned long long cavern_speed_playfield_after =
+        frame_rect_hash(48, 14, 224, 145);
     unsigned cavern_speed_after_nonzero = 0;
-    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
-        cavern_speed_after_nonzero += g_framebuf[pixel] != 0;
+    for (unsigned y = 14; y < 159; ++y)
+        for (unsigned x = 48; x < 272; ++x)
+            cavern_speed_after_nonzero +=
+                g_framebuf[(size_t)y * ZELIARD_WIDTH + x] != 0;
+    /* The next live 200FIGHT presentations must retain the restored page;
+     * checking only the dismissal frame misses a private-VGA overwrite. */
+    unsigned cavern_speed_resumed_min_nonzero = 224u * 145u;
+    for (unsigned resumed = 0; resumed < 8; ++resumed) {
+        zeliard_tick(16);
+        unsigned resumed_nonzero = 0;
+        for (unsigned y = 14; y < 159; ++y)
+            for (unsigned x = 48; x < 272; ++x)
+                resumed_nonzero +=
+                    g_framebuf[(size_t)y * ZELIARD_WIDTH + x] != 0;
+        if (resumed_nonzero < cavern_speed_resumed_min_nonzero)
+            cavern_speed_resumed_min_nonzero = resumed_nonzero;
+    }
     const int cavern_speed_restored = cavern_speed_opened &&
         !zeliard_speed_menu_active() && !zeliard_paused() &&
         zeliard_fight_active() && cavern_speed_before_nonzero > 1000 &&
-        cavern_speed_after_nonzero > 1000;
+        cavern_speed_after_nonzero > 1000 &&
+        cavern_speed_playfield_after == cavern_speed_playfield_before &&
+        cavern_speed_resumed_min_nonzero > 1000;
     ok &= cavern_speed_restored;
     printf("main_controls:malicia_f9_speed_return: %s "
-           "frame=%016llx>%016llx nonzero=%u/%u active=%d speed=%d\n",
+           "frame=%016llx>%016llx play=%016llx>%016llx "
+           "nonzero=%u/%u resumed_min=%u active=%d speed=%d\n",
            cavern_speed_restored ? "PASS" : "FAIL", cavern_before_speed,
-           cavern_after_speed, cavern_speed_before_nonzero,
-           cavern_speed_after_nonzero, zeliard_fight_active(),
+           cavern_after_speed, cavern_speed_playfield_before,
+           cavern_speed_playfield_after, cavern_speed_before_nonzero,
+           cavern_speed_after_nonzero, cavern_speed_resumed_min_nonzero,
+           zeliard_fight_active(),
            zeliard_game_speed_digit());
     const unsigned long long cavern_before_inventory =
         fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
