@@ -57,6 +57,7 @@ typedef struct {
     u8 dos_handle_open;
     u8 dos_write_ok;
     u8 drug_description_backdrop_active;
+    u8 drug_repeat_prompt_active;
     u8 drug_description_backdrop[112u * 45u];
     char save_name[13];
     u8 save_record[0x100];
@@ -608,13 +609,33 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
          * becomes visible in the linear host framebuffer, although DOS keeps
          * the already-presented menu until the loop returns to A88C. */
         if (g_room_vm.at_input_poll && script_ip == 0xAB0F) {
-            copy_frame_rect(g_room_vm.drug_description_backdrop, frame,
-                            156, 34, 112, 45);
             g_room_vm.drug_description_backdrop_active = 1;
-        } else if (g_room_vm.at_input_poll && script_ip == 0xA88C) {
+            g_room_vm.drug_repeat_prompt_active = 1;
+        } else if (g_room_vm.at_input_poll &&
+                   (script_ip == 0xA88C || script_ip == 0xA98D)) {
+            /* A88C is the initial main-menu poll; A98D is the main-menu poll
+             * reached after answering No.  Both end backdrop preservation.
+             * Continuing to restore at A98D overwrote every subsequent main
+             * menu cursor frame, making its arrow appear immovable. */
+            if (script_ip == 0xA88C)
+                copy_frame_rect(g_room_vm.drug_description_backdrop, frame,
+                                156, 34, 112, 45);
             g_room_vm.drug_description_backdrop_active = 0;
+            g_room_vm.drug_repeat_prompt_active = 0;
+        } else if (g_room_vm.at_input_poll) {
+            /* A completed Space selection has delivered control to the next
+             * stable menu/text poll.  Only now has the AB0F prompt ended.
+             * Do not infer this from transient instruction pointers while
+             * menu_nav is animating the Yes/No cursor. */
+            g_room_vm.drug_repeat_prompt_active = 0;
         }
-        if (g_room_vm.drug_description_backdrop_active)
+        /* AB0F is the live Yes/No poll for "Can I tell you about anything
+         * else?". Do not repaint its captured initial frame while menu_nav
+         * animates the cursor: that made the answer change internally while
+         * the visible arrow remained frozen. Resume preservation after the
+         * prompt hands control to the item selector. */
+        if (g_room_vm.drug_description_backdrop_active &&
+            !g_room_vm.drug_repeat_prompt_active)
             restore_frame_rect(frame, g_room_vm.drug_description_backdrop,
                                156, 34, 112, 45);
     }

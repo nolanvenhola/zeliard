@@ -298,6 +298,28 @@ int main(void) {
         ok &= equipped_spell_hashes[spell - 1] ==
               equipped_spell_oracle[spell - 1];
     }
+    /* A Sage changes selected_spell while its room overlay owns VGA. On
+     * return, the cached town frame may still contain the previously
+     * selected spell. Pin the exit redraw to the newly learned spell. */
+    static u8 sage_exit_vga[0x10000];
+    static u8 sage_exit_game[0x10000];
+    memset(sage_exit_vga, 0, sizeof(sage_exit_vga));
+    memcpy(sage_exit_game, segments[0], sizeof(sage_exit_game));
+    sage_exit_game[ZEL_PLAYER_SELECTED_SPELL] = 1;
+    ok &= zeliard_gmmcga_draw_equipped_spell(
+        sage_exit_vga, sizeof(sage_exit_vga), segments[1],
+        sizeof(segments[1]), 1, 0x37A4) == 0;
+    sage_exit_game[ZEL_PLAYER_SELECTED_SPELL] = 2;
+    sage_exit_game[ZEL_PLAYER_SPELL_CHARGES + 1] = 6;
+    ok &= zeliard_town_redraw_room_exit_spell_hud(
+        sage_exit_vga, sizeof(sage_exit_vga), sage_exit_game,
+        sizeof(sage_exit_game), segments[1], sizeof(segments[1])) == 0;
+    const unsigned long long sage_exit_spell = frame_rect_hash(
+        sage_exit_vga, 222, 164, 16, 16);
+    const unsigned long long sage_exit_charge = frame_rect_hash(
+        sage_exit_vga, 220, 187, 16, 8);
+    ok &= sage_exit_spell == equipped_spell_oracle[1] &&
+          sage_exit_charge == 0xE4CD1F75D7093925ULL;
     ok &= facing_town.facing_item_position == 0x002F;
     ok &= facing_town.facing_npc_position == 0x0030;
     ok &= facing_town.facing_door_type == 0x07;
@@ -323,6 +345,8 @@ int main(void) {
            equipped_spell_hashes[2], equipped_spell_hashes[3],
            equipped_spell_hashes[4], equipped_spell_hashes[5],
            equipped_spell_hashes[6]);
+    printf("town_sage_exit_spell_hud: spell=%016llx charge=%016llx\n",
+           sage_exit_spell, sage_exit_charge);
     const unsigned long long cpat_pixel_hash =
         fnv1a64(segments[1] + 0x8100, 0x2EE0);
     const unsigned long long cpat_alpha_hash =
@@ -1225,7 +1249,7 @@ int main(void) {
         bosque->dialog.active && !bosque->dialog.prompt_active &&
         bosque->dialog.final_wait &&
         (u16)(bosque_segments[0][0x7C58] |
-              ((u16)bosque_segments[0][0x7C59] << 8)) == 0xCC5A;
+              ((u16)bosque_segments[0][0x7C59] << 8)) == 0xCCB5;
     const int bosque_guard_no_crest_left_open = zeliard_town_advance_pit(
         bosque, &bosque_game, bosque_vga, sizeof(bosque_vga), 1, 4);
     const int bosque_guard_no_crest_right_open = zeliard_town_advance_pit(

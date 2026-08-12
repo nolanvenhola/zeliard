@@ -139,7 +139,7 @@ static int test_all_town_dialog_entries(void) {
         }
     }
     free(driver);
-    ok &= entries == 105 && hash == 0x65FE919F2E9A453FULL;
+    ok &= entries == 105 && hash == 0xB12C6DFF0A49E00AULL;
     printf("town_dialog_matrix: %s entries=%u hash=%016llx\n",
            ok ? "PASS" : "FAIL", entries, hash);
     return ok;
@@ -275,8 +275,8 @@ static int run_bosque_sentry_answer(int choose_no,
           memcmp(segment + 0x7513, "Yes", 4) == 0 &&
           memcmp(segment + 0x7517, "No", 3) == 0;
 
-    /* Explicitly select both visible rows. The Bosque No response is
-     * dialog 12 ("Don't lie"). */
+    /* Explicitly select both visible rows. Release 106TOWN maps Yes to
+     * dialog 12 ("Don't lie") and No to dialog 13 ("You cannot pass"). */
     segment[0xFF17] = choose_no ? 2 : 1;
     ok &= zeliard_town_dialog_continue(
         &dialog, segment, scratch, vga, sizeof(vga)) == 0;
@@ -338,7 +338,7 @@ static int test_bosque_sentry_prompt(void) {
     ok &= yes_prompt == 0x26F8F2DC2A165E3FULL &&
           no_prompt == yes_prompt &&
           yes_response != no_response &&
-          yes_end == 0xCCB5 && no_end == 0xCC5A &&
+          yes_end == 0xCC5A && no_end == 0xCCB5 &&
           yes_flags == 0x40 && no_flags == 0x40 &&
           yes_repeat == -2 && no_repeat == -2;
     printf("town_bosque_sentry_prompt: %s prompt=%016llx "

@@ -113,6 +113,12 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
                              u8 *vga, size_t vga_size,
                              u32 pit_ticks, u8 input_direction);
 
+/* Reapply the spell HUD state retained by a room overlay after the cached
+ * town framebuffer is restored (notably a spell newly taught by a Sage). */
+int zeliard_town_redraw_room_exit_spell_hud(
+    u8 *vga, size_t vga_size, u8 *game_seg, size_t game_size,
+    const u8 *item_seg, size_t item_size);
+
 /* 106TOWN try_take_facing_item/try_talk.../door_scan target scan only. */
 void zeliard_town_detect_facing_targets(zeliard_town_runtime_t *town,
                                         u8 *game_seg, u8 input_direction);

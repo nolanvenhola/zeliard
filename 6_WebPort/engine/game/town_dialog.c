@@ -507,11 +507,13 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
                 }
             }
         } else {
-            /* The visible rows are 0=Yes and 1=No. Keep this explicit:
-             * Bosque dialog 12 is "Don't lie..." and belongs to No;
-             * dialog 13 is the other refusal and belongs to Yes. */
+            /* The visible rows are 0=Yes and 1=No. 106TOWN:6655 keeps
+             * BL=0Dh when show_yes_no_dialog returns carry (No), but changes
+             * it to 0Ch when carry is clear (Yes). For Bosque that makes a
+             * false Yes answer dialog 12 ("Don't lie...") and an honest No
+             * answer dialog 13 ("You cannot pass..."). */
             const int answered_no = dialog->prompt_selection == 1;
-            next_dialog = answered_no ? 12 : 13;
+            next_dialog = answered_no ? 13 : 12;
         }
         dialog->prompt_active = dialog->waiting = 0;
         return render_dialog(dialog, cs, vga, vga_size,

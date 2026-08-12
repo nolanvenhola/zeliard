@@ -1139,6 +1139,14 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
                  vga, vga_size, 0, 0xC61C, 0x1700) ||
              zeliard_gmmcga_draw_shield_hp(vga, vga_size, cs, 0x10000)))
             return -4;
+        /* 217KENJP:A957-A980 installs the newly taught spell in the HUD
+         * before returning to 106TOWN. Our room shell restores the cached
+         * pre-entry town frame, so replay that live spell and charge after
+         * the restore just as we do for armory equipment above. */
+        if (zeliard_town_redraw_room_exit_spell_hud(
+                vga, vga_size, cs, 0x10000,
+                game->segment[1], 0x10000))
+            return -4;
     } else if (town->building_transition ==
                ZEL_TOWN_BUILDING_TRANSITION_SPECIAL) {
         /* 106TOWN:door_type_special loads town selector 86h (Dorado),
@@ -1163,6 +1171,22 @@ static int advance_building_transition(zeliard_town_runtime_t *town,
     town->pending_room_kind = ZEL_ROOM_NONE;
     town->building_transition_pass = 0;
     return 1;
+}
+
+int zeliard_town_redraw_room_exit_spell_hud(
+    u8 *vga, size_t vga_size, u8 *game_seg, size_t game_size,
+    const u8 *item_seg, size_t item_size) {
+    if (!vga || vga_size < 0x10000 || !game_seg || game_size < 0x10000 ||
+        !item_seg || item_size < 0x10000)
+        return -1;
+    const u8 spell = game_seg[ZEL_PLAYER_SELECTED_SPELL];
+    if (!spell) return 0;
+    return zeliard_gmmcga_draw_equipped_spell(
+               vga, vga_size, item_seg, item_size, spell, 0x37A4) ||
+           zeliard_gmmcga_draw_status_line(
+               vga, vga_size, 0, 0xAA1C, 0x1700) ||
+           zeliard_gmmcga_draw_spell_charge(
+               vga, vga_size, game_seg, game_size);
 }
 
 int zeliard_town_advance_pit(zeliard_town_runtime_t *town,

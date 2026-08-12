@@ -598,6 +598,17 @@ static void apply_input_actions(u32 actions) {
             g_game_segments[0][0xFF1D] = 0;
             g_game_segments[0][0xFF29] = 0;
             opening_speed_overlay_hide();
+            /* 200FIGHT owns a resident VGA page independently of the host
+             * presentation buffer.  The F9 wait can span a browser frame in
+             * which that presentation buffer is cleared or replaced; merely
+             * restoring the dialog rectangle then leaves the cavern black.
+             * Republish the complete current cavern/inventory page, matching
+             * the next release display boundary.  Towns retain stick.asm's
+             * exact saved-rectangle restoration above. */
+            if (g_gameplay_location == GAMEPLAY_LOCATION_CAVERN) {
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                framebuf_rgb_disable();
+            }
             g_speed_menu_active = 0;
             g_speed_menu_selected = 0;
             g_paused = 0;

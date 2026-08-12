@@ -706,6 +706,8 @@ static int muralla_release_vm_drugstore_text_repress(void) {
     ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
     ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
     ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const unsigned long long description_menu_backdrop =
+        frame_rect_hash(vga, 156, 34, 112, 45);
     /* 215DRUGP: Description -> question -> item menu -> item intro ->
      * Ken'ko's multi-page description. Each slash is a fresh key wait. */
     ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
@@ -721,6 +723,17 @@ static int muralla_release_vm_drugstore_text_repress(void) {
     ok &= intro_frame != description_frame;
     const unsigned long long shop_menu_backdrop =
         frame_rect_hash(vga, 156, 34, 112, 45);
+    const u16 repeat_yes_ip = zeliard_room_masm_vm_ip();
+    const u16 repeat_yes_script = (u16)(cs[0xFF4C] |
+        ((u16)cs[0xFF4D] << 8));
+    const unsigned long long repeat_yes_frame = fnv1a64(vga, 0x10000);
+    ok &= vm_run_to_next_poll(cs, vga, 2, 0, &ticks);
+    const unsigned long long repeat_no_frame = fnv1a64(vga, 0x10000);
+    const u16 repeat_no_ip = zeliard_room_masm_vm_ip();
+    ok &= repeat_no_frame != repeat_yes_frame;
+    ok &= vm_run_to_next_poll(cs, vga, 1, 0, &ticks);
+    const unsigned long long repeat_yes_restored = fnv1a64(vga, 0x10000);
+    ok &= repeat_yes_restored == repeat_yes_frame;
     ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
     ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
     const unsigned long long second_list_backdrop =
@@ -731,8 +744,8 @@ static int muralla_release_vm_drugstore_text_repress(void) {
     ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT;
     const unsigned long long second_intro_backdrop =
         frame_rect_hash(vga, 156, 34, 112, 45);
-    ok &= second_list_backdrop == shop_menu_backdrop &&
-          second_intro_backdrop == shop_menu_backdrop;
+    ok &= second_list_backdrop == description_menu_backdrop &&
+          second_intro_backdrop == description_menu_backdrop;
     for (unsigned page = 0; ok && page < 12 &&
          zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_TEXT; ++page)
         ok &= vm_browser_space_pulse(&input, cs, vga, &ticks);
@@ -745,12 +758,31 @@ static int muralla_release_vm_drugstore_text_repress(void) {
     ok &= zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU;
     const unsigned long long returned_menu_backdrop =
         frame_rect_hash(vga, 156, 34, 112, 45);
-    ok &= returned_menu_backdrop == shop_menu_backdrop;
+    ok &= returned_menu_backdrop == description_menu_backdrop;
+    const unsigned long long returned_main_selection =
+        fnv1a64(vga, 0x10000);
+    const u16 returned_main_ip = zeliard_room_masm_vm_ip();
+    const u16 returned_main_script = (u16)(cs[0xFF4C] |
+        ((u16)cs[0xFF4D] << 8));
+    ok &= vm_run_to_next_poll(cs, vga, 1, 0, &ticks);
+    const unsigned long long returned_main_scrolled =
+        fnv1a64(vga, 0x10000);
+    ok &= returned_main_scrolled != returned_main_selection;
     printf("muralla_release_vm_drugstore_text_repress: ticks=%u "
-           "frames=%016llx>%016llx backdrop=%016llx/%016llx/%016llx/%016llx "
+           "frames=%016llx>%016llx prompt=%016llx/%04x/%04x>%016llx/%04x>%016llx "
+           "backdrop=%016llx/%016llx/%016llx/%016llx/%016llx "
+           "main=%016llx/%04x/%04x>%016llx/%04x/%04x "
            "kind=%d\n", ticks, intro_frame, description_frame,
-           shop_menu_backdrop, second_list_backdrop, second_intro_backdrop,
-           returned_menu_backdrop, zeliard_room_masm_vm_input_kind());
+           repeat_yes_frame, repeat_yes_ip, repeat_yes_script,
+           repeat_no_frame, repeat_no_ip,
+           repeat_yes_restored,
+           description_menu_backdrop, shop_menu_backdrop,
+           second_list_backdrop, second_intro_backdrop,
+           returned_menu_backdrop, returned_main_selection, returned_main_ip,
+           returned_main_script, returned_main_scrolled,
+           zeliard_room_masm_vm_ip(),
+           (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)),
+           zeliard_room_masm_vm_input_kind());
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;

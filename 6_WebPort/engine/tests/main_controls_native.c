@@ -632,6 +632,42 @@ int main(void) {
         const u8 cue = (u8)zeliard_sound_cue();
         malicia_cue_counts[cue]++;
     }
+    const unsigned long long cavern_before_speed =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    unsigned cavern_speed_before_nonzero = 0;
+    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        cavern_speed_before_nonzero += g_framebuf[pixel] != 0;
+    zeliard_key_down(120);
+    zeliard_tick(16);
+    zeliard_key_up(120);
+    zeliard_tick(16);
+    const int cavern_speed_opened = zeliard_speed_menu_active() &&
+        zeliard_paused();
+    zeliard_text_key('7');
+    /* Browser presentation is not 200FIGHT's authoritative VGA page.  If it
+     * is replaced while the modal wait is active, dismissal must republish
+     * the whole cavern rather than only restoring the F9 rectangle. */
+    memset(g_framebuf, 0, ZELIARD_FB_SIZE);
+    zeliard_key_down(32);
+    zeliard_tick(16);
+    zeliard_key_up(32);
+    zeliard_tick(16);
+    const unsigned long long cavern_after_speed =
+        fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    unsigned cavern_speed_after_nonzero = 0;
+    for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        cavern_speed_after_nonzero += g_framebuf[pixel] != 0;
+    const int cavern_speed_restored = cavern_speed_opened &&
+        !zeliard_speed_menu_active() && !zeliard_paused() &&
+        zeliard_fight_active() && cavern_speed_before_nonzero > 1000 &&
+        cavern_speed_after_nonzero > 1000;
+    ok &= cavern_speed_restored;
+    printf("main_controls:malicia_f9_speed_return: %s "
+           "frame=%016llx>%016llx nonzero=%u/%u active=%d speed=%d\n",
+           cavern_speed_restored ? "PASS" : "FAIL", cavern_before_speed,
+           cavern_after_speed, cavern_speed_before_nonzero,
+           cavern_speed_after_nonzero, zeliard_fight_active(),
+           zeliard_game_speed_digit());
     const unsigned long long cavern_before_inventory =
         fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
     unsigned cavern_before_nonzero = 0;
