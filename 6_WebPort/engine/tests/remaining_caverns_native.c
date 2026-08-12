@@ -1,4 +1,5 @@
 #include "../game/fight_masm_vm.h"
+#include "../load/fill_buffer.h"
 #include "../platform/platform.h"
 #include "../render/palette.h"
 
@@ -372,6 +373,104 @@ static int run_jashiin_case(void) {
     return ok;
 }
 
+/* Item records whose action byte carries 20h use the WORD at +0Bh as a
+ * STDPLY offset and the byte at +0Dh as its permanent-state mask.  This is
+ * the release 200FIGHT process_map_seg_updates contract; exercise every such
+ * authored record rather than keeping a hand-maintained sample list. */
+static int run_all_persistent_objects(void) {
+    static u8 game[0x10000], vga[0x10000];
+    unsigned authored = 0, applied = 0, removed = 0, transformed = 0,
+             invalid = 0;
+    int ok = 1;
+    for (u8 selector = 0; selector < 31; ++selector) {
+        const char *asset = zeliard_cavern_map_asset(selector);
+        size_t size = 0;
+        u8 *image = platform_load_asset(asset, &size);
+        if (!image || size < 4 + 0x12) {
+            printf("cavern_persistence:%02x/%s: FAIL missing map\n",
+                   selector, asset ? asset : "null");
+            free(image);
+            ok = 0;
+            continue;
+        }
+        const u8 *map = image + 4;
+        size_t at = 4u + (size_t)(read_u16(map, 0x10) - 0xC000u);
+        unsigned object_index = 0;
+        while (at + 16 <= size && read_u16(image, at) != 0xFFFF) {
+            const u8 *row = image + at;
+            const u16 state_offset = read_u16(row, 11);
+            const u8 state_mask = row[13];
+            /* +0Eh is zero for items and nonzero for enemy families. */
+            if (row[14] == 0 && (row[7] & 0x20)) {
+                ++authored;
+                if (state_offset >= 0x100 || state_mask == 0 ||
+                    (state_mask & (u8)(state_mask - 1u)) != 0) {
+                    ++invalid;
+                    ok = 0;
+                    printf("cavern_persistence:%02x/%s/%u: FAIL "
+                           "invalid link=%04x/%02x\n", selector, asset,
+                           object_index, state_offset, state_mask);
+                } else {
+                    u8 before[16], after[16];
+                    prepare_player(game, selector);
+                    palette_set_game_mcga();
+                    int record_ok = zeliard_fight_masm_vm_start(
+                        game, sizeof(game), vga, sizeof(vga));
+                    u16 objects = zeliard_fight_masm_vm_peek_u16(0xC010);
+                    u16 object = (u16)(objects + object_index * 16u);
+                    for (unsigned byte = 0; byte < sizeof(before); ++byte)
+                        before[byte] = zeliard_fight_masm_vm_peek_u8(
+                            (u16)(object + byte));
+
+                    prepare_player(game, selector);
+                    game[state_offset] |= state_mask;
+                    palette_set_game_mcga();
+                    record_ok &= zeliard_fight_masm_vm_start(
+                        game, sizeof(game), vga, sizeof(vga));
+                    objects = zeliard_fight_masm_vm_peek_u16(0xC010);
+                    object = (u16)(objects + object_index * 16u);
+                    for (unsigned byte = 0; byte < sizeof(after); ++byte)
+                        after[byte] = zeliard_fight_masm_vm_peek_u8(
+                            (u16)(object + byte));
+                    const u8 head0 =
+                        after[0];
+                    const u8 head1 = after[1];
+                    const u8 link0 = after[11];
+                    const u8 link1 = after[12];
+                    const int is_removed =
+                        (head0 == 0 && head1 == 0xFF &&
+                         link0 == 0xFF && link1 == 0xFF) ||
+                        (head0 == 0xFF && head1 == 0xFF);
+                    const int is_transformed =
+                        memcmp(before, after, sizeof(before)) != 0;
+                    record_ok &= is_removed || is_transformed;
+                    if (record_ok) {
+                        ++applied;
+                        removed += is_removed;
+                        transformed += !is_removed && is_transformed;
+                    }
+                    else ok = 0;
+                    printf("cavern_persistence:%02x/%s/%u: %s/%s "
+                           "state=%04x/%02x bytes=%02x%02x/%02x%02x\n",
+                           selector, asset, object_index,
+                           record_ok ? "PASS" : "FAIL",
+                           is_removed ? "removed" : "transformed",
+                           state_offset, state_mask, head0, head1, link0,
+                           link1);
+                }
+            }
+            ++object_index;
+            at += 16;
+        }
+        free(image);
+    }
+    printf("cavern_persistence_inventory: %s authored=%u applied=%u "
+           "removed=%u transformed=%u invalid=%u maps=31\n",
+           ok && authored == applied ? "PASS" : "FAIL", authored, applied,
+           removed, transformed, invalid);
+    return ok && authored > 0 && authored == applied;
+}
+
 int main(void) {
     static const cavern_case_t cases[] = {
         {"Reaccion", "mp71.mdt", 0x13, 196, 7, 92, 25, 10, 0x1E,
@@ -407,6 +506,7 @@ int main(void) {
     ok &= run_persistence_case("Milagro", 0x18, 3, 0x43, 0x20);
     ok &= run_persistence_case("Desleal", 0x19, 3, 0x44, 0x08);
     ok &= run_persistence_case("Final", 0x1B, 0, 0x45, 0x10);
+    ok &= run_all_persistent_objects();
     printf("VERDICT: %s: all remaining cavern release maps execute in the "
            "exact fight VM\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

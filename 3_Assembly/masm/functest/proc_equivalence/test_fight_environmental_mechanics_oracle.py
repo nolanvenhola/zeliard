@@ -129,6 +129,29 @@ def main() -> int:
         (6, (48,46,49,48)), (6, (117,60,118,62)),
     ]
 
+    # MPP8's complete movement-family table owns the authored invisible-wall
+    # groups in Milagro and Falter.  Pin both their bounds and exact tile
+    # family populations so a visually blank collision corridor cannot be
+    # dropped or shifted without the oracle failing.
+    area8_invisible_tiles = {
+        0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18, 0x19,
+        0x1A, 0x1B, 0x1C,
+    }
+    milagro_invisible = components(
+        decoded["milagro"].grid, area8_invisible_tiles)
+    falter_invisible = components(
+        decoded["falter"].grid, area8_invisible_tiles)
+    invisible_ok = milagro_invisible == [
+        (30, (134,9,139,14), ((19,6),(20,4),(21,12),(23,4),
+                              (26,2),(27,1),(28,1))),
+        (19, (34,10,36,16), ((19,19),)),
+        (55, (108,23,111,36), ((17,28),(18,8),(19,19))),
+    ] and falter_invisible == [
+        (449, (0,0,127,16), ((17,137),(18,153),(19,159))),
+        (60, (78,20,81,34), ((17,12),(18,12),(19,36))),
+        (20, (94,44,98,47), ((17,20),)),
+    ]
+
     platform_contract = {
         "caliente_vertical": [row.hex() for row in records(maps["caliente"], 4, 3)],
         "caliente_collapsing": [row.hex() for row in records(maps["caliente"], 6, 3)],
@@ -196,13 +219,17 @@ def main() -> int:
             "65409c61006800","6e40bd68007300","7780ba70007c00"],
     }
 
-    ok = family_ok and correr_ok and corroer_ok and platforms_ok
+    ok = (family_ok and correr_ok and corroer_ok and invisible_ok and
+          platforms_ok)
     print("fight_environment: " + ("PASS" if family_ok else "FAIL") +
           f" move_slots={family_tables}")
     print("fight_environment_correr: " + ("PASS" if correr_ok else "FAIL") +
           f" components={len(correr_components)} cells={sum(r[0] for r in correr_components)}")
     print("fight_environment_corroer: " + ("PASS" if corroer_ok else "FAIL") +
           f" paths={corroer_contract}")
+    print("fight_environment_area8_invisible: " +
+          ("PASS" if invisible_ok else "FAIL") +
+          f" milagro={milagro_invisible} falter={falter_invisible}")
     print("fight_environment_platforms: " + ("PASS" if platforms_ok else "FAIL") +
           f" contract={platform_contract}")
     print("VERDICT: " + ("PASS" if ok else "FAIL") +

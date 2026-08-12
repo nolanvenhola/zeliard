@@ -103,6 +103,14 @@ int main(void) {
         {20, 128, 78, 23, 0, 15, 84, 36, "correr_upper_airflow"},
         {20, 128, 1, 34, 0, 15, 15, 45, "correr_wrapped_airflow"},
         {20, 128, 78, 59, 0, 15, 62, 59, "correr_lower_airflow"},
+        /* Area-7/8 release-VM probes found by the exhaustive coordinate
+         * survey.  These lock the complete current + collision + gravity
+         * trajectory, including Reaccion's vertical wrap. */
+        {19, 196, 50, 2, 0, 15, 72, 3, "reaccion_wrapped_airflow"},
+        {23, 256, 97, 37, 0, 20, 85, 46, "absor_airflow"},
+        {24, 256, 193, 17, 0, 10, 194, 30, "milagro_airflow"},
+        {25, 192, 9, 17, 0, 20, 22, 18, "desleal_airflow"},
+        {26, 128, 25, 5, 0, 10, 9, 5, "falter_airflow"},
     };
     static const u8 caliente_vertical[] = {
         0x07,0x00,0x06, 0x0E,0x00,0x03, 0x17,0x00,0x03,
