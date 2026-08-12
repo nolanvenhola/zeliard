@@ -157,8 +157,12 @@ static int runtime_round_trip(void) {
     for (size_t offset = 0; offset < 0x1C00; offset += sizeof(zero))
         ok &= memcmp(cs + 0xA000 + offset, zero, sizeof(zero)) == 0;
     ok &= fnv1a64(vga, 0x10000) == 0xEB05052EA5B62325ULL;
+    cs[ZEL_PLAYER_SAVE_SAGE] = 0x82;
+    cs[ZEL_PLAYER_LAST_SAGE] = 0x81;
     ok &= zeliard_room_enter(room, ZEL_ROOM_SAGE, cs, 0x10000,
                              vga, 0x10000) == 0;
+    ok &= cs[ZEL_PLAYER_SAVE_SAGE] == 0x82 &&
+          cs[ZEL_PLAYER_LAST_SAGE] == 0x82;
     ok &= fnv1a64(vga, 0x10000) == 0xA6873B3AD33ACEC7ULL;
     ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
     ok &= zeliard_room_enter(room, ZEL_ROOM_VIEWING, cs, 0x10000,

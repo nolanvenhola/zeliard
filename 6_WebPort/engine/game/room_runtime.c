@@ -192,6 +192,14 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
             game_seg + 0xA16E, 96, room->room_tiles, 0x3000,
             vga, vga_size, 0x0E17);
     } else if (kind == ZEL_ROOM_SAGE) {
+        /* 217KENJP records DS:0000..00FF verbatim and therefore cannot
+         * repair the release game's stale 0C5h field while saving.  The web
+         * death/recall paths use that documented last-sage destination, so
+         * commit the town selector at the same boundary where 106TOWN hands
+         * control to the sage overlay.  Castle and Esco do not host sages. */
+        const u8 sage_town = game_seg[ZEL_PLAYER_SAVE_SAGE];
+        if (sage_town >= 0x81 && sage_town <= 0x88)
+            game_seg[ZEL_PLAYER_LAST_SAGE] = sage_town;
         if (game_seg[0xC006] == 0) game_seg[0xC006] = 1;
         game_seg[0xBB12] = 0x17;
         game_seg[0xBB13] = 0x07;

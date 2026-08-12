@@ -49,7 +49,9 @@ try {
     module._zeliard_test_game_set_u8(0x80, 0x20);
     module._zeliard_test_game_set_u8(0x81, 0x00);
     module._zeliard_test_game_set_u8(0x83, 0x10);
-    module._zeliard_test_game_set_u8(0xC4, 0x81);
+    module._zeliard_test_game_set_u8(0xC4, 0x82);
+    module._zeliard_test_game_set_u8(0xC5, 0x81);
+    module._zeliard_test_game_set_u8(0xC006, 2);
     module._zeliard_test_enter_room(2);
   });
   await page.waitForFunction(() => window.__zeliard._zeliard_room_kind() === 2,
@@ -132,6 +134,15 @@ try {
     downloadedRecord.equals(Buffer.from(persistedRecord)),
     'portable .usr download mismatch', {
       name: download.suggestedFilename(), size: downloadedRecord.length });
+  assert(downloadedRecord[0xC4] === 0x82 &&
+    downloadedRecord[0xC5] === 0x82 &&
+    persistedRecord[0xC4] === 0x82 && persistedRecord[0xC5] === 0x82,
+    'Satono sage destination was not serialized into the save record', {
+      downloaded: { saveSage: downloadedRecord[0xC4],
+        lastSage: downloadedRecord[0xC5] },
+      persisted: { saveSage: persistedRecord[0xC4],
+        lastSage: persistedRecord[0xC5] },
+    });
 
   await pulse(40);
   await pulse(32);
@@ -190,7 +201,7 @@ try {
   });
   await page.waitForFunction(() =>
     window.__zeliard._zeliard_scene() === 2 &&
-    window.__zeliard._zeliard_town_area() === 1 &&
+    window.__zeliard._zeliard_town_area() === 2 &&
     window.__zeliard._zeliard_session_terminated() === 0);
   const restored = await page.evaluate((saved) => {
     const module = window.__zeliard;
@@ -212,11 +223,11 @@ try {
   }, expected);
   assert(restored.loaded && restored.scene === 2 &&
     restored.goldHigh === restored.expectedGoldHigh &&
-    restored.sages === restored.expectedSages && restored.area === 1 &&
+    restored.sages === restored.expectedSages && restored.area === 2 &&
     restored.position === 0x20 && restored.column === 0x10,
     'saved-game bootstrap did not restore the record', restored);
-  assert(restored.frameHash === '776b165581f82eb8',
-    'Muralla saved-game frame mismatch', restored);
+  assert(restored.frameHash === '1861bd18296f924f',
+    'Satono saved-game frame mismatch', restored);
   assert(pageErrors.length === 0, 'browser errors', pageErrors);
   console.log(JSON.stringify({ verdict: 'PASS', continuePrompt, persisted,
     terminated, restarted,
