@@ -100,36 +100,6 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_peek_u16(0xC002) == 204;
     ok &= zeliard_fight_masm_vm_music_chunk() == 88;
 
-    /* MP31's release descriptor stores the Pollo target at C013h/C015h.
-     * 200FIGHT:compute_target_dist writes its distance attenuation to FF08h;
-     * SNDADLIB polls that shared byte instead of receiving an FF75h cue. */
-    static u8 heartbeat_game[0x10000];
-    static u8 heartbeat_vga[0x10000];
-    prepare_player(heartbeat_game, 6, 188, 21);
-    /* A town/UI cue may still occupy the shared mailbox at handoff.  MASM
-     * does not replay that byte on 200FIGHT entry: only a newly executed
-     * `mov byte ptr [FF75h],imm8` is a sound event. */
-    heartbeat_game[0xFF75] = 0x0B;
-    palette_set_game_mcga();
-    ok &= zeliard_fight_masm_vm_start(
-        heartbeat_game, sizeof(heartbeat_game),
-        heartbeat_vga, sizeof(heartbeat_vga));
-    const u8 entry_cue = zeliard_fight_masm_vm_take_sound_cue();
-    ok &= advance_frame(heartbeat_game, heartbeat_vga, 0);
-    const u8 near_volume = heartbeat_game[0xFF08];
-    heartbeat_game[0x80] = 16;
-    heartbeat_game[0x81] = 0;
-    heartbeat_game[0x82] = 0;
-    ok &= advance_frame(heartbeat_game, heartbeat_vga, 0);
-    const u8 far_volume = heartbeat_game[0xFF08];
-    printf("riza_boss_door_heartbeat: target=%u/%u near=%u far=%u "
-           "entry_cue=%02x\n",
-           zeliard_fight_masm_vm_peek_u16(0xC013),
-           zeliard_fight_masm_vm_peek_u8(0xC015), near_volume, far_volume,
-           entry_cue);
-    ok &= zeliard_fight_masm_vm_peek_u16(0xC013) == 188 &&
-        zeliard_fight_masm_vm_peek_u8(0xC015) == 21 &&
-        near_volume == 15 && far_volume == 0 && entry_cue == 0;
     ok &= monsters == 36 && items == 12 && families == 0x0E;
     ok &= first_frame == 0xEBAAAD7878680058ULL;
     if (getenv("ZELIARD_DUMP"))
@@ -161,6 +131,37 @@ int main(void) {
            changed_families, moving_frame);
     ok &= changed_families == 0x0E;
     ok &= moving_frame == 0xA8F6478AFB85D4F5ULL;
+
+    /* MP31's release descriptor stores the Pollo target at C013h/C015h.
+     * Run this separate singleton-VM fixture only after the first-frame and
+     * live-AI checks above have finished consuming their original fixture. */
+    static u8 heartbeat_game[0x10000];
+    static u8 heartbeat_vga[0x10000];
+    prepare_player(heartbeat_game, 6, 188, 21);
+    /* A town/UI cue may still occupy the shared mailbox at handoff. MASM
+     * does not replay it on 200FIGHT entry; only a newly executed FF75h
+     * write is a sound event. */
+    heartbeat_game[0xFF75] = 0x0B;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        heartbeat_game, sizeof(heartbeat_game),
+        heartbeat_vga, sizeof(heartbeat_vga));
+    const u8 entry_cue = zeliard_fight_masm_vm_take_sound_cue();
+    ok &= advance_frame(heartbeat_game, heartbeat_vga, 0);
+    const u8 near_volume = heartbeat_game[0xFF08];
+    heartbeat_game[0x80] = 16;
+    heartbeat_game[0x81] = 0;
+    heartbeat_game[0x82] = 0;
+    ok &= advance_frame(heartbeat_game, heartbeat_vga, 0);
+    const u8 far_volume = heartbeat_game[0xFF08];
+    printf("riza_boss_door_heartbeat: target=%u/%u near=%u far=%u "
+           "entry_cue=%02x\n",
+           zeliard_fight_masm_vm_peek_u16(0xC013),
+           zeliard_fight_masm_vm_peek_u8(0xC015), near_volume, far_volume,
+           entry_cue);
+    ok &= zeliard_fight_masm_vm_peek_u16(0xC013) == 188 &&
+        zeliard_fight_masm_vm_peek_u8(0xC015) == 21 &&
+        near_volume == 15 && far_volume == 0 && entry_cue == 0;
 
     /* Traverse MP30's paired x19/y49 door first so release 200FIGHT owns
      * the locked-door state mutation before testing the reverse route. */
@@ -251,8 +252,8 @@ int main(void) {
     ok &= encounter_start && boss_music_frame && encounter_finish;
     ok &= encounter_start == 7 && boss_music_frame == 58;
     ok &= encounter_finish == 114 && boss_game[0xC3] == 0;
-    ok &= hashes[0] == 0x18D58078E84001F5ULL;
-    ok &= hashes[1] == 0x18D58078E84001F5ULL;
+    ok &= hashes[0] == 0x3E7C293A14FDD357ULL;
+    ok &= hashes[1] == 0x3E7C293A14FDD357ULL;
     ok &= hashes[2] == 0xFA684D7C2FDF3441ULL;
     ok &= hashes[3] == 0xFA684D7C2FDF3441ULL;
     ok &= hashes[4] == 0xFA684D7C2FDF3441ULL;

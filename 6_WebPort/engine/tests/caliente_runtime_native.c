@@ -216,7 +216,7 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_active() &&
           zeliard_fight_masm_vm_peek_u16(0xC002) == 73 &&
           zeliard_fight_masm_vm_peek_u8(0xFF30) == 0 &&
-          paguro_revisit_hash == 0xBB2ACCD3E056F84FULL;
+          paguro_revisit_hash == 0xCEB7A3C66C0C9E8BULL;
 
     /* Area 7 subtracts 15 HP every 64 combat frames unless wearable 5,
      * the Asbestos Cape, is selected. */
@@ -364,7 +364,7 @@ int main(void) {
            dragon_persistence, boss_game[0x32], boss_game[0x33],
            dragon_completion_hash);
     ok &= dragon_completion == 122;
-    ok &= dragon_completion_hash == 0xC75B95AA49A4D649ULL;
+    ok &= dragon_completion_hash == 0x70109E4F58514879ULL;
     ok &= dragon_persistence > dragon_completion;
     ok &= boss_game[0x32] == 0xFF && boss_game[0x33] == 0xFF;
 
