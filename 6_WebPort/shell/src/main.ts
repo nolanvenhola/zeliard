@@ -104,10 +104,10 @@ const gameSpeedEl = document.getElementById('game-speed') as HTMLSelectElement;
 const playerLevelEl = document.getElementById('player-level') as HTMLOutputElement;
 const playerExperienceEl = document.getElementById(
     'player-experience') as HTMLOutputElement;
-const playerExperienceNeededEl = document.getElementById(
-    'player-experience-needed') as HTMLOutputElement;
+const playerExperienceThresholdEl = document.getElementById(
+    'player-experience-threshold') as HTMLOutputElement;
 /* 217KENJP sage_hp_thresh at A28Ch. Experience is spent on growth, so this
- * is the remaining amount required by the next blessing. */
+ * is the per-level target required by the next blessing. */
 const experienceThresholds = [
     50, 150, 300, 420, 1000, 1500, 3000, 5000,
     6000, 8000, 10000, 15000, 20000, 40000, 50000, 60000,
@@ -596,12 +596,11 @@ async function boot() {
             const threshold = experienceThresholds[Math.min(level, 15)];
             playerLevelEl.value = String(level);
             playerExperienceEl.value = String(experience);
-            playerExperienceNeededEl.value = String(
-                Math.max(0, threshold - experience));
+            playerExperienceThresholdEl.value = String(threshold);
         } else {
             playerLevelEl.value = '—';
             playerExperienceEl.value = '—';
-            playerExperienceNeededEl.value = '—';
+            playerExperienceThresholdEl.value = '—';
         }
     }
 
