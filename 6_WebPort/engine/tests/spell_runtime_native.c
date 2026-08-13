@@ -4,6 +4,15 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Visual oracle path, executed from the assembled release binaries:
+ * 200FIGHT:boss_sprite_select indexes the spell tables at 8C81h/8C8Dh with
+ * selected_spell (DS:009Dh), then calls the relocated gfx_fn_77 entry.
+ * On an inventory return, combat_palette_update calls
+ * 206GFMCA:bg_restore_rect and GMMCGA:2C2A to replace and decode the selected
+ * spell's 24 sprites at game_seg:9350h. Hashing live rendered frames in both
+ * facing directions catches wrong spell tables or stale decoded graphics;
+ * state/charge assertions alone cannot do that. */
+
 static unsigned long long fnv1a64(const u8 *data, size_t size) {
     unsigned long long hash = 0xCBF29CE484222325ULL;
     while (size--) { hash ^= *data++; hash *= 0x100000001B3ULL; }
@@ -55,6 +64,7 @@ typedef struct {
     unsigned cue_count;
     unsigned active_mask;
     unsigned long long first_active_hash;
+    unsigned long long rendered_spell_hash;
     unsigned long long frame_hash;
 } spell_probe_t;
 
@@ -68,6 +78,7 @@ static spell_probe_t cast_spell(u8 spell, u8 charges, u8 facing) {
         game, sizeof(game), vga, sizeof(vga));
     game[0xC2] = facing;
     game[0xFF1E] = 0xFF;
+    unsigned active_frames = 0;
     for (unsigned frame = 0; frame < 32; ++frame) {
         result.ok &= advance_frame(game, vga, 0);
         result.active_mask |=
@@ -82,6 +93,8 @@ static spell_probe_t cast_spell(u8 spell, u8 charges, u8 facing) {
                     (u8)zeliard_fight_masm_vm_peek_u8((u16)(at + 2));
             }
         }
+        if (game[0xFF3E] && ++active_frames == 2)
+            result.rendered_spell_hash = fnv1a64(vga, 64000);
         for (u8 cue; (cue = zeliard_fight_masm_vm_take_sound_cue()) != 0;)
             if (result.cue_count < 32)
                 result.cues[result.cue_count++] = cue;
@@ -108,12 +121,14 @@ static void print_probe(const char *spell, const char *name,
     for (unsigned i = 0; i < result->cue_count; ++i)
         printf("%02x", result->cues[i]);
     printf(" init=%04x/%02x,%04x/%02x,%04x/%02x,%04x/%02x "
-           "active_mask=%08x active_frame=%016llx frame=%016llx\n",
+           "active_mask=%08x active_frame=%016llx rendered=%016llx "
+           "frame=%016llx\n",
            result->initial_slot_x[0], result->initial_slot_y[0],
            result->initial_slot_x[1], result->initial_slot_y[1],
            result->initial_slot_x[2], result->initial_slot_y[2],
            result->initial_slot_x[3], result->initial_slot_y[3],
            result->active_mask, result->first_active_hash,
+           result->rendered_spell_hash,
            result->frame_hash);
 }
 
@@ -171,12 +186,14 @@ int main(void) {
         right.slot_x == 0xFFFF && right.slot_y == 0x3B &&
         right.slot_flags == 0x81 && right.slot_frame == 1 &&
         right.slot_dir == 1 && right.active_mask == 0x0000000C &&
+        right.rendered_spell_hash == 0x85604F5823DDC2F1ULL &&
         right.frame_hash == 0xE0BD8B77231AE163ULL &&
         has_cue(&right, 0x17) && has_cue(&right, 0x18) &&
         left.charge == 2 && left.active == 0 &&
         left.slot_x == 0xFFFF && left.slot_y == 0x3B &&
         left.slot_flags == 0 && left.slot_frame == 5 && left.slot_dir == 1 &&
         left.active_mask == 0x0000007C &&
+        left.rendered_spell_hash == 0x0277FB36FAEE1BE9ULL &&
         left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
         has_cue(&left, 0x17) && has_cue(&left, 0x18) &&
         empty.charge == 0 && empty.active == 0 &&
@@ -191,6 +208,7 @@ int main(void) {
         saeta_right.slot_flags == 1 && saeta_right.slot_frame == 0x0A &&
         saeta_right.slot_dir == 0 &&
         saeta_right.active_mask == 0x00000FFC &&
+        saeta_right.rendered_spell_hash == 0x1931CF0724735FC8ULL &&
         saeta_right.frame_hash == 0xE0BD8B77231AE163ULL &&
         has_cue(&saeta_right, 0x17) && has_cue(&saeta_right, 0x18) &&
         saeta_left.charge == 2 && saeta_left.active == 0 &&
@@ -198,6 +216,7 @@ int main(void) {
         saeta_left.slot_flags == 0 && saeta_left.slot_frame == 0x0A &&
         saeta_left.slot_dir == 0 &&
         saeta_left.active_mask == 0x00000FFC &&
+        saeta_left.rendered_spell_hash == 0x54F00BD9F28303D5ULL &&
         saeta_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
         has_cue(&saeta_left, 0x17) && has_cue(&saeta_left, 0x18) &&
         saeta_empty.charge == 0 && saeta_empty.active == 0 &&
@@ -212,6 +231,7 @@ int main(void) {
         fuego_right.slot_flags == 1 && fuego_right.slot_frame == 0x0C &&
         fuego_right.slot_dir == 4 &&
         fuego_right.active_mask == 0x00003FFC &&
+        fuego_right.rendered_spell_hash == 0xFE1C6CDDAAA57112ULL &&
         fuego_right.frame_hash == 0xE0BD8B77231AE163ULL &&
         has_cue(&fuego_right, 0x17) && has_cue(&fuego_right, 0x18) &&
         fuego_left.charge == 2 && fuego_left.active == 0 &&
@@ -219,6 +239,7 @@ int main(void) {
         fuego_left.slot_flags == 0 && fuego_left.slot_frame == 0x0C &&
         fuego_left.slot_dir == 4 &&
         fuego_left.active_mask == 0x00003FFC &&
+        fuego_left.rendered_spell_hash == 0xA8157B1DB200F3E2ULL &&
         fuego_left.frame_hash == 0xDC8D212DD0516A71ULL &&
         has_cue(&fuego_left, 0x17) && has_cue(&fuego_left, 0x18) &&
         fuego_empty.charge == 0 && fuego_empty.active == 0 &&
@@ -233,6 +254,7 @@ int main(void) {
         lanzar_right.slot_flags == 1 && lanzar_right.slot_frame == 0x0A &&
         lanzar_right.slot_dir == 0 &&
         lanzar_right.active_mask == 0x00000FFC &&
+        lanzar_right.rendered_spell_hash == 0x2D2A7935EA1377D2ULL &&
         lanzar_right.frame_hash == 0xE0BD8B77231AE163ULL &&
         has_cue(&lanzar_right, 0x17) && has_cue(&lanzar_right, 0x18) &&
         lanzar_left.charge == 2 && lanzar_left.active == 0 &&
@@ -240,6 +262,7 @@ int main(void) {
         lanzar_left.slot_flags == 0 && lanzar_left.slot_frame == 0x0A &&
         lanzar_left.slot_dir == 0 &&
         lanzar_left.active_mask == 0x00000FFC &&
+        lanzar_left.rendered_spell_hash == 0xB9688F0928340A23ULL &&
         lanzar_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
         has_cue(&lanzar_left, 0x17) && has_cue(&lanzar_left, 0x18) &&
         lanzar_empty.charge == 0 && lanzar_empty.active == 0 &&
@@ -262,6 +285,7 @@ int main(void) {
         rascar_right.initial_slot_x[3] == 0x0008 &&
         rascar_right.initial_slot_y[3] == 0x2E &&
         rascar_right.active_mask == 0x00003FFC &&
+        rascar_right.rendered_spell_hash == 0x2FAA9F01E25EF23CULL &&
         rascar_right.first_active_hash == 0xD3AFD2C23E6E42A8ULL &&
         rascar_right.frame_hash == 0x8C006929B120236FULL &&
         has_cue(&rascar_right, 0x17) && has_cue(&rascar_right, 0x18) &&
@@ -278,6 +302,7 @@ int main(void) {
         rascar_left.initial_slot_x[3] == 0x0008 &&
         rascar_left.initial_slot_y[3] == 0x2E &&
         rascar_left.active_mask == 0x00003FFC &&
+        rascar_left.rendered_spell_hash == 0x8ED4EE90F4CE3E5AULL &&
         rascar_left.first_active_hash == 0x23C9300FB7F284BBULL &&
         rascar_left.frame_hash == 0x6AE6CDAA425881C4ULL &&
         has_cue(&rascar_left, 0x17) && has_cue(&rascar_left, 0x18) &&
@@ -300,6 +325,7 @@ int main(void) {
         agua_right.initial_slot_x[2] == 0x0010 &&
         agua_right.initial_slot_y[2] == 0x3B &&
         agua_right.active_mask == 0x00000FFC &&
+        agua_right.rendered_spell_hash == 0x63EF8BF8EE32B5D7ULL &&
         agua_right.first_active_hash == 0xD3AFD2C23E6E42A8ULL &&
         agua_right.frame_hash == 0xE0BD8B77231AE163ULL &&
         has_cue(&agua_right, 0x17) && has_cue(&agua_right, 0x18) &&
@@ -314,6 +340,7 @@ int main(void) {
         agua_left.initial_slot_x[2] == 0x0011 &&
         agua_left.initial_slot_y[2] == 0x3B &&
         agua_left.active_mask == 0x00000FFC &&
+        agua_left.rendered_spell_hash == 0x8195AB2060224317ULL &&
         agua_left.first_active_hash == 0x23C9300FB7F284BBULL &&
         agua_left.frame_hash == 0xA6449A0FD1BE0E7AULL &&
         has_cue(&agua_left, 0x17) && has_cue(&agua_left, 0x18) &&
@@ -349,7 +376,7 @@ int main(void) {
         guerra_empty.frame_hash == 0xAADFEDB233F3F9A4ULL &&
         has_cue(&guerra_empty, 0x17) && !has_cue(&guerra_empty, 0x18) &&
         !has_cue(&guerra_empty, 0x19);
-    printf("VERDICT: %s: release MASM spell cast probes\n",
+    printf("VERDICT: %s: release MASM rendered spell graphics oracle\n",
            ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

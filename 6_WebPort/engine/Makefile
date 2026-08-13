@@ -524,7 +524,7 @@ build/zeliard-native: $(NATIVE_SRC) Makefile
 	@mkdir -p build
 	$(CC) $(CFLAGS_COMMON) -o $@ $(NATIVE_SRC)
 
-test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/usr-fixtures-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/collected-tears-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native build/inventory-masm-vm-native build/cavern-transition-native build/malicia-runtime-native build/peligro-runtime-native build/madera-runtime-native build/riza-runtime-native build/escarcha-runtime-native build/glacial-runtime-native build/cementar-runtime-native build/corroer-runtime-native build/plata-runtime-native build/tesoro-runtime-native build/arrugia-runtime-native build/fight-selectors-native build/ending-handoff-native build/caliente-runtime-native build/correr-runtime-native build/remaining-caverns-native build/environmental-mechanics-native
+test-native: build/opening-parity-native build/opening-audio-native build/mscadlib-vm-native build/main-controls-native build/continuous-input-native build/gameplay-parity-native build/usr-fixtures-native build/zeliad-loader-parity-native build/game-loader-parity-native build/runtime-parity-native build/mcga-font-inv-native build/mcga-drv-seg-3-native build/mcga-tile-render-native build/mcga-tilemap-render-native build/mcga-render-a-full-native build/mcga-gfx-update-da-native build/mcga-title-tile-pipeline-native build/mcga-title-sweep-assets-native build/mcga-runtime-native build/mcga-sprite-palette-native build/town-mcga-dispatch-native build/town-mcga-services-native build/collected-tears-native build/town-background-native build/town-actor-native build/town-runtime-native build/town-first-dialog-native build/felishika-rooms-native build/inventory-masm-vm-native build/cavern-transition-native build/malicia-runtime-native build/peligro-runtime-native build/madera-runtime-native build/riza-runtime-native build/escarcha-runtime-native build/glacial-runtime-native build/cementar-runtime-native build/corroer-runtime-native build/plata-runtime-native build/tesoro-runtime-native build/arrugia-runtime-native build/fight-selectors-native build/ending-handoff-native build/caliente-runtime-native build/correr-runtime-native build/spell-runtime-native build/remaining-caverns-native build/environmental-mechanics-native
 	./build/opening-parity-native
 	./build/opening-audio-native
 	./build/mscadlib-vm-native
@@ -572,6 +572,7 @@ test-native: build/opening-parity-native build/opening-audio-native build/mscadl
 	./build/ending-handoff-native
 	./build/caliente-runtime-native
 	./build/correr-runtime-native
+	./build/spell-runtime-native
 	./build/remaining-caverns-native
 	./build/environmental-mechanics-native
 

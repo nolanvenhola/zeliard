@@ -941,16 +941,29 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 zeliard_gmmcga_draw_life_current(
                     g_game_vga, sizeof(g_game_vga), g_game_segments[0],
                     sizeof(g_game_segments[0]));
-                if (g_game_segments[0][ZEL_PLAYER_SELECTED_SPELL])
+                if (g_game_segments[0][ZEL_PLAYER_SELECTED_SPELL]) {
+                    /* 200FIGHT:combat_palette_update returns from
+                     * 201SELCT through the MCGA equipment renderer before
+                     * presenting the next combat frame.  Refresh both the
+                     * selected spell portrait and its charge; otherwise a
+                     * live Fuego -> Saeta change leaves Fuego's portrait in
+                     * the resident fight VGA page. */
+                    zeliard_gmmcga_draw_equipped_spell(
+                        g_game_vga, sizeof(g_game_vga),
+                        g_game_segments[1], sizeof(g_game_segments[1]),
+                        g_game_segments[0][ZEL_PLAYER_SELECTED_SPELL],
+                        0x37A4);
                     zeliard_gmmcga_draw_spell_charge(
                         g_game_vga, sizeof(g_game_vga), g_game_segments[0],
                         sizeof(g_game_segments[0]));
+                }
                 if (g_game_segments[0][ZEL_PLAYER_SHIELD])
                     zeliard_gmmcga_draw_shield_hp(
                         g_game_vga, sizeof(g_game_vga), g_game_segments[0],
                         sizeof(g_game_segments[0]));
                 zeliard_fight_masm_vm_restore_vga(
                     g_game_vga, sizeof(g_game_vga));
+                g_inventory_fight_hud_override = 0;
             }
             const u16 map_width_after =
                 zeliard_fight_masm_vm_peek_u16(0xC002);

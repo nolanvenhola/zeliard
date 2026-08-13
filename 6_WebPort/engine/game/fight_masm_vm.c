@@ -667,6 +667,50 @@ zeliard_fight_vm_error_t zeliard_fight_masm_vm_last_error(void) {
 }
 int zeliard_fight_masm_vm_at_frame(void) { return g_fight_vm.at_frame; }
 u16 zeliard_fight_masm_vm_ip(void) { return zel_fight86_ip(); }
+
+static u16 mcga_append_plane_bit(u16 value, u16 *plane) {
+    const u16 carry = (u16)(*plane >> 15);
+    *plane = (u16)((*plane << 1) | carry);
+    return (u16)((value << 1) | carry);
+}
+
+/* GMMCGA:2C2A converts CX packed 16x8, three-plane sprites in place.
+ * bg_restore_rect leaves the selected spell's 24 packed sprites at 9350h;
+ * the converter first uses game_seg:0000h as scratch, then writes the
+ * decoded six-byte rows back to 9350h. */
+static void decode_spell_graphics_mcga(u8 *game) {
+    memcpy(game, game + 0x9350, 0x480);
+    const u8 *source = game;
+    u8 *destination = game + 0x9350;
+    for (unsigned sprite = 0; sprite < 0x18; ++sprite) {
+        for (unsigned row = 0; row < 8; ++row) {
+            u16 plane0 = (u16)(((u16)source[0] << 8) | source[1]);
+            u16 plane1 = (u16)(((u16)source[2] << 8) | source[3]);
+            u16 plane2 = (u16)(((u16)source[4] << 8) | source[5]);
+            source += 6;
+            u16 ax = 0;
+            for (unsigned half = 0; half < 2; ++half) {
+                for (unsigned pixel = 0; pixel < 5; ++pixel) {
+                    ax = mcga_append_plane_bit(ax, &plane2);
+                    ax = mcga_append_plane_bit(ax, &plane1);
+                    ax = mcga_append_plane_bit(ax, &plane0);
+                }
+                ax = mcga_append_plane_bit(ax, &plane2);
+                *destination++ = (u8)ax;
+                *destination++ = (u8)(ax >> 8);
+                ax = mcga_append_plane_bit(ax, &plane1);
+                ax = mcga_append_plane_bit(ax, &plane0);
+                for (unsigned pixel = 0; pixel < 2; ++pixel) {
+                    ax = mcga_append_plane_bit(ax, &plane2);
+                    ax = mcga_append_plane_bit(ax, &plane1);
+                    ax = mcga_append_plane_bit(ax, &plane0);
+                }
+                *destination++ = (u8)ax;
+            }
+        }
+    }
+}
+
 int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
                                              size_t game_size) {
     if (!g_fight_vm.active || !game_seg || game_size < 0x10000) return 0;
@@ -679,8 +723,32 @@ int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
     memcpy(memory + fight, game_seg, 0x100);
     memcpy(memory + fight + 0xEB60, game_seg + 0xEB60, 4u * 7u);
     memcpy(memory + fight + 0xFF00, game_seg + 0xFF00, 0x80);
+    /* 200FIGHT:combat_palette_update is the release continuation after
+     * 201SELCT returns. */
+    memset(memory + fight + 0xE900, 0xFD, 0x214);
+    memory[fight + 0x9EF5] = 0xFF;
+    memory[fight + 0x9EEF] = 0;
+    memory[fight + 0x9EF0] = 0;
+    memory[fight + 0xFF1D] = 0;
+    memory[fight + 0xFF1E] = 0;
+    /* GMMCGA:2106, the MCGA drv_screen_init_a target. */
+    u8 *vga = memory + linear(VGA_SEG, 0);
+    for (unsigned row = 14; row < 158; ++row)
+        memset(vga + row * 320u + 48u, 0, 224u);
+    /* 206GFMCA:bg_restore_rect runs with ES=gvar_game_seg.  Stage the new
+     * spell's 0x480-byte dirty-background bank in that auxiliary segment,
+     * not in 200FIGHT's resident DS. */
+    const u8 spell = memory[fight + 0x009D];
+    if (spell && spell != 7) {
+        const size_t magic = linear(ASSET_SEG, 0);
+        const u16 source = read_u16(memory, magic + (spell - 1u) * 2u);
+        memcpy(memory + linear(GAME_SEG, 0x9350),
+               memory + magic + source, 0x480);
+        decode_spell_graphics_mcga(memory + linear(GAME_SEG, 0));
+    }
     return 1;
 }
+
 int zeliard_fight_masm_vm_restore_vga(const u8 *vga, size_t vga_size) {
     if (!g_fight_vm.active || !vga || vga_size < 0x10000) return 0;
     memcpy(zel_fight86_memory() + linear(VGA_SEG, 0), vga, 0x10000);
