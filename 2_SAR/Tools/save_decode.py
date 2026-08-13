@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""
+save_decode.py — decode .USR save files using the player-record EQU map.
+
+Save file layout (TCRF authoritative + 217KENJP.asm save-write routine):
+  0x00..0x4F   per-cavern/per-area progression bitmaps (event handlers)
+  0x50..0x7F   zero padding (truly all 00 across all 17 saves)
+  0x80..0xE8   PLAYER RECORD (matches stdply.inc, ends at init_complete_flag)
+  0xE9..0xFF   uninitialized 23-byte gap between stdply.bin (233 bytes)
+               and stick.bin (loads at game_seg:0x0100); captured verbatim
+               by the save-write routine (217KENJP.asm:1181) but has no
+               gameplay meaning — leftover stack/heap state at save time.
+
+This tool prints a per-save table with named fields for the player record,
+plus a separate report for the mystery flag header.
+"""
+from pathlib import Path
+import sys
+
+SAVE_DIR = Path(__file__).parent / "bin"
+
+
+# Player record fields (offset, name, format) — copied from stdply.inc.
+# Names are unified with stdply.inc canonicals + save_edit.py FIELDS so all
+# three sources of truth agree.  TCRF aliases live in stdply.inc.
+# format: 'b' = 1-byte unsigned, 'w' = 2-byte LE word, '24' = 3-byte 24-bit LE
+PLAYER_RECORD = [
+    (0x80, "starting_position_in_town",   "b"),   # 16-bit at runtime; high byte (0x81) always 00 in saves
+    (0x81, "stat_X81",         "b"),   # DO NOT EDIT — non-00 crashes the game (TCRF)
+    (0x82, "map_scroll_row",   "b"),
+    (0x83, "screen_position",  "b"),
+    (0x84, "fight_player_col", "b"),
+    (0x85, "player_gold",      "24"),  # 3 bytes (hi, lo, mid)
+    (0x88, "player_bank",      "24"),  # 3 bytes (hi, lo, mid)
+    (0x8B, "player_almas",     "w"),
+    (0x8D, "hero_level",       "b"),
+    (0x8E, "experience",       "w"),
+    (0x90, "player_HP",        "w"),
+    (0x92, "sword",  "b"),
+    (0x93, "shield",      "b"),
+    (0x94, "shield_HP",        "w"),
+    (0x96, "shield_max_HP",    "w"),
+    (0x98, "keys_normal",      "b"),
+    (0x99, "keys_lion",        "b"),
+    (0x9A, "crest_elf",        "b"),
+    (0x9B, "crest_glory",      "b"),
+    (0x9C, "crest_hero",       "b"),
+    (0x9D, "selected_spell",   "b"),
+    (0x9E, "selected_accessory","b"),
+    (0x9F, "stat_X9F",         "b"),
+    (0xA0, "tears_of_esmesanti_count", "b"),
+    (0xA1, "wear_list",        "5b"),  # 5 wearable slots (4 shoes + 1 cape) — IDs in acquisition order
+    (0xA6, "item_slots",       "5b"),  # 5 inventory slots; each byte = item ID 0..8
+    (0xAB, "spell_charges",    "7b"),  # 7-byte current spell-charges table (Espada..Guerra)
+    (0xB2, "player_hp_max",    "w"),
+    (0xB4, "spell_charges_max","7b"),  # 7-byte max spell-charges table (sage refill cap)
+    (0xBB, "spell_known_espada", "b"),
+    (0xBC, "spell_known_saeta",  "b"),
+    (0xBD, "spell_known_fuego",  "b"),
+    (0xBE, "spell_known_lanzar", "b"),
+    (0xBF, "spell_known_rascar", "b"),
+    (0xC0, "spell_known_agua",   "b"),
+    (0xC1, "spell_known_guerra", "b"),
+    (0xC2, "facing_direction",      "b"),
+    (0xC3, "boss_intro_flag",    "b"),
+    (0xC4, "save_sage",          "b"),
+    (0xC5, "last_sage_visited",  "b"),
+    (0xC6, "heal_pulse_count",   "w"),
+    (0xC8, "current_level_idx",  "b"),
+    (0xE4, "key_count",          "b"),
+    (0xE5, "sages_spoken_bitmap",       "b"),
+    (0xE6, "scene_trans_request","b"),
+    (0xE7, "gvar_pose_idx",      "b"),
+    (0xE8, "init_complete_flag", "b"),
+]
+
+
+def load_saves():
+    return {p.stem: p.read_bytes() for p in sorted(SAVE_DIR.glob("*.[Uu][Ss][Rr]"))}
+
+
+def read_field(data, offset, fmt):
+    if fmt == "b":
+        return data[offset]
+    if fmt == "w":
+        return data[offset] | (data[offset + 1] << 8)
+    if fmt == "24":
+        # Layout per stdply.inc: byte[0]=hi, byte[1]=lo (low byte of low word),
+        # byte[2]=mid (high byte of low word).  So:
+        #   value = (hi << 16) | (mid << 8) | lo
+        hi  = data[offset]
+        lo  = data[offset + 1]
+        mid = data[offset + 2]
+        return (hi << 16) | (mid << 8) | lo
+    if fmt.endswith("b"):
+        n = int(fmt[:-1])
+        return tuple(data[offset:offset + n])
+    raise ValueError(f"unknown format {fmt}")
+
+
+def fmt_value(v, fmt):
+    if isinstance(v, tuple):
+        return " ".join(f"{x:02x}" for x in v)
+    if fmt == "b":
+        return f"{v:3d} (0x{v:02x})"
+    if fmt == "w":
+        return f"{v:5d} (0x{v:04x})"
+    if fmt == "24":
+        return f"{v:8d} (0x{v:06x})"
+    return str(v)
+
+
+def decode_player_record(saves):
+    print("=== PLAYER RECORD (save offset 0x80..0xC1 = stdply.inc EQUs) ===")
+    print()
+    # Print as a table: rows = fields, columns = saves
+    save_names = sorted(saves.keys())
+    # Header
+    name_width = max(len(n) for n in save_names) + 2
+    field_width = max(len(name) for _, name, _ in PLAYER_RECORD) + 4
+    print(f"{'field':<{field_width}}", end="")
+    for s in save_names:
+        print(f"{s:<{name_width}}", end="")
+    print()
+    print("-" * (field_width + name_width * len(save_names)))
+
+    for offset, name, fmt in PLAYER_RECORD:
+        # Compute all values
+        vals = {s: read_field(d, offset, fmt) for s, d in saves.items()}
+        # Find unique values to highlight constant fields
+        uniq = set(vals.values())
+        marker = "  " if len(uniq) == 1 else "* "  # * = varies
+        print(f"{marker}{name:<{field_width - 2}}", end="")
+        for s in save_names:
+            v = vals[s]
+            if isinstance(v, tuple):
+                txt = " ".join(f"{x:02x}" for x in v)
+            elif fmt == "b":
+                txt = f"{v:3d}"
+            elif fmt == "w":
+                txt = f"{v:5d}"
+            elif fmt == "24":
+                txt = f"{v:7d}"
+            else:
+                txt = str(v)
+            print(f"{txt:<{name_width}}", end="")
+        print()
+    print()
+
+
+def decode_mystery_header(saves):
+    print("=== MYSTERY FLAG HEADER (save offset 0x00..0x4F) ===")
+    print("(Likely per-cavern/per-area progression flags. Values shown as hex bytes;")
+    print(" '.' = same as Muralla baseline, 'X' = different from Muralla.)")
+    print()
+
+    save_names = sorted(saves.keys())
+    if "Muralla" not in saves:
+        baseline_name = save_names[0]
+    else:
+        baseline_name = "Muralla"
+    baseline = saves[baseline_name]
+
+    print(f"Baseline: {baseline_name}")
+    print()
+
+    # Identify offsets in 0x00..0x4F that vary
+    varying_offsets = []
+    for off in range(0x50):
+        vals = {s: d[off] for s, d in saves.items()}
+        if len(set(vals.values())) > 1:
+            varying_offsets.append(off)
+
+    if not varying_offsets:
+        print("(no varying bytes in header)")
+        return
+
+    # Table: row = save, col = varying offset
+    name_width = max(len(n) for n in save_names) + 2
+    print(f"{'save':<{name_width}}", end="")
+    for off in varying_offsets:
+        print(f"{off:02x} ", end="")
+    print()
+    print("-" * (name_width + 3 * len(varying_offsets)))
+
+    for s in save_names:
+        d = saves[s]
+        print(f"{s:<{name_width}}", end="")
+        for off in varying_offsets:
+            print(f"{d[off]:02x} ", end="")
+        print()
+    print()
+
+
+def decode_byte_46_4F(saves):
+    """Special focus on bytes 0x46..0x4F which look like a save-name string."""
+    print("=== Save-name-ish region (0x46..0x4F) — ASCII view ===")
+    save_names = sorted(saves.keys())
+    name_width = max(len(n) for n in save_names) + 2
+    for s in save_names:
+        d = saves[s]
+        chunk = d[0x46:0x50]
+        ascii_repr = "".join(chr(b) if 32 <= b < 127 else "." for b in chunk)
+        hex_repr = " ".join(f"{b:02x}" for b in chunk)
+        print(f"{s:<{name_width}}{hex_repr}  |{ascii_repr}|")
+    print()
+
+
+def main():
+    saves = load_saves()
+    if not saves:
+        print(f"No save files in {SAVE_DIR}")
+        return 1
+
+    decode_player_record(saves)
+    decode_mystery_header(saves)
+    decode_byte_46_4F(saves)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
