@@ -38,10 +38,10 @@
         #start:hover { background: #222; border-color: #fff; }
         #start:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
         [hidden] { display: none !important; }
-        #save-controls, #stored-save-controls, #game-controls {
+        #save-controls, #stored-save-controls, #game-controls, #debug-controls {
             display: flex; gap: 8px; align-items: center;
         }
-        #game-controls {
+        #game-controls, #debug-controls {
             flex-wrap: wrap; justify-content: center;
         }
         #game-stats {
@@ -49,17 +49,20 @@
             border: 1px solid #555; background: #080808;
         }
         #save-select, #audio-backend, #display-mode, #game-speed,
-        #music-toggle, #sound-toggle, #load-save, #download-save, #restart, .file-button {
+        #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
+        #restore-resources, #load-save, #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
         #save-select, #audio-backend, #display-mode { min-width: 160px; padding: 0 8px; }
         #game-speed { min-width: 52px; padding: 0 6px; }
-        #music-toggle, #sound-toggle, #load-save, #download-save, #restart, .file-button {
+        #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
+        #restore-resources, #load-save, #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
         }
-        #music-toggle[aria-pressed="false"], #sound-toggle[aria-pressed="false"] {
+        #music-toggle[aria-pressed="false"], #sound-toggle[aria-pressed="false"],
+        #invincible-toggle[aria-pressed="false"], #flying-toggle[aria-pressed="false"] {
             color: #999; border-color: #555;
         }
     </style>
@@ -86,6 +89,11 @@
                 <span>Level <output id="player-level">0</output></span>
                 <span>Experience <output id="player-experience">0</output> / <output id="player-experience-threshold">0</output></span>
             </span>
+        </div>
+        <div id="debug-controls" aria-label="Testing and debugging controls">
+            <button id="invincible-toggle" type="button" aria-pressed="false">Invincible: Off</button>
+            <button id="restore-resources" type="button">Restore Shield + Magic</button>
+            <button id="flying-toggle" type="button" aria-pressed="false">Flying: Off</button>
         </div>
         <div id="save-controls">
             <label>Audio

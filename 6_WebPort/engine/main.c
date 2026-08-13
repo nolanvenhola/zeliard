@@ -82,6 +82,60 @@ static u8 g_fight_death_audio_fade_started;
 static u8 g_death_sage_chrome_active;
 static u32 g_fight_regen_pit_ticks;
 static u8 g_fight_regen_frames;
+static u8 g_debug_invincible;
+static u8 g_debug_no_gravity;
+
+static u16 game_read_u16(u16 offset) {
+    return (u16)(g_game_segments[0][offset] |
+        ((u16)g_game_segments[0][offset + 1] << 8));
+}
+
+static void debug_write_u8(u16 offset, u8 value) {
+    g_game_segments[0][offset] = value;
+    zeliard_fight_masm_vm_poke_u8(offset, value);
+    if (zeliard_inventory_masm_vm_active())
+        zeliard_inventory_masm_vm_poke(offset, value);
+}
+
+static void debug_write_u16(u16 offset, u16 value) {
+    debug_write_u8(offset, (u8)value);
+    debug_write_u8((u16)(offset + 1u), (u8)(value >> 8));
+}
+
+static void debug_redraw_hud(int life, int shield, int spell) {
+    if (g_scene != SCENE_GAME || zeliard_inventory_masm_vm_active()) return;
+    if (life)
+        zeliard_gmmcga_draw_life_current(
+            g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+            sizeof(g_game_segments[0]));
+    if (shield && g_game_segments[0][ZEL_PLAYER_SHIELD])
+        zeliard_gmmcga_draw_shield_hp(
+            g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+            sizeof(g_game_segments[0]));
+    if (spell && g_game_segments[0][ZEL_PLAYER_SELECTED_SPELL])
+        zeliard_gmmcga_draw_spell_charge(
+            g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+            sizeof(g_game_segments[0]));
+    if (zeliard_fight_masm_vm_active())
+        zeliard_fight_masm_vm_restore_vga(
+            g_game_vga, sizeof(g_game_vga));
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    framebuf_rgb_disable();
+}
+
+static void debug_restore_health(void) {
+    debug_write_u16(ZEL_PLAYER_HP, game_read_u16(ZEL_PLAYER_HP_MAX));
+}
+
+static void debug_restore_shield_magic_state(void) {
+    debug_write_u16(ZEL_PLAYER_SHIELD_HP,
+                    game_read_u16(ZEL_PLAYER_SHIELD_HP_MAX));
+    for (u16 spell = 0; spell < 7; ++spell) {
+        if (g_game_segments[0][ZEL_PLAYER_SPELL_KNOWN + spell])
+            debug_write_u8((u16)(ZEL_PLAYER_SPELL_CHARGES + spell),
+                g_game_segments[0][ZEL_PLAYER_SPELL_CHARGES_MAX + spell]);
+    }
+}
 
 static int advance_fight_passive_life_restoration(u32 pit_ticks,
                                                   u16 hp_before,
@@ -913,7 +967,7 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             }
             const u16 hp_before = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
-            if (hp_before <= 1) begin_fight_death();
+            if (!g_debug_invincible && hp_before <= 1) begin_fight_death();
             const u16 map_width_before =
                 zeliard_fight_masm_vm_peek_u16(0xC002);
             const int frames = zeliard_fight_masm_vm_advance(
@@ -973,7 +1027,16 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             }
             const u16 hp_after = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
-            if (hp_after <= 1) begin_fight_death();
+            if (g_debug_invincible) {
+                if (hp_after != game_read_u16(ZEL_PLAYER_HP_MAX)) {
+                    debug_restore_health();
+                    zeliard_gmmcga_draw_life_current(
+                        g_game_vga, sizeof(g_game_vga), g_game_segments[0],
+                        sizeof(g_game_segments[0]));
+                    zeliard_fight_masm_vm_restore_vga(
+                        g_game_vga, sizeof(g_game_vga));
+                }
+            } else if (hp_after <= 1) begin_fight_death();
             if (g_fight_death_pending &&
                 !g_fight_death_audio_fade_started &&
                 g_game_segments[0][0xFF24] == 8) {
@@ -1313,6 +1376,31 @@ EXPORT u32              zeliard_load_request_serial(void) { return g_load_reques
 EXPORT int              zeliard_game_speed_digit(void) {
     const u8 speed = g_game_segments[0][0xFF33];
     return speed >= 1u && speed <= 10u ? 10 - speed : 5;
+}
+EXPORT int              zeliard_debug_invincible(void) {
+    return g_debug_invincible;
+}
+EXPORT void             zeliard_debug_set_invincible(int enabled) {
+    g_debug_invincible = enabled != 0;
+    zeliard_fight_masm_vm_set_debug_invincible(g_debug_invincible);
+    if (g_debug_invincible) {
+        g_fight_death_pending = 0;
+        g_fight_death_return_pending = 0;
+        g_fight_death_audio_fade_started = 0;
+        debug_restore_health();
+        debug_redraw_hud(1, 0, 0);
+    }
+}
+EXPORT int              zeliard_debug_no_gravity(void) {
+    return g_debug_no_gravity;
+}
+EXPORT void             zeliard_debug_set_no_gravity(int enabled) {
+    g_debug_no_gravity = enabled != 0;
+    zeliard_fight_masm_vm_set_debug_no_gravity(g_debug_no_gravity);
+}
+EXPORT void             zeliard_debug_restore_shield_magic(void) {
+    debug_restore_shield_magic_state();
+    debug_redraw_hud(0, 1, 1);
 }
 EXPORT int              zeliard_session_terminated(void) { return g_session_terminated; }
 EXPORT int              zeliard_music_enabled(void) { return zel_opening_audio_music_enabled(); }

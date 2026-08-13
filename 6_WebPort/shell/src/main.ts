@@ -39,6 +39,11 @@ type EngineExports = {
     _zeliard_restore_menu_active(): number;
     _zeliard_load_request_serial(): number;
     _zeliard_game_speed_digit(): number;
+    _zeliard_debug_invincible(): number;
+    _zeliard_debug_set_invincible(enabled: number): void;
+    _zeliard_debug_no_gravity(): number;
+    _zeliard_debug_set_no_gravity(enabled: number): void;
+    _zeliard_debug_restore_shield_magic(): void;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
@@ -101,6 +106,12 @@ const displayModeEl = document.getElementById('display-mode') as HTMLSelectEleme
 const musicToggleEl = document.getElementById('music-toggle') as HTMLButtonElement;
 const soundToggleEl = document.getElementById('sound-toggle') as HTMLButtonElement;
 const gameSpeedEl = document.getElementById('game-speed') as HTMLSelectElement;
+const invincibleToggleEl = document.getElementById(
+    'invincible-toggle') as HTMLButtonElement;
+const restoreResourcesEl = document.getElementById(
+    'restore-resources') as HTMLButtonElement;
+const flyingToggleEl = document.getElementById(
+    'flying-toggle') as HTMLButtonElement;
 const playerLevelEl = document.getElementById('player-level') as HTMLOutputElement;
 const playerExperienceEl = document.getElementById(
     'player-experience') as HTMLOutputElement;
@@ -586,6 +597,17 @@ async function boot() {
         gameSpeedEl.value = String(Module._zeliard_game_speed_digit());
         gameSpeedEl.disabled = Module._zeliard_scene() !== 2 ||
             Module._zeliard_paused() !== 0;
+        const debugEnabled = Module._zeliard_scene() === 2;
+        const invincible = Module._zeliard_debug_invincible() !== 0;
+        const flying = Module._zeliard_debug_no_gravity() !== 0;
+        invincibleToggleEl.textContent =
+            `Invincible: ${invincible ? 'On' : 'Off'}`;
+        invincibleToggleEl.setAttribute('aria-pressed', String(invincible));
+        flyingToggleEl.textContent = `Flying: ${flying ? 'On' : 'Off'}`;
+        flyingToggleEl.setAttribute('aria-pressed', String(flying));
+        invincibleToggleEl.disabled = !debugEnabled;
+        flyingToggleEl.disabled = !debugEnabled;
+        restoreResourcesEl.disabled = !debugEnabled;
 
         if (Module._zeliard_scene() === 2) {
             const player = Module._zeliard_game_segment();
@@ -628,6 +650,20 @@ async function boot() {
         Module._zeliard_key(120);
         Module._zeliard_text_key(gameSpeedEl.value.charCodeAt(0));
         Module._zeliard_key(32);
+        refreshGameControls();
+    });
+    invincibleToggleEl.addEventListener('click', () => {
+        Module._zeliard_debug_set_invincible(
+            Module._zeliard_debug_invincible() ? 0 : 1);
+        refreshGameControls();
+    });
+    restoreResourcesEl.addEventListener('click', () => {
+        Module._zeliard_debug_restore_shield_magic();
+        refreshGameControls();
+    });
+    flyingToggleEl.addEventListener('click', () => {
+        Module._zeliard_debug_set_no_gravity(
+            Module._zeliard_debug_no_gravity() ? 0 : 1);
         refreshGameControls();
     });
 

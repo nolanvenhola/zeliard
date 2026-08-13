@@ -65,6 +65,35 @@ typedef struct {
 } fight_vm_state_t;
 
 static fight_vm_state_t g_fight_vm;
+static u8 g_debug_invincible;
+static u8 g_debug_no_gravity;
+static size_t linear(u16 segment, u16 offset);
+
+enum {
+    /* SAR loading strips the four-byte chunk header, so binary offset N is
+     * resident at FIGHT_LOAD_BASE - 4 + N. */
+    DEBUG_GRAVITY_BRANCH = 0x6970,
+    DEBUG_DAMAGE_ENTRY = 0x7685,
+};
+
+static void apply_debug_patches(void) {
+    static const u8 gravity_original[] = { 0xE8, 0x03, 0x02, 0x73, 0x03 };
+    static const u8 gravity_disabled[] = { 0xE9, 0xCE, 0x01, 0x90, 0x90 };
+    u8 *memory = zel_fight86_memory();
+    const size_t fight = linear(FIGHT_SEG, 0);
+
+    /* MASM 200FIGHT:combat_step_advance calls check_3tile_clearance at
+     * release offset 0974h. Flight jumps directly to check_combat_7f,
+     * bypassing only the authored downward fall path. */
+    memcpy(memory + fight + DEBUG_GRAVITY_BRANCH,
+           g_debug_no_gravity ? gravity_disabled : gravity_original,
+           sizeof(gravity_original));
+    /* Every cavern damage path converges at subtract_from_player_HP,
+     * release offset 1689h. RET preserves hit animation/audio while making
+     * the player immune to the HP subtraction itself. */
+    memory[fight + DEBUG_DAMAGE_ENTRY] =
+        g_debug_invincible ? 0xC3 : 0x29;
+}
 
 static void post_sound_cue(fight_vm_state_t *state, u8 cue) {
     if (!cue) return;
@@ -530,6 +559,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
         platform_log("200FIGHT VM base asset load failed");
         return 0;
     }
+    apply_debug_patches();
     relocate_words(memory, linear(ASSET_SEG, 0x1800), 3, 0x1800);
     if (!prepare_sword_graphics(memory, game_seg[0x0092])) {
         g_fight_vm.last_error = ZEL_FIGHT_VM_ERROR_SWORD_SELECTOR;
@@ -865,5 +895,15 @@ int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value) {
     if (!g_fight_vm.active || offset == 0xFFFFu) return 0;
     write_u16(zel_fight86_memory(), linear(FIGHT_SEG, offset), value);
     return 1;
+}
+
+void zeliard_fight_masm_vm_set_debug_invincible(int enabled) {
+    g_debug_invincible = enabled != 0;
+    if (g_fight_vm.active) apply_debug_patches();
+}
+
+void zeliard_fight_masm_vm_set_debug_no_gravity(int enabled) {
+    g_debug_no_gravity = enabled != 0;
+    if (g_fight_vm.active) apply_debug_patches();
 }
 void zeliard_fight_masm_vm_stop(void) { g_fight_vm.active = 0; }

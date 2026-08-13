@@ -40,6 +40,8 @@ int zeliard_fight_masm_vm_peek_u8(u16 offset);
 int zeliard_fight_masm_vm_peek_u16(u16 offset);
 int zeliard_fight_masm_vm_poke_u8(u16 offset, u8 value);
 int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value);
+void zeliard_fight_masm_vm_set_debug_invincible(int enabled);
+void zeliard_fight_masm_vm_set_debug_no_gravity(int enabled);
 int zeliard_fight_masm_vm_restore_game_state(const u8 *game_seg,
                                              size_t game_size);
 int zeliard_fight_masm_vm_restore_vga(const u8 *vga, size_t vga_size);
