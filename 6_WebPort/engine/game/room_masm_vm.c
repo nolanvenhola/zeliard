@@ -28,6 +28,7 @@ enum {
     TOWN_TEXT_WAIT_INPUT = 0x71DF,
     TOWN_TEXT_WAIT_REPEAT = 0x71E9,
     TOWN_TEXT_WAIT_AFTER_TICK = 0x71EC,
+    ROOM_CALLBACK_RETURN_STUB = 0x0501,
     BANK_DEPOSIT_AMOUNT_QUERY = 0xA2D8,
     BANK_DEPOSIT_REPEAT_QUERY = 0xA2FE,
     BANK_WITHDRAW_AMOUNT_QUERY = 0xA477,
@@ -58,6 +59,7 @@ typedef struct {
     u8 dos_write_ok;
     u8 drug_description_backdrop_active;
     u8 drug_repeat_prompt_active;
+    u8 callback_running;
     u8 drug_description_backdrop[112u * 45u];
     char save_name[13];
     u8 save_record[0x100];
@@ -139,6 +141,9 @@ static void relocate_words(u8 *memory, size_t address, u8 count,
 static int room_step(void *context, u16 cs, u16 ip) {
     room_vm_state_t *state = context;
     u8 *memory = zel_room86_memory();
+    if (cs == GAME_SEG && state->callback_running &&
+        ip == ROOM_CALLBACK_RETURN_STUB)
+        return 1;
     if (cs == GAME_SEG && state->kind == ZEL_ROOM_SAGE) {
         const size_t instruction = linear(cs, ip);
         u16 *registers = zel_room86_registers();
@@ -491,6 +496,39 @@ static void restore_frame_rect(u8 *destination, const u8 *source,
                source + (size_t)row * width, width);
 }
 
+static void run_bank_idle_portrait_callback(u8 *memory, size_t base) {
+    if (g_room_vm.kind != ZEL_ROOM_BANK || !g_room_vm.at_input_poll ||
+        zel_room86_ip() != TOWN_POLL_AFTER_TICK ||
+        memory[base + 0xAD21] == 0 ||
+        read_u16(memory, base + 0xAD1F) != 0xA7C3)
+        return;
+
+    /* 213BANKP's two-word room header installs A728 at A002.  Native
+     * 106TOWN calls that exact callback from tick_npcs_then_pump while
+     * poll_menu_input waits.  The host yields at that poll, so execute the
+     * authored callback once per PIT and then restore the suspended poll's
+     * CPU context. */
+    u16 *registers = zel_room86_registers();
+    u16 saved_registers[12];
+    memcpy(saved_registers, registers, sizeof(saved_registers));
+    const u16 saved_ip = zel_room86_ip();
+    const u16 callback = read_u16(memory, base + 0xA002);
+    const u16 callback_sp = (u16)(registers[ZEL_TINY86_SP] - 2u);
+    const size_t callback_stack = linear(
+        registers[ZEL_TINY86_SS], callback_sp);
+    const u16 saved_stack_word = read_u16(memory, callback_stack);
+    registers[ZEL_TINY86_SP] = callback_sp;
+    write_u16(memory, callback_stack, ROOM_CALLBACK_RETURN_STUB);
+    g_room_vm.callback_running = 1;
+    zel_room86_set_ip(callback);
+    (void)zel_room86_run(INSTRUCTIONS_PER_PIT);
+    g_room_vm.callback_running = 0;
+    write_u16(memory, callback_stack, saved_stack_word);
+    memcpy(registers, saved_registers, sizeof(saved_registers));
+    zel_room86_set_ip(saved_ip);
+    zel_room86_set_flags(0x0202);
+}
+
 int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
                                const u8 *game_seg, size_t game_size,
                                const u8 *vga, size_t vga_size) {
@@ -573,6 +611,7 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                   (u16)(read_u16(memory, base + 0xFF1B) + 1u));
         write_u16(memory, base + 0xFF50,
                   (u16)(read_u16(memory, base + 0xFF50) + 1u));
+        run_bank_idle_portrait_callback(memory, base);
         const u32 amount_before =
             ((u32)memory[base + 0xAD29] << 16) |
             read_u16(memory, base + 0xAD2A);

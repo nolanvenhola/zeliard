@@ -1550,14 +1550,15 @@ static int muralla_release_vm_bank_amount_input(u8 withdraw) {
     unsigned ticks = 0;
     ok &= bank_reach_amount_selector(cs, vga, withdraw ? 3 : 2, &ticks);
 
-    unsigned change_ticks[64] = {0};
+    unsigned change_ticks[512] = {0};
     size_t change_count = 0;
     u32 previous = bank_amount(cs);
-    for (unsigned held = 1; ok && held <= 500; ++held) {
+    for (unsigned held = 1; ok && held <= 900; ++held) {
         ok &= zeliard_room_masm_vm_advance(
             cs, 0x10000, vga, 0x10000, 1, 1, 0, 0);
         const u32 amount = bank_amount(cs);
-        if (amount != previous && change_count < 64) {
+        if (amount != previous &&
+            change_count < sizeof(change_ticks) / sizeof(change_ticks[0])) {
             change_ticks[change_count++] = held;
             previous = amount;
         }
@@ -1567,8 +1568,11 @@ static int muralla_release_vm_bank_amount_input(u8 withdraw) {
         ? change_ticks[2] - change_ticks[1] : 0;
     const unsigned last_gap = change_count > 2
         ? change_ticks[change_count - 1] - change_ticks[change_count - 2] : 0;
-    ok &= change_count == 20 && selected == 20 &&
-          first_gap == 34 && last_gap == 17;
+    /* 213BANKP loc_15..loc_17 starts at a 35-PIT hold delay, subtracts one
+     * after every repeat, and then alternates its 1/0 delay states to
+     * produce one amount change on every PIT. */
+    ok &= change_count == 305 && selected == 305 &&
+          first_gap == 34 && last_gap == 1 && cs[0xAD2F] <= 1;
 
     /* query_input_state returns the held Space mask in AH bit 0. */
     cs[0xFF16] = 1;
@@ -1592,6 +1596,64 @@ static int muralla_release_vm_bank_amount_input(u8 withdraw) {
            withdraw ? "withdraw" : "deposit", ticks,
            (unsigned)change_count, selected, first_gap, last_gap,
            carried, banked, cs[0xAD2F]);
+    zeliard_room_masm_vm_stop();
+    free(cs); free(vga);
+    return ok;
+}
+
+static int muralla_release_vm_bank_large_deposit_reaction(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); return 0;
+    }
+    cs[0x85] = 0; cs[0x86] = 0xD0; cs[0x87] = 0x07; /* 2000 gold */
+    cs[0xC006] = 1;
+    int ok = zeliard_room_masm_vm_start(
+        ZEL_ROOM_BANK, cs, 0x10000, vga, 0x10000);
+    unsigned ticks = 0;
+    ok &= bank_reach_amount_selector(cs, vga, 2, &ticks);
+    const unsigned long long portrait_before =
+        frame_rect_hash(vga, 72, 31, 64, 40);
+    for (unsigned held = 0; ok && bank_amount(cs) < 1000 && held < 5000;
+         ++held)
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 4, 0, 0);
+    ok &= bank_amount(cs) == 1000;
+
+    cs[0xFF16] = 1;
+    ok &= zeliard_room_masm_vm_advance(
+        cs, 0x10000, vga, 0x10000, 1, 0, 1, 0);
+    cs[0xFF16] = 0;
+    unsigned long long portrait_hashes[8] = {0};
+    size_t portrait_count = 0;
+    for (unsigned settle = 0; ok && settle < 2000; ++settle) {
+        ok &= zeliard_room_masm_vm_advance(
+            cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
+        const unsigned long long hash = frame_rect_hash(vga, 72, 31, 64, 40);
+        if ((!portrait_count || portrait_hashes[portrait_count - 1] != hash) &&
+            portrait_count < sizeof(portrait_hashes) / sizeof(portrait_hashes[0]))
+            portrait_hashes[portrait_count++] = hash;
+        if (settle > 500 && zeliard_room_masm_vm_at_input_poll()) {
+            break;
+        }
+    }
+    const u32 carried = ((u32)cs[0x85] << 16) |
+        (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
+    const u32 banked = ((u32)cs[0x88] << 16) |
+        (u16)(cs[0x89] | ((u16)cs[0x8A] << 8));
+    printf("muralla_release_vm_bank_large_deposit: ticks=%u carried=%u "
+           "banked=%u anim=%02x src=%02x%02x before=%016llx frames=%u",
+           ticks, carried, banked, cs[0xAD21], cs[0xAD20], cs[0xAD1F],
+           portrait_before, (unsigned)portrait_count);
+    for (size_t index = 0; index < portrait_count; ++index)
+        printf(" %016llx", portrait_hashes[index]);
+    putchar('\n');
+    ok &= carried == 1000 && banked == 1000 && cs[0xAD21] == 0xFF &&
+          (u16)(cs[0xAD1F] | ((u16)cs[0xAD20] << 8)) == 0xA7C3 &&
+          portrait_count >= 2 && portrait_hashes[0] == portrait_before &&
+          portrait_hashes[1] == 0xE53CEA7F0C7AF8CAULL;
+    for (size_t index = 2; index < portrait_count; ++index)
+        ok &= portrait_hashes[index] == portrait_hashes[index & 1u];
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;
@@ -2229,6 +2291,7 @@ int main(void) {
                    esco_release_vm_bank_exchange() &&
                    muralla_release_vm_bank_amount_input(0) &&
                    muralla_release_vm_bank_amount_input(1) &&
+                   muralla_release_vm_bank_large_deposit_reaction() &&
                    satono_release_vm_inn_rest() &&
                    tumba_release_vm_inn_rest() &&
                    dorado_release_vm_inn_rest() &&

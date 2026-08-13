@@ -112,6 +112,9 @@ const restoreResourcesEl = document.getElementById(
     'restore-resources') as HTMLButtonElement;
 const flyingToggleEl = document.getElementById(
     'flying-toggle') as HTMLButtonElement;
+const keymapOpenEl = document.getElementById('keymap-open') as HTMLButtonElement;
+const keymapCloseEl = document.getElementById('keymap-close') as HTMLButtonElement;
+const keymapDialogEl = document.getElementById('keymap-dialog') as HTMLDialogElement;
 const playerLevelEl = document.getElementById('player-level') as HTMLOutputElement;
 const playerExperienceEl = document.getElementById(
     'player-experience') as HTMLOutputElement;
@@ -666,11 +669,27 @@ async function boot() {
             Module._zeliard_debug_no_gravity() ? 0 : 1);
         refreshGameControls();
     });
+    keymapOpenEl.addEventListener('click', () => {
+        Module._zeliard_release_all_keys();
+        keymapDialogEl.showModal();
+    });
+    keymapCloseEl.addEventListener('click', () => keymapDialogEl.close());
+    keymapDialogEl.addEventListener('click', (e: MouseEvent) => {
+        if (e.target === keymapDialogEl)
+            keymapDialogEl.close();
+    });
 
     startButton.hidden = false;
     startButton.addEventListener('click', () => void startPlayback());
     refreshGameControls();
     window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (keymapDialogEl.open) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                keymapDialogEl.close();
+            }
+            return;
+        }
         const keycodes: Record<string, number> = {
             Enter: 13,
             Alt: 18,
@@ -714,6 +733,8 @@ async function boot() {
             Module._zeliard_music_attenuation());
     });
     window.addEventListener('keyup', (e: KeyboardEvent) => {
+        if (keymapDialogEl.open)
+            return;
         const keycodes: Record<string, number> = {
             Enter: 13,
             Alt: 18,
