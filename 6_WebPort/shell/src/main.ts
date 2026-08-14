@@ -44,6 +44,7 @@ type EngineExports = {
     _zeliard_debug_no_gravity(): number;
     _zeliard_debug_set_no_gravity(enabled: number): void;
     _zeliard_debug_restore_shield_magic(): void;
+    _zeliard_debug_add_item(itemId: number): number;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
@@ -110,6 +111,10 @@ const invincibleToggleEl = document.getElementById(
     'invincible-toggle') as HTMLButtonElement;
 const restoreResourcesEl = document.getElementById(
     'restore-resources') as HTMLButtonElement;
+const debugItemSelectEl = document.getElementById(
+    'debug-item-select') as HTMLSelectElement;
+const debugAddItemEl = document.getElementById(
+    'debug-add-item') as HTMLButtonElement;
 const flyingToggleEl = document.getElementById(
     'flying-toggle') as HTMLButtonElement;
 const keymapOpenEl = document.getElementById('keymap-open') as HTMLButtonElement;
@@ -611,6 +616,8 @@ async function boot() {
         invincibleToggleEl.disabled = !debugEnabled;
         flyingToggleEl.disabled = !debugEnabled;
         restoreResourcesEl.disabled = !debugEnabled;
+        debugItemSelectEl.disabled = !debugEnabled;
+        debugAddItemEl.disabled = !debugEnabled;
 
         if (Module._zeliard_scene() === 2) {
             const player = Module._zeliard_game_segment();
@@ -664,6 +671,15 @@ async function boot() {
         Module._zeliard_debug_restore_shield_magic();
         refreshGameControls();
     });
+    debugAddItemEl.addEventListener('click', () => {
+        const added = Module._zeliard_debug_add_item(
+            Number(debugItemSelectEl.value));
+        debugAddItemEl.textContent = added ? 'Added' : 'Inventory Full';
+        window.setTimeout(() => {
+            debugAddItemEl.textContent = 'Add Item';
+        }, 1200);
+        refreshGameControls();
+    });
     flyingToggleEl.addEventListener('click', () => {
         Module._zeliard_debug_set_no_gravity(
             Module._zeliard_debug_no_gravity() ? 0 : 1);
@@ -692,6 +708,8 @@ async function boot() {
         }
         const keycodes: Record<string, number> = {
             Enter: 13,
+            Shift: 16,
+            Control: 17,
             Alt: 18,
             ' ': 32,
             ArrowLeft: 37,
@@ -703,6 +721,10 @@ async function boot() {
             F2: 113,
             F7: 118,
             F9: 120,
+            e: 69,
+            E: 69,
+            s: 83,
+            S: 83,
         };
         const keycode = keycodes[e.key];
         if (keycode === undefined) {
@@ -727,6 +749,9 @@ async function boot() {
             return;
         }
         Module._zeliard_key_down(keycode);
+        if ((keycode === 69 || keycode === 83) &&
+            !e.ctrlKey && !e.metaKey && !e.altKey)
+            Module._zeliard_text_key(keycode);
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,
@@ -737,6 +762,8 @@ async function boot() {
             return;
         const keycodes: Record<string, number> = {
             Enter: 13,
+            Shift: 16,
+            Control: 17,
             Alt: 18,
             ' ': 32,
             ArrowLeft: 37,
@@ -748,6 +775,10 @@ async function boot() {
             F2: 113,
             F7: 118,
             F9: 120,
+            e: 69,
+            E: 69,
+            s: 83,
+            S: 83,
         };
         const keycode = keycodes[e.key];
         if (keycode === undefined)

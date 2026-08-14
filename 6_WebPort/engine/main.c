@@ -85,6 +85,8 @@ static u8 g_fight_regen_frames;
 static u8 g_debug_invincible;
 static u8 g_debug_no_gravity;
 
+static void debug_refresh_open_inventory(void);
+
 static u16 game_read_u16(u16 offset) {
     return (u16)(g_game_segments[0][offset] |
         ((u16)g_game_segments[0][offset + 1] << 8));
@@ -92,7 +94,9 @@ static u16 game_read_u16(u16 offset) {
 
 static void debug_write_u8(u16 offset, u8 value) {
     g_game_segments[0][offset] = value;
+    g_cavern_town_segments[0][offset] = value;
     zeliard_fight_masm_vm_poke_u8(offset, value);
+    zeliard_room_masm_vm_poke_u8(offset, value);
     if (zeliard_inventory_masm_vm_active())
         zeliard_inventory_masm_vm_poke(offset, value);
 }
@@ -555,6 +559,31 @@ static void inventory_open(void) {
     /* 200FIGHT:do_combat_round posts cue 0Bh immediately before calling
      * the selector. Use the same transition cue for the host-owned call. */
     zel_opening_audio_write_cue(0x0B);
+}
+
+static void debug_refresh_open_inventory(void) {
+    if (!zeliard_inventory_masm_vm_active()) return;
+    const zeliard_inventory_context_t context = g_inventory_return_to_fight
+        ? ZEL_INVENTORY_CONTEXT_CAVERN
+        : ZEL_INVENTORY_CONTEXT_TOWN;
+    zeliard_inventory_masm_vm_stop();
+    /* This browser-only action is not a DOS key input.  Restart the exact
+     * selector from a neutral stick state so a stale Enter/direction sample
+     * cannot immediately close or navigate the rebuilt item list. */
+    zel_input_release_all(&g_input, g_game_segments[0], 1);
+    if (zeliard_gmmcga_clear_playfield(
+            g_game_vga, sizeof(g_game_vga)) != 0) {
+        platform_log("debug inventory playfield clear failed");
+        return;
+    }
+    if (!zeliard_inventory_masm_vm_start(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            g_game_vga, sizeof(g_game_vga), context)) {
+        platform_log("debug inventory selector restart failed");
+        return;
+    }
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    framebuf_rgb_disable();
 }
 
 static bool game_fetch_asset(void *context, const char *name,
@@ -1399,8 +1428,21 @@ EXPORT void             zeliard_debug_set_no_gravity(int enabled) {
     zeliard_fight_masm_vm_set_debug_no_gravity(g_debug_no_gravity);
 }
 EXPORT void             zeliard_debug_restore_shield_magic(void) {
+    debug_restore_health();
     debug_restore_shield_magic_state();
-    debug_redraw_hud(0, 1, 1);
+    debug_redraw_hud(1, 1, 1);
+}
+EXPORT int              zeliard_debug_add_item(int item_id) {
+    if (item_id < 1 || item_id > 8) return 0;
+    for (u16 slot = 0; slot < 5; ++slot) {
+        const u16 offset = (u16)(ZEL_PLAYER_ITEM_SLOTS + slot);
+        if (g_game_segments[0][offset] == 0) {
+            debug_write_u8(offset, (u8)item_id);
+            debug_refresh_open_inventory();
+            return 1;
+        }
+    }
+    return 0;
 }
 EXPORT int              zeliard_session_terminated(void) { return g_session_terminated; }
 EXPORT int              zeliard_music_enabled(void) { return zel_opening_audio_music_enabled(); }

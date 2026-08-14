@@ -47,6 +47,12 @@ static const key_binding_t KEY_BINDINGS[] = {
     {ZEL_INPUT_KEY_F2,     0x3C, 0, 0, 0x2000, 1u << 8, 0},
     {ZEL_INPUT_KEY_F7,     0x41, 0, 0, 0x4000, 1u << 11, 0},
     {ZEL_INPUT_KEY_F9,     0x43, 0, 0, 0x8000, 1u << 10, 0},
+    /* stick.asm make codes: the selector's hidden LEVEL/EXP panel checks
+     * for this exact combined timer mask (Ctrl+Shift+S+E = 0286h). */
+    {ZEL_INPUT_KEY_CONTROL,0x1D, 0, 0, 0x0004, 1u << 12, 0},
+    {ZEL_INPUT_KEY_SHIFT,  0x2A, 0, 0, 0x0002, 1u << 13, 0},
+    {ZEL_INPUT_KEY_S,      0x1F, 0, 0, 0x0080, 1u << 14, 0},
+    {ZEL_INPUT_KEY_E,      0x12, 0, 0, 0x0200, 1u << 15, 0},
 };
 
 static u16 read_u16(const u8 *mem, u16 off) {

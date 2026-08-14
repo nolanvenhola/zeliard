@@ -104,7 +104,7 @@ num_fmt_buf		equ	(offset num_fmt_buf_lbl)	;* = AE16h
 weap_spr_base		equ	0E1Ah			;* weapon portrait sprite table base (8 bytes/entry)
 accessory_spr_base		equ	0E53h			;* magic portrait sprite table base (5 bytes/entry)
 item_spr_base		equ	0E81h			;* item portrait sprite table base (5 bytes/entry)
-joy_hold_threshold	equ	0286h			; joystick button hold count for item confirm (646 ticks)
+key_level_exp_chord	equ	0286h			; Ctrl + Shift + S + E exact keyboard-state mask
 item_use_dispatch_tbl	equ	0A452h			;* DBG: (offset item_use_dispatch_tbl_lbl)
 
 ; ----------------------------------------------------------------------
@@ -539,7 +539,7 @@ item_input_loop:
 										retn
 
 item_poll_input:
-										cmp	word ptr ds:[gvar_timer_counter],joy_hold_threshold
+										cmp	word ptr ds:[gvar_timer_counter],key_level_exp_chord
 										jne	item_not_confirm			; Jump if not equal
 										jmp	item_confirm_chk
 

@@ -48,18 +48,18 @@
             display: flex; gap: 14px; padding: 5px 10px;
             border: 1px solid #555; background: #080808;
         }
-        #save-select, #audio-backend, #display-mode, #game-speed,
+        #save-select, #audio-backend, #display-mode, #game-speed, #debug-item-select,
         #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
-        #restore-resources, #keymap-open, #keymap-close, #load-save,
+        #restore-resources, #debug-add-item, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
-        #save-select, #audio-backend, #display-mode { min-width: 160px; padding: 0 8px; }
+        #save-select, #audio-backend, #display-mode, #debug-item-select { min-width: 160px; padding: 0 8px; }
         #game-speed { min-width: 52px; padding: 0 6px; }
         #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
-        #restore-resources, #keymap-open, #keymap-close, #load-save,
+        #restore-resources, #debug-add-item, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
         }
@@ -133,7 +133,18 @@
         </div>
         <div id="debug-controls" aria-label="Testing and debugging controls">
             <button id="invincible-toggle" type="button" aria-pressed="false">Invincible: Off</button>
-            <button id="restore-resources" type="button">Restore Shield + Magic</button>
+            <button id="restore-resources" type="button">Restore Health + Shield + Magic</button>
+            <select id="debug-item-select" aria-label="Item to add">
+                <option value="1">Ken'ko Potion</option>
+                <option value="2">Juu-en Fruit</option>
+                <option value="3">Elixir of Kashi</option>
+                <option value="4">Chikara Powder</option>
+                <option value="5">Magia Stone</option>
+                <option value="6">Holy Water of Acero</option>
+                <option value="7">Sabre Oil</option>
+                <option value="8">Kioku Feather</option>
+            </select>
+            <button id="debug-add-item" type="button">Add Item</button>
             <button id="flying-toggle" type="button" aria-pressed="false">Flying: Off</button>
             <button id="keymap-open" type="button">Controls</button>
         </div>
@@ -185,6 +196,7 @@
                         <tr><th><kbd>F2</kbd></th><td>Toggle sound effects</td></tr>
                         <tr><th><kbd>F7</kbd></th><td>Open the load-game menu</td></tr>
                         <tr><th><kbd>F9</kbd></th><td>Open the game-speed menu</td></tr>
+                        <tr><th><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> + <kbd>E</kbd></th><td>Show Level and EXP in the inventory screen</td></tr>
                         <tr><th>At the bank</th><td><kbd>&uarr;</kbd> +1, <kbd>&darr;</kbd> &minus;1, <kbd>&larr;</kbd> +10, <kbd>&rarr;</kbd> &minus;10. Hold a direction to accelerate.</td></tr>
                         <tr><th>Letters / numbers</th><td>Enter saved-game names and menu values</td></tr>
                         <tr><th><kbd>Backspace</kbd></th><td>Erase the previous typed character</td></tr>
@@ -206,7 +218,7 @@
                     </tbody>
                 </table>
             </section>
-            <p id="keymap-note">Testing controls are available as buttons below the game: Invincible, Restore Shield + Magic, and Flying. They intentionally have no keyboard shortcuts.</p>
+            <p id="keymap-note">Testing controls are available below the game: Invincible, Restore Health + Shield + Magic, add any witchcraft item, and Flying. They intentionally have no keyboard shortcuts.</p>
         </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>

@@ -125,6 +125,40 @@ int main(void) {
 
     zeliard_inventory_masm_vm_stop();
 
+    /* 201SELCT release bytes compare FF18 to 0286h only in the USE panel.
+     * That exact Ctrl+Shift+S+E state backs up the inventory and draws the
+     * hidden LEVEL/EXP box through the original selector rendering calls. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xA1, 0, 0x21);
+    game[0xA6] = 1;
+    game[0x8C] = 4;
+    game[0x8E] = 0x19;
+    game[0x8F] = 0x03;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_CAVERN);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 8, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+    const unsigned long long secret_base_frame = fnv1a64(vga, 64000);
+    game[0xFF18] = 0x86;
+    game[0xFF19] = 0x02;
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, 0, 0, 0);
+    const unsigned long long secret_popup_frame = fnv1a64(vga, 64000);
+    const u8 secret_overlay = zeliard_inventory_masm_vm_peek(0xAE02);
+    printf("inventory_masm_secret_level_exp: overlay=%02x base=%016llx "
+           "popup=%016llx level=%u exp=%u\n", secret_overlay,
+           secret_base_frame, secret_popup_frame, game[0x8C] + 1,
+           (unsigned)(game[0x8E] | ((u16)game[0x8F] << 8)));
+    ok &= secret_overlay == 0xFF &&
+        secret_popup_frame == 0x8070ADC81793B3BCULL &&
+        secret_popup_frame != secret_base_frame && game[0x8C] == 4 &&
+        game[0x8E] == 0x19 && game[0x8F] == 0x03;
+    zeliard_inventory_masm_vm_stop();
+
     /* The normal-key byte is an independent count, not a boolean.  The
      * release panel reads that byte directly and separately from 0099h. */
     memset(game, 0, 0x10000);

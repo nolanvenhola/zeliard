@@ -31,6 +31,7 @@ u32 zeliard_room_masm_vm_save_serial(void);
 const char *zeliard_room_masm_vm_save_name(void);
 const u8 *zeliard_room_masm_vm_save_record(void);
 void zeliard_room_masm_vm_force_save_failure(int fail);
+int zeliard_room_masm_vm_poke_u8(u16 offset, u8 value);
 void zeliard_room_masm_vm_stop(void);
 
 #endif

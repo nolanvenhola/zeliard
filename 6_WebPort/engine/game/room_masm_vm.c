@@ -744,6 +744,11 @@ u8 zeliard_room_masm_vm_take_sound_cue(void) {
 void zeliard_room_masm_vm_text_key(u8 ascii) {
     if (g_room_vm.active) g_room_vm.pending_ascii = ascii;
 }
+int zeliard_room_masm_vm_poke_u8(u16 offset, u8 value) {
+    if (!g_room_vm.active) return 0;
+    zel_room86_memory()[linear(GAME_SEG, offset)] = value;
+    return 1;
+}
 u32 zeliard_room_masm_vm_save_serial(void) { return g_save_serial; }
 const char *zeliard_room_masm_vm_save_name(void) { return g_save_name; }
 const u8 *zeliard_room_masm_vm_save_record(void) { return g_save_record; }

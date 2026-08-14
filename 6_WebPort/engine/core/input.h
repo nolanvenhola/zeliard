@@ -5,6 +5,8 @@
 
 enum {
     ZEL_INPUT_KEY_ENTER = 13,
+    ZEL_INPUT_KEY_SHIFT = 16,
+    ZEL_INPUT_KEY_CONTROL = 17,
     ZEL_INPUT_KEY_SPACE = 32,
     ZEL_INPUT_KEY_ALT = 18,
     ZEL_INPUT_KEY_LEFT = 37,
@@ -16,6 +18,8 @@ enum {
     ZEL_INPUT_KEY_F2 = 113,
     ZEL_INPUT_KEY_F7 = 118,
     ZEL_INPUT_KEY_F9 = 120,
+    ZEL_INPUT_KEY_E = 69,
+    ZEL_INPUT_KEY_S = 83,
 };
 
 typedef enum {

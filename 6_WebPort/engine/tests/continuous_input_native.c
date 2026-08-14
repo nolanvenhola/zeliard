@@ -111,6 +111,19 @@ int main(void) {
     ok &= word_at(mem, TIMER_COUNTER) == 0;
     printf("continuous_input:f7_restore_edge: %s\n", ok ? "PASS" : "FAIL");
 
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_CONTROL);
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_SHIFT);
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_S);
+    ok &= word_at(mem, TIMER_COUNTER) == 0x0086;
+    zel_input_key_down(&input, mem, ZEL_INPUT_KEY_E);
+    ok &= word_at(mem, TIMER_COUNTER) == 0x0286;
+    zel_input_key_up(&input, mem, ZEL_INPUT_KEY_S);
+    ok &= word_at(mem, TIMER_COUNTER) == 0x0206;
+    zel_input_release_all(&input, mem, 1);
+    ok &= word_at(mem, TIMER_COUNTER) == 0;
+    printf("continuous_input:secret_level_exp_chord: %s\n",
+           ok ? "PASS" : "FAIL");
+
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_LEFT);
     zel_input_key_down(&input, mem, ZEL_INPUT_KEY_SPACE);
     mem[SPACE_ACTION] = 0xFF;
