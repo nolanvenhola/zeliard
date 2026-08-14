@@ -764,5 +764,6 @@ unsigned short *zel_tiny86_registers(void) { return regs16; }
 unsigned char *zel_tiny86_byte_registers(void) { return regs8; }
 unsigned short zel_tiny86_ip(void) { return reg_ip; }
 void zel_tiny86_set_ip(unsigned short value) { reg_ip = value; }
+unsigned short zel_tiny86_flags(void) { make_flags(); return (unsigned short)scratch_uint; }
 void zel_tiny86_set_flags(unsigned short value) { set_flags(value); }
 void zel_tiny86_set_io_port(unsigned short port, unsigned char value) { io_ports[port] = value; }

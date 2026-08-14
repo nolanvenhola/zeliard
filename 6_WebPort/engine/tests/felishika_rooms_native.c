@@ -1614,6 +1614,10 @@ static int muralla_release_vm_bank_large_deposit_reaction(void) {
     ok &= bank_reach_amount_selector(cs, vga, 2, &ticks);
     const unsigned long long portrait_before =
         frame_rect_hash(vga, 72, 31, 64, 40);
+    u8 portrait_pixels_before[64 * 40];
+    for (u16 row = 0; row < 40; ++row)
+        memcpy(portrait_pixels_before + row * 64,
+               vga + (size_t)(31 + row) * 320u + 72, 64);
     for (unsigned held = 0; ok && bank_amount(cs) < 1000 && held < 5000;
          ++held)
         ok &= zeliard_room_masm_vm_advance(
@@ -1626,10 +1630,20 @@ static int muralla_release_vm_bank_large_deposit_reaction(void) {
     cs[0xFF16] = 0;
     unsigned long long portrait_hashes[8] = {0};
     size_t portrait_count = 0;
+    u8 changed_tile_rows = 0;
     for (unsigned settle = 0; ok && settle < 2000; ++settle) {
         ok &= zeliard_room_masm_vm_advance(
             cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
         const unsigned long long hash = frame_rect_hash(vga, 72, 31, 64, 40);
+        if (hash != portrait_before) {
+            for (u16 tile_row = 0; tile_row < 5; ++tile_row)
+                for (u16 row = tile_row * 8; row < tile_row * 8 + 8;
+                     ++row)
+                    for (u16 column = 0; column < 64; ++column)
+                        if (portrait_pixels_before[row * 64 + column] !=
+                            vga[(size_t)(31 + row) * 320u + 72 + column])
+                            changed_tile_rows |= (u8)(1u << tile_row);
+        }
         if ((!portrait_count || portrait_hashes[portrait_count - 1] != hash) &&
             portrait_count < sizeof(portrait_hashes) / sizeof(portrait_hashes[0]))
             portrait_hashes[portrait_count++] = hash;
@@ -1647,13 +1661,25 @@ static int muralla_release_vm_bank_large_deposit_reaction(void) {
            portrait_before, (unsigned)portrait_count);
     for (size_t index = 0; index < portrait_count; ++index)
         printf(" %016llx", portrait_hashes[index]);
-    putchar('\n');
-    ok &= carried == 1000 && banked == 1000 && cs[0xAD21] == 0xFF &&
-          (u16)(cs[0xAD1F] | ((u16)cs[0xAD20] << 8)) == 0xA7C3 &&
-          portrait_count >= 2 && portrait_hashes[0] == portrait_before &&
-          portrait_hashes[1] == 0xE53CEA7F0C7AF8CAULL;
-    for (size_t index = 2; index < portrait_count; ++index)
-        ok &= portrait_hashes[index] == portrait_hashes[index & 1u];
+    printf(" rows=%02x\n", changed_tile_rows);
+    int saw_laugh_a = 0, saw_laugh_b = 0;
+    for (size_t index = 0; index < portrait_count; ++index) {
+        saw_laugh_a |= portrait_hashes[index] == 0xE2C1573A30332836ULL;
+        saw_laugh_b |= portrait_hashes[index] == 0xFF5F2D00FBF8745BULL;
+    }
+    const unsigned long long portrait_after =
+        frame_rect_hash(vga, 72, 31, 64, 40);
+    printf("bank reaction final: kind=%d ip=%04x script=%02x%02x "
+           "portrait=%016llx\n", zeliard_room_masm_vm_input_kind(),
+           zeliard_room_masm_vm_ip(), cs[0xFF4D], cs[0xFF4C],
+           portrait_after);
+    ok &= carried == 1000 && banked == 1000 && cs[0xAD21] == 0 &&
+          (u16)(cs[0xAD1F] | ((u16)cs[0xAD20] << 8)) == 0xA8BB &&
+          changed_tile_rows == 0x1F && saw_laugh_a && saw_laugh_b &&
+          zeliard_room_masm_vm_input_kind() == ZEL_ROOM_VM_INPUT_MENU &&
+          (u16)(cs[0xFF4C] | ((u16)cs[0xFF4D] << 8)) == 0xAB32 &&
+          /* 213BANKP opcode 03 ends on its authored A8BB grumpy frame. */
+          portrait_after == 0xE2C1573A30332836ULL;
     zeliard_room_masm_vm_stop();
     free(cs); free(vga);
     return ok;

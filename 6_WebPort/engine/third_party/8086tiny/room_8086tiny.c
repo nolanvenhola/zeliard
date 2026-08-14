@@ -11,6 +11,7 @@
 #define zel_tiny86_byte_registers zel_room86_byte_registers
 #define zel_tiny86_ip zel_room86_ip
 #define zel_tiny86_set_ip zel_room86_set_ip
+#define zel_tiny86_flags zel_room86_flags
 #define zel_tiny86_set_flags zel_room86_set_flags
 #define zel_tiny86_set_io_port zel_room86_set_io_port
 #define set_CF zel_room86_set_CF

@@ -16,6 +16,7 @@ unsigned zel_room86_memory_size(void);
 unsigned short *zel_room86_registers(void);
 unsigned short zel_room86_ip(void);
 void zel_room86_set_ip(unsigned short value);
+unsigned short zel_room86_flags(void);
 void zel_room86_set_flags(unsigned short value);
 
 enum {
@@ -142,8 +143,10 @@ static int room_step(void *context, u16 cs, u16 ip) {
     room_vm_state_t *state = context;
     u8 *memory = zel_room86_memory();
     if (cs == GAME_SEG && state->callback_running &&
-        ip == ROOM_CALLBACK_RETURN_STUB)
+        ip == ROOM_CALLBACK_RETURN_STUB) {
+        state->callback_running = 0;
         return 1;
+    }
     if (cs == GAME_SEG && state->kind == ZEL_ROOM_SAGE) {
         const size_t instruction = linear(cs, ip);
         u16 *registers = zel_room86_registers();
@@ -496,13 +499,7 @@ static void restore_frame_rect(u8 *destination, const u8 *source,
                source + (size_t)row * width, width);
 }
 
-static void run_bank_idle_portrait_callback(u8 *memory, size_t base) {
-    if (g_room_vm.kind != ZEL_ROOM_BANK || !g_room_vm.at_input_poll ||
-        zel_room86_ip() != TOWN_POLL_AFTER_TICK ||
-        memory[base + 0xAD21] == 0 ||
-        read_u16(memory, base + 0xAD1F) != 0xA7C3)
-        return;
-
+static void execute_room_callback(u8 *memory, size_t base) {
     /* 213BANKP's two-word room header installs A728 at A002.  Native
      * 106TOWN calls that exact callback from tick_npcs_then_pump while
      * poll_menu_input waits.  The host yields at that poll, so execute the
@@ -512,21 +509,61 @@ static void run_bank_idle_portrait_callback(u8 *memory, size_t base) {
     u16 saved_registers[12];
     memcpy(saved_registers, registers, sizeof(saved_registers));
     const u16 saved_ip = zel_room86_ip();
+    const u16 saved_flags = zel_room86_flags();
     const u16 callback = read_u16(memory, base + 0xA002);
     const u16 callback_sp = (u16)(registers[ZEL_TINY86_SP] - 2u);
     const size_t callback_stack = linear(
         registers[ZEL_TINY86_SS], callback_sp);
     const u16 saved_stack_word = read_u16(memory, callback_stack);
     registers[ZEL_TINY86_SP] = callback_sp;
+    registers[ZEL_TINY86_DS] = GAME_SEG;
     write_u16(memory, callback_stack, ROOM_CALLBACK_RETURN_STUB);
     g_room_vm.callback_running = 1;
     zel_room86_set_ip(callback);
-    (void)zel_room86_run(INSTRUCTIONS_PER_PIT);
+    /* A complete 8x5 animated tile redraw takes more than one ordinary
+     * room PIT instruction slice.  Native 106TOWN does not preempt this
+     * near callback, so keep executing VM slices until its RET reaches the
+     * sentinel instead of restoring the menu poll after only the top rows. */
+    for (unsigned slice = 0; g_room_vm.callback_running && slice < 16;
+         ++slice)
+        (void)zel_room86_run(INSTRUCTIONS_PER_PIT);
     g_room_vm.callback_running = 0;
     write_u16(memory, callback_stack, saved_stack_word);
     memcpy(registers, saved_registers, sizeof(saved_registers));
     zel_room86_set_ip(saved_ip);
-    zel_room86_set_flags(0x0202);
+    zel_room86_set_flags(saved_flags);
+}
+
+static void run_bank_idle_portrait_callback(u8 *memory, size_t base) {
+    if (g_room_vm.kind != ZEL_ROOM_BANK || memory[base + 0xAD21] == 0 ||
+        read_u16(memory, base + 0xAD1F) != 0xA7C3)
+        return;
+    /* BANKP opcode 03 busy-waits on the PIT while 106TOWN continues its
+     * A002 room callback.  The host VM advances that PIT wait in slices, so
+     * invoke the same callback throughout the script phase, not only after
+     * it has yielded back to the main menu poll. */
+    execute_room_callback(memory, base);
+}
+
+static void finish_bank_large_deposit_reaction(u8 *memory, size_t base) {
+    if (g_room_vm.kind != ZEL_ROOM_BANK || !g_room_vm.at_input_poll ||
+        g_room_vm.input_kind != ZEL_ROOM_VM_INPUT_MENU ||
+        zel_room86_ip() != TOWN_POLL_AFTER_TICK ||
+        read_u16(memory, base + 0xFF4C) != 0xAB32 ||
+        memory[base + 0xAD21] == 0 ||
+        read_u16(memory, base + 0xAD1F) != 0xA7C3)
+        return;
+
+    /* 213BANKP opcode 03 finishes its timed A843/A86B/A893/A8BB
+     * reaction on A8BB, the normal grumpy portrait.  The room VM yields at
+     * 106TOWN's resumed menu poll before the program's cleanup draw becomes
+     * externally visible.  Execute that authored final A8BB frame once and
+     * retire AD21 so the special A7C3 callback cannot restart indefinitely. */
+    write_u16(memory, base + 0xAD1F, 0xA8BB);
+    memory[base + 0xAD22] = 1;
+    write_u16(memory, base + 0xFF1B, 0x001E);
+    execute_room_callback(memory, base);
+    memory[base + 0xAD21] = 0;
 }
 
 int zeliard_room_masm_vm_start(zeliard_room_kind_t kind,
@@ -611,6 +648,7 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
                   (u16)(read_u16(memory, base + 0xFF1B) + 1u));
         write_u16(memory, base + 0xFF50,
                   (u16)(read_u16(memory, base + 0xFF50) + 1u));
+        finish_bank_large_deposit_reaction(memory, base);
         run_bank_idle_portrait_callback(memory, base);
         const u32 amount_before =
             ((u32)memory[base + 0xAD29] << 16) |
