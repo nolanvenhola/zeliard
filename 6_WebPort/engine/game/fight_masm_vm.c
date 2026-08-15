@@ -333,6 +333,14 @@ static int load_fill_to(u8 *memory, size_t destination, const char *name) {
     return 1;
 }
 
+static int asset_available(const char *name) {
+    size_t size = 0;
+    u8 *file = platform_load_asset(name, &size);
+    const int available = file != NULL && size >= 4;
+    free(file);
+    return available;
+}
+
 static int fight_step(void *context, u16 cs, u16 ip) {
     fight_vm_state_t *state = context;
     u8 *memory = zel_fight86_memory();
@@ -462,6 +470,13 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             return 1;
         } else if (operation == 4) {
             loaded = prepare_sword_graphics(memory, selector);
+        } else if (operation == 5 && asset) {
+            /* stick.asm's AL=5 path hands the MSD chunk to the resident sound
+             * driver. It does not copy the raw music payload to ES:DI. Doing
+             * so here overwrote the tail of the 4000h enemy sprite bank when
+             * a track exceeded 1000h bytes (MUS6 reaches 45B5h). */
+            loaded = asset_available(asset);
+            if (loaded) state->music_chunk = chunk;
         } else if (asset) {
             const size_t destination = operation == 1
                 ? linear(FIGHT_SEG, 0xC000)
@@ -471,8 +486,6 @@ static int fight_step(void *context, u16 cs, u16 ip) {
                 : load_payload_to(memory, destination, asset);
             if (loaded && operation == 2 && archive == 2 && chunk == 56)
                 state->authored_wait_sequence = 1;
-            if (loaded && operation == 5)
-                state->music_chunk = chunk;
         }
         platform_log("200FIGHT loader: AL=%u AH=%u SI=%04X ref=%u/%u asset=%s loaded=%d ES=%04X DI=%04X",
                      (unsigned)operation, (unsigned)selector, si, archive, chunk,
@@ -885,6 +898,11 @@ int zeliard_fight_masm_vm_peek_u8(u16 offset) {
 }
 int zeliard_fight_masm_vm_peek_u16(u16 offset) {
     return read_u16(zel_fight86_memory(), linear(FIGHT_SEG, offset));
+}
+int zeliard_fight_masm_vm_peek_data_u8(u16 offset) {
+    const u8 *memory = zel_fight86_memory();
+    const u16 data_seg = read_u16(memory, linear(FIGHT_SEG, 0xFF2C));
+    return memory[linear(data_seg, offset)];
 }
 int zeliard_fight_masm_vm_poke_u8(u16 offset, u8 value) {
     if (!g_fight_vm.active) return 0;

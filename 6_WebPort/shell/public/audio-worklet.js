@@ -4,10 +4,14 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
         this.chunks = [];
         this.chunkOffset = 0;
         this.bufferedFrames = 0;
+        this.primeTargetFrames = 4096;
         this.primed = false;
         this.lastLeft = 0;
         this.lastRight = 0;
         this.fadeInFrames = 0;
+        this.crossfadeFrames = 0;
+        this.crossfadeLeft = 0;
+        this.crossfadeRight = 0;
         this.callbacksSinceStats = 0;
         this.stats = {
             callbacks: 0,
@@ -27,8 +31,28 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
                 this.lastLeft = 0;
                 this.lastRight = 0;
                 this.fadeInFrames = 0;
+                this.crossfadeFrames = 0;
+                this.crossfadeLeft = 0;
+                this.crossfadeRight = 0;
                 this.callbacksSinceStats = 0;
                 for (const key of Object.keys(this.stats)) this.stats[key] = 0;
+                return;
+            }
+            if (event.data?.type === 'cue-rebase') {
+                this.chunks.length = 0;
+                this.chunkOffset = 0;
+                this.bufferedFrames = 0;
+                this.primed = false;
+                this.fadeInFrames = 0;
+                this.crossfadeFrames = 64;
+                this.crossfadeLeft = this.lastLeft;
+                this.crossfadeRight = this.lastRight;
+                return;
+            }
+            if (event.data?.type === 'buffer-target') {
+                const frames = event.data.frames;
+                if (Number.isInteger(frames) && frames >= 128 && frames <= 16384)
+                    this.primeTargetFrames = frames;
                 return;
             }
             if (event.data?.type !== 'pcm') return;
@@ -63,12 +87,13 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
         const right = outputs[0][1];
         left.fill(0);
         right.fill(0);
-        /* The fight VM can occupy the browser main thread for longer than a
-         * town frame.  Keep ~85 ms at 48 kHz queued on the audio thread so
-         * combat SFX do not underrun and repeatedly hard-restart as fuzz. */
-        if (!this.primed && this.bufferedFrames >= 4096) {
+        /* The host selects a low-latency town target or the larger fight
+         * cushion.  The fight VM can occupy the browser main thread for
+         * longer than a town frame, so it retains ~85 ms at 48 kHz while
+         * town dialog starts after only ~21 ms. */
+        if (!this.primed && this.bufferedFrames >= this.primeTargetFrames) {
             this.primed = true;
-            this.fadeInFrames = 64;
+            this.fadeInFrames = this.crossfadeFrames > 0 ? 0 : 64;
         }
         if (this.primed && this.bufferedFrames < left.length) this.primed = false;
 
@@ -77,11 +102,22 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
             for (let i = 0; i < left.length; ++i) {
                 const frame = this.readFrame();
                 if (!frame) break;
-                const gain = this.fadeInFrames > 0
-                    ? (65 - this.fadeInFrames) / 64 : 1;
-                left[i] = frame[0] / 32768 * gain;
-                right[i] = frame[1] / 32768 * gain;
-                if (this.fadeInFrames > 0) this.fadeInFrames--;
+                const sampleLeft = frame[0] / 32768;
+                const sampleRight = frame[1] / 32768;
+                if (this.crossfadeFrames > 0) {
+                    const gain = (65 - this.crossfadeFrames) / 64;
+                    left[i] = this.crossfadeLeft * (1 - gain) +
+                        sampleLeft * gain;
+                    right[i] = this.crossfadeRight * (1 - gain) +
+                        sampleRight * gain;
+                    this.crossfadeFrames--;
+                } else {
+                    const gain = this.fadeInFrames > 0
+                        ? (65 - this.fadeInFrames) / 64 : 1;
+                    left[i] = sampleLeft * gain;
+                    right[i] = sampleRight * gain;
+                    if (this.fadeInFrames > 0) this.fadeInFrames--;
+                }
                 this.lastLeft = left[i];
                 this.lastRight = right[i];
                 const peak = Math.max(Math.abs(frame[0]), Math.abs(frame[1]));
@@ -101,6 +137,7 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
             }
             this.lastLeft = 0;
             this.lastRight = 0;
+            this.crossfadeFrames = 0;
         }
         this.stats.callbacks++;
         this.stats.requestedFrames += left.length;

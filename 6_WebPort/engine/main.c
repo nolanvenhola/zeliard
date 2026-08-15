@@ -1234,12 +1234,12 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         else if (town_area_before != g_town_runtime.area)
             zel_audio_play_music(current_town_music());
         if (g_town_runtime.dialog.pending_sound_cue) {
-            zel_opening_audio_write_cue(
+            zel_opening_audio_write_immediate_cue(
                 g_town_runtime.dialog.pending_sound_cue);
             g_town_runtime.dialog.pending_sound_cue = 0;
         }
         if (g_town_runtime.room.pending_sound_cue) {
-            zel_opening_audio_write_cue(
+            zel_opening_audio_write_immediate_cue(
                 g_town_runtime.room.pending_sound_cue);
             g_town_runtime.room.pending_sound_cue = 0;
         }

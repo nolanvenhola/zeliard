@@ -169,6 +169,34 @@ static unsigned heartbeat_pcm_peak(int muted, u32 *writes) {
     return peak;
 }
 
+static int expect_balanced_heartbeat_pair(void) {
+    short pcm[480 * 2];
+    unsigned long long first = 0, second = 0;
+
+    zel_opening_audio_init();
+    zel_opening_audio_set_heartbeat_volume(15);
+    for (int block = 0; block < 90; ++block) {
+        zel_opening_audio_tick(10);
+        const size_t frames = zel_opening_audio_read_pcm(pcm, 480);
+        if ((block < 5 || block >= 35) &&
+            (block < 55 || block >= 85))
+            continue;
+        unsigned long long *sum = block < 35 ? &first : &second;
+        for (size_t i = 0; i < frames * 2; ++i)
+            *sum += pcm[i] < 0 ? (unsigned)-(int)pcm[i] : (unsigned)pcm[i];
+    }
+    /* Release SNDADLIB makes both attacks in the door's double thump the
+     * same strength.  Applying its back-to-back OPL key-off/key-on writes
+     * without chip-write spacing leaves the second at roughly 27%. */
+    const int ok = first > 1000000 && second > 1000000 &&
+        second * 4 >= first * 3 && second * 3 <= first * 4;
+    printf("opening_audio:boss_heartbeat_balanced_pair: %s "
+           "first=%llu second=%llu ratio_milli=%llu\n",
+           ok ? "PASS" : "FAIL", first, second,
+           first ? second * 1000 / first : 0);
+    return ok;
+}
+
 static int expect_heartbeat_stops_with_score(void) {
     short pcm[480 * 2];
     unsigned peak = 0;
@@ -197,6 +225,25 @@ static int expect_heartbeat_stops_with_score(void) {
     const int ok = peak <= 2;
     printf("opening_audio:boss_heartbeat_stops_on_handoff: %s peak=%u\n",
            ok ? "PASS" : "FAIL", peak);
+    return ok;
+}
+
+static int expect_immediate_dialog_sfx_boundary(void) {
+    zel_opening_audio_init();
+    zel_opening_audio_tick(100);
+    const size_t stale_frames = zel_opening_audio_pcm_available();
+    const u32 serial = zel_opening_audio_cue_serial();
+    zel_opening_audio_write_immediate_cue(0x1E);
+    const size_t at_cue = zel_opening_audio_pcm_available();
+    zel_opening_audio_tick(1);
+    const size_t cue_frames = zel_opening_audio_pcm_available();
+    const int ok = stale_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES &&
+        at_cue == 0 && cue_frames == 48 &&
+        zel_opening_audio_cue_serial() == serial + 1;
+    printf("opening_audio:immediate_dialog_sfx_boundary: %s "
+           "before=%zu boundary=%zu after=%zu serial=%u\n",
+           ok ? "PASS" : "FAIL", stale_frames, at_cue, cue_frames,
+           zel_opening_audio_cue_serial());
     return ok;
 }
 
@@ -296,6 +343,7 @@ int main(void) {
     ok &= expect_sfx_pcm(0x14);
     ok &= zel_opening_audio_set_backend(ZEL_AUDIO_ADLIB);
     ok &= expect_dialog_sfx_continuity();
+    ok &= expect_immediate_dialog_sfx_boundary();
 
     u32 heartbeat_writes = 0, heartbeat_muted_writes = 0;
     const unsigned heartbeat_peak = heartbeat_pcm_peak(0, &heartbeat_writes);
@@ -308,6 +356,7 @@ int main(void) {
            heartbeat_pcm_ok ? "PASS" : "FAIL", heartbeat_peak,
            heartbeat_muted_peak, heartbeat_writes, heartbeat_muted_writes);
     ok &= heartbeat_pcm_ok;
+    ok &= expect_balanced_heartbeat_pair();
     ok &= expect_heartbeat_stops_with_score();
     zel_opening_audio_init();
 

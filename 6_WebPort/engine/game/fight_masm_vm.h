@@ -38,6 +38,7 @@ u8 zeliard_fight_masm_vm_ending_scene(void);
 u8 zeliard_fight_masm_vm_take_sound_cue(void);
 int zeliard_fight_masm_vm_peek_u8(u16 offset);
 int zeliard_fight_masm_vm_peek_u16(u16 offset);
+int zeliard_fight_masm_vm_peek_data_u8(u16 offset);
 int zeliard_fight_masm_vm_poke_u8(u16 offset, u8 value);
 int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value);
 void zeliard_fight_masm_vm_set_debug_invincible(int enabled);

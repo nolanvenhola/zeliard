@@ -141,6 +141,7 @@ class OpeningMusic {
     private activeTrack = -1;
     private cueSerial = 0;
     private resetSerial = 0;
+    private bufferTargetFrames = 4096;
     readonly stats = {
         callbacks: 0,
         requestedFrames: 0,
@@ -177,7 +178,7 @@ class OpeningMusic {
     static async load(module: ZeliardModule): Promise<OpeningMusic> {
         if (!module._zeliard_exact_music_driver())
             throw new Error('original audio driver runtime unavailable');
-        const context = new AudioContext();
+        const context = new AudioContext({ latencyHint: 'interactive' });
         const workletUrl = new URL('audio-worklet.js', appBaseUrl);
         workletUrl.searchParams.set('v', Date.now().toString(36));
         await context.audioWorklet.addModule(workletUrl.href);
@@ -195,6 +196,11 @@ class OpeningMusic {
             this.cueSerial = cueSerial;
             this.stats.cueSerial = cueSerial;
             this.stats.cueBypassCount++;
+            /* The town engine discarded its pre-cue PCM at the same serial
+             * boundary. Drop the worklet's older music too, otherwise the
+             * dialog effect still waits behind that independent queue. */
+            if (this.bufferTargetFrames === 1024)
+                this.node.port.postMessage({ type: 'cue-rebase' });
         }
         let buffered = this.module._zeliard_audio_pcm_available();
         while (buffered > 0) {
@@ -208,6 +214,16 @@ class OpeningMusic {
             this.node.port.postMessage({ type: 'pcm', pcm }, [pcm.buffer]);
             buffered -= delivered;
         }
+    }
+
+    setLowLatency(enabled: boolean): void {
+        const targetFrames = enabled ? 1024 : 4096;
+        if (targetFrames === this.bufferTargetFrames) return;
+        this.bufferTargetFrames = targetFrames;
+        this.node.port.postMessage({
+            type: 'buffer-target',
+            frames: targetFrames,
+        });
     }
 
     sync(track: number, enabled: boolean, paused: boolean, attenuation: number): void {
@@ -830,6 +846,12 @@ async function boot() {
             lastLoadRequestSerial = loadRequestSerial;
             openSaveEl.click();
         }
+        /* Town dialog cues should not sit behind the fight VM's 85 ms
+         * underrun cushion. Opening, cavern transitions, and active fights
+         * retain it; ordinary town execution uses a ~21 ms target. */
+        music?.setLowLatency(Module._zeliard_scene() === 2 &&
+            Module._zeliard_fight_active() === 0 &&
+            Module._zeliard_cavern_transition_active() === 0);
         music?.sync(Module._zeliard_music_track(),
             Module._zeliard_music_enabled() !== 0,
             Module._zeliard_paused() !== 0,

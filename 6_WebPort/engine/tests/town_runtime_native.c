@@ -146,8 +146,68 @@ static unsigned long long npc_state_hash(const u8 *segment) {
     return fnv1a64(segment + at, size);
 }
 
+static int town_actor_bank_matches(const u8 *game_data, const u8 *mask_data,
+                                   u8 selector) {
+    static const unsigned long long pixel_hashes[2] = {
+        0xC287EABFFE898D6CULL, 0x44D254E063EEEC7DULL,
+    };
+    static const unsigned long long mask_hashes[2] = {
+        0xF205BFB757BBDA0CULL, 0x4F2D17A7A7837D5FULL,
+    };
+    return selector < 2 &&
+        fnv1a64(game_data + 0x4100, 0x1EC0) == pixel_hashes[selector] &&
+        fnv1a64(mask_data + 0x7000, 0x0520) == mask_hashes[selector];
+}
+
+static int town_actor_patterns_match(const u8 *expected_game_data,
+                                     const u8 *expected_mask_data,
+                                     const u8 *actual_game_data,
+                                     const u8 *actual_mask_data) {
+    /* MMAN is shorter than the A4h-tile conversion span used by 106TOWN,
+     * so bytes after its authored payload retain prior segment contents.
+     * Compare the five entities' pattern table and every tile it can
+     * reference, excluding that intentionally unowned tail. */
+    if (memcmp(expected_game_data + 0x4000, actual_game_data + 0x4000,
+               5u * 0x30u) != 0)
+        return 0;
+    for (u16 pattern = 0; pattern < 5u * 0x30u; ++pattern) {
+        const u8 tile_id = expected_game_data[0x4000 + pattern];
+        if (!tile_id || tile_id > 0xA4) return 0;
+        const u8 tile = (u8)(tile_id - 1);
+        if (memcmp(expected_game_data + 0x4100 + (u16)tile * 0x30u,
+                   actual_game_data + 0x4100 + (u16)tile * 0x30u,
+                   0x30) != 0 ||
+            memcmp(expected_mask_data + 0x7000 + (u16)tile * 8u,
+                   actual_mask_data + 0x7000 + (u16)tile * 8u,
+                   8) != 0)
+            return 0;
+    }
+    return 1;
+}
+
+static int town_npc_records_are_renderable(const u8 *segment,
+                                            u8 expected_count) {
+    u16 at = (u16)(segment[0xC00F] | ((u16)segment[0xC010] << 8));
+    for (u8 count = 0; count < expected_count; ++count, at = (u16)(at + 8)) {
+        if (at > 0xFFF7) return 0;
+        const u16 position =
+            (u16)(segment[at] | ((u16)segment[at + 1] << 8));
+        const u8 entity = (u8)(segment[at + 2] & 0x7F);
+        const u8 motion = segment[at + 5];
+        /* GTMCGA gives each entity eight six-byte patterns (four frames in
+         * each direction) in the 4000h..40FFh actor table. */
+        const u16 last_pattern_byte =
+            (u16)(0x4000u + (u16)entity * 0x30u + 7u * 6u + 5u);
+        if (position == 0xFFFF || motion > 7 || last_pattern_byte >= 0x4100)
+            return 0;
+    }
+    return at <= 0xFFFE && segment[at] == 0xFF && segment[at + 1] == 0xFF;
+}
+
 static int dirty_town_entry_matches_clean(u8 area_id,
                                           unsigned long long *frame_hash) {
+    static const u8 actor_selectors[10] = {0, 0, 1, 0, 1, 1, 0, 1, 1, 0};
+    static const u8 npc_counts[10] = {4, 9, 7, 12, 8, 8, 12, 9, 10, 7};
     static u8 clean_segments[ZELIARD_GAME_SEGMENT_COUNT]
                             [ZELIARD_GAME_SEGMENT_SIZE];
     static u8 dirty_segments[ZELIARD_GAME_SEGMENT_COUNT]
@@ -205,8 +265,23 @@ static int dirty_town_entry_matches_clean(u8 area_id,
     const int repeated_result = zeliard_town_enter_first_frame(
         &dirty_town, &dirty_game, dirty_vga, sizeof(dirty_vga));
     if (frame_hash) *frame_hash = fnv1a64(dirty_vga, sizeof(dirty_vga));
+    const u8 town_index = (u8)(area_id - 0x80);
+    const int clean_bank = town_index < 10 && town_actor_bank_matches(
+        clean_segments[1], clean_segments[2], actor_selectors[town_index]);
+    const int dirty_bank = town_index < 10 && town_actor_patterns_match(
+        clean_segments[1], clean_segments[2], dirty_segments[1],
+        dirty_segments[2]);
+    const int clean_npcs = town_index < 10 && town_npc_records_are_renderable(
+        clean_segments[0], npc_counts[town_index]);
+    const int dirty_npcs = town_index < 10 && town_npc_records_are_renderable(
+        dirty_segments[0], npc_counts[town_index]);
+    printf("town_npc_audit_%02x: bank=%d/%d records=%d/%d count=%u\n",
+           area_id, clean_bank, dirty_bank, clean_npcs, dirty_npcs,
+           town_index < 10 ? (unsigned)npc_counts[town_index] : 0);
     return clean_result == 0 && dirty_result == 0 && repeated_result == 0 &&
+        town_index < 10 && clean_town.area == (zeliard_town_area_t)town_index &&
         clean_town.area == dirty_town.area &&
+        clean_bank && dirty_bank && clean_npcs && dirty_npcs &&
         memcmp(clean_vga, dirty_vga, sizeof(clean_vga)) == 0;
 }
 
@@ -1695,7 +1770,7 @@ int main(void) {
     free(tumba);
 
     /* Ticket #83: Dorado's release DRMP descriptor selects MGT2, DPAT,
-     * CMAN, and the 200FIGHT handoff target 5Ch -> start 4Bh/column 0Dh. */
+     * MMAN, and the 200FIGHT handoff target 5Ch -> start 4Bh/column 0Dh. */
     static u8 dorado_segments[ZELIARD_GAME_SEGMENT_COUNT]
                               [ZELIARD_GAME_SEGMENT_SIZE];
     static u8 dorado_vga[0x10000];
@@ -1726,6 +1801,11 @@ int main(void) {
     dorado_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
     const int dorado_result = dorado ? zeliard_town_enter_first_frame(
         dorado, &dorado_game, dorado_vga, sizeof(dorado_vga)) : -99;
+    const int dorado_actor_mman =
+        fnv1a64(dorado_segments[1] + 0x4100, 0x1EC0) ==
+            0xC287EABFFE898D6CULL &&
+        fnv1a64(dorado_segments[2] + 0x7000, 0x0520) ==
+            0xF205BFB757BBDA0CULL;
     const unsigned long long dorado_frame =
         fnv1a64(dorado_vga, sizeof(dorado_vga));
     const unsigned long long dorado_playfield =
@@ -1746,11 +1826,12 @@ int main(void) {
             fclose(dump);
         }
     }
-    ok &= dorado_result == 0 && dorado->area == ZEL_TOWN_AREA_DORADO;
+    ok &= dorado_result == 0 && dorado->area == ZEL_TOWN_AREA_DORADO &&
+          dorado_actor_mman;
     ok &= dorado->music_index == 3 && dorado->map_side == 1 &&
           dorado->palette_index == 2 && dorado->town_text_record == 0xC6D8;
-    ok &= dorado_frame == 0x45C2F6EDBB2C189FULL &&
-          dorado_playfield == 0x9C76E0D0BFF78CCDULL &&
+    ok &= dorado_frame == 0x8C8091CE1A71AE19ULL &&
+          dorado_playfield == 0xF7BAD97B9E14237CULL &&
           dorado_capture == 0xAB3088CF79795EEDULL &&
           dorado_state == 0xA44A7ECC9A5C610DULL &&
           dorado_npcs == 0x25A3DA737241664DULL;
@@ -1761,6 +1842,32 @@ int main(void) {
     memcpy(dorado_snapshot + sizeof(dorado_segments), dorado_vga,
            sizeof(dorado_vga));
     const zeliard_town_runtime_t dorado_runtime_snapshot = *dorado;
+
+    /* 106TOWN invalidates the complete GTMCGA tile cursor after restoring
+     * an NPC speech panel. Dorado's animated scenery made the missing
+     * invalidation visible as a stale rectangular background after talk. */
+    dorado_segments[0][0xFF33] = 5;
+    const int dorado_dialog_begin = zeliard_town_dialog_begin_live(
+        &dorado->dialog, dorado_segments[0], dorado_segments[3],
+        dorado_segments[1], sizeof(dorado_segments[1]),
+        dorado_segments[2], sizeof(dorado_segments[2]),
+        dorado_vga, sizeof(dorado_vga), 190);
+    dorado_segments[0][0xFF1D] = 0xFF;
+    const int dorado_dialog_close = zeliard_town_advance_pit(
+        dorado, &dorado_game, dorado_vga, sizeof(dorado_vga), 20, 0);
+    int dorado_dialog_cursor_invalid = 1;
+    for (u16 cursor = 0xE000; cursor < 0xE0E0; ++cursor)
+        dorado_dialog_cursor_invalid &= dorado_segments[0][cursor] == 0xFE;
+    ok &= dorado_dialog_begin == 0 && dorado_dialog_close > 0 &&
+          !dorado->dialog.active && dorado_dialog_cursor_invalid;
+    printf("town_dorado_dialog_restore: begin=%d close=%d active=%d "
+           "cursor=%d\n", dorado_dialog_begin, dorado_dialog_close,
+           dorado->dialog.active, dorado_dialog_cursor_invalid);
+
+    memcpy(dorado_segments, dorado_snapshot, sizeof(dorado_segments));
+    memcpy(dorado_vga, dorado_snapshot + sizeof(dorado_segments),
+           sizeof(dorado_vga));
+    *dorado = dorado_runtime_snapshot;
 
     dorado_segments[0][0x0083] = 0xFF;
     const int dorado_left = zeliard_town_advance_pit(
@@ -1835,10 +1942,11 @@ int main(void) {
     const u8 dorado_silkarn_b = dorado_segments[0][0xCE03];
     ok &= dorado_silkarn == 0 &&
           dorado_silkarn_a == 12 && dorado_silkarn_b == 13;
-    printf("town_dorado_entry: rc=%d frame=%016llx playfield=%016llx "
+    printf("town_dorado_entry: rc=%d actor_mman=%d frame=%016llx playfield=%016llx "
            "capture=%016llx state=%016llx npc=%016llx music=%u "
            "story=%02x/%02x>%02x/%02x\n",
-           dorado_result, dorado_frame, dorado_playfield, dorado_capture,
+           dorado_result, dorado_actor_mman, dorado_frame, dorado_playfield,
+           dorado_capture,
            dorado_state, dorado_npcs, (unsigned)dorado->music_index,
            dorado_story_before[0], dorado_story_before[1],
            dorado_silkarn_a, dorado_silkarn_b);
@@ -2283,6 +2391,11 @@ int main(void) {
     esco_segments[0][ZEL_PLAYER_SHIELD_HP_MAX] = 30;
     const int esco_result = esco ? zeliard_town_enter_first_frame(
         esco, &esco_game, esco_vga, sizeof(esco_vga)) : -99;
+    const int esco_actor_mman =
+        fnv1a64(esco_segments[1] + 0x4100, 0x1EC0) ==
+            0xC287EABFFE898D6CULL &&
+        fnv1a64(esco_segments[2] + 0x7000, 0x0520) ==
+            0xF205BFB757BBDA0CULL;
     const unsigned long long esco_frame =
         fnv1a64(esco_vga, sizeof(esco_vga));
     const unsigned long long esco_playfield =
@@ -2293,11 +2406,12 @@ int main(void) {
         selected_state_hash(esco_segments[0]);
     const unsigned long long esco_npcs =
         npc_state_hash(esco_segments[0]);
-    esco_ok &= esco_result == 0 && esco->area == ZEL_TOWN_AREA_ESCO;
+    esco_ok &= esco_result == 0 && esco->area == ZEL_TOWN_AREA_ESCO &&
+               esco_actor_mman;
     esco_ok &= esco->music_index == 2 && esco->map_side == 0 &&
           esco->palette_index == 1 && esco->town_text_record == 0xC6D8;
-    esco_ok &= esco_frame == 0x3AB7A5B1C9795BD3ULL &&
-               esco_playfield == 0xC6E95699DF8A3712ULL &&
+    esco_ok &= esco_frame == 0xC533A2131FBF07E7ULL &&
+               esco_playfield == 0x58E96A42F196797CULL &&
                esco_capture == 0xF2C3F82A0F93D06DULL &&
                esco_state == 0x90F5C82A0880BE0FULL &&
                esco_npcs == 0xFA227698AC7EE473ULL;
@@ -2348,9 +2462,10 @@ int main(void) {
                 ((u16)esco_segments[0][0x0081] << 8)) == 0x00BF &&
           esco_segments[0][0x0083] == 0x1A;
 
-    printf("town_esco_entry: ok=%d rc=%d frame=%016llx playfield=%016llx "
+    printf("town_esco_entry: ok=%d rc=%d actor_mman=%d frame=%016llx playfield=%016llx "
            "capture=%016llx state=%016llx npc=%016llx music=%u\n",
-           esco_ok, esco_result, esco_frame, esco_playfield, esco_capture,
+           esco_ok, esco_result, esco_actor_mman, esco_frame, esco_playfield,
+           esco_capture,
            esco_state, esco_npcs,
            (unsigned)esco_runtime_snapshot.music_index);
     printf("town_esco_routes: tunnel=%d/006b/3c/00/18 "

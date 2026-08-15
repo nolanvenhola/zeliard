@@ -25,7 +25,29 @@ try {
     m._zeliard_tick(0);
     const started = m._zeliard_test_restart_fight(
       14, 30 - 16, (28 - 9) & 0x3f, 12);
-    for (let frame = 0; frame < 12; ++frame) m._zeliard_tick(20);
+    const frameHashes = [];
+    for (let frame = 0; frame < 80; ++frame) {
+      m._zeliard_tick(20);
+      const framePixels = m.HEAPU8.subarray(
+        m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
+      let hash = 2166136261;
+      for (let offset = 0; offset < framePixels.length; offset += 31) {
+        hash ^= framePixels[offset];
+        hash = Math.imul(hash, 16777619) >>> 0;
+      }
+      frameHashes.push(hash);
+    }
+    let frameChanges = 0;
+    let stableRun = 1;
+    let maxStableRun = 1;
+    for (let frame = 1; frame < frameHashes.length; ++frame) {
+      if (frameHashes[frame] !== frameHashes[frame - 1]) {
+        ++frameChanges;
+        stableRun = 1;
+      } else {
+        maxStableRun = Math.max(maxStableRun, ++stableRun);
+      }
+    }
     const pixels = m.HEAPU8.subarray(
       m._zeliard_framebuf(), m._zeliard_framebuf() + 64000);
     let visible = 0;
@@ -62,6 +84,8 @@ try {
       music: m._zeliard_music_track(),
       exactAudio: m._zeliard_exact_music_driver(),
       visible,
+      frameChanges,
+      maxStableRun,
     };
   });
 
@@ -73,12 +97,14 @@ try {
 
   if (!result.started || !result.active || result.width !== 320 ||
       result.chunk !== 91 || result.music !== 14 || !result.exactAudio ||
-      result.visible < 1000)
+      result.visible < 1000 || result.frameChanges < 10 ||
+      result.maxStableRun > 6)
     throw new Error(`Tesoro browser parity failed: ${JSON.stringify(result)}`);
   if (errors.length)
     throw new Error(`browser errors: ${JSON.stringify(errors)}`);
   console.log(`tesoro_browser: PASS width=${result.width} ` +
-    `music=${result.chunk}/${result.music} visible=${result.visible}`);
+    `music=${result.chunk}/${result.music} visible=${result.visible} ` +
+    `changes=${result.frameChanges} maxStable=${result.maxStableRun}`);
   console.log('VERDICT: PASS: Tesoro runtime and exact Area-6 audio');
 } finally {
   await browser.close();

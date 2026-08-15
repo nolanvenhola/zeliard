@@ -57,4 +57,46 @@ processor.port.onmessage({ data: { type: 'reset' } });
 if (processor.bufferedFrames !== 0 || processor.primed)
   throw new Error('worklet reset retained stream state');
 
-console.log('audio_worklet: PASS: continuous queued PCM and clean underrun');
+/* Town playback uses a smaller prime target so NPC dialog effects do not
+ * wait behind the fight VM's full 4096-frame underrun cushion. */
+processor.port.onmessage({ data: { type: 'buffer-target', frames: 1024 } });
+const townPcm = new Int16Array(1024 * 2);
+townPcm.fill(1200);
+processor.port.onmessage({ data: { type: 'pcm', pcm: townPcm } });
+const townLeft = new Float32Array(128);
+const townRight = new Float32Array(128);
+processor.process([], [[townLeft, townRight]]);
+if (townLeft[0] === 0 || townRight[0] === 0 ||
+    processor.primeTargetFrames !== 1024)
+  throw new Error('low-latency town target did not start at 1024 frames');
+
+/* A dialog cue must bypass PCM already queued on the audio thread. */
+const staleTownPcm = new Int16Array(512 * 2);
+staleTownPcm.fill(2000);
+processor.port.onmessage({ data: { type: 'pcm', pcm: staleTownPcm } });
+processor.port.onmessage({ data: { type: 'cue-rebase' } });
+if (processor.bufferedFrames !== 0 || processor.primed)
+  throw new Error('dialog cue retained pre-cue worklet audio');
+const cuePcm = new Int16Array(1024 * 2);
+cuePcm.fill(3000);
+processor.port.onmessage({ data: { type: 'pcm', pcm: cuePcm } });
+const cueLeft = new Float32Array(128);
+const cueRight = new Float32Array(128);
+processor.process([], [[cueLeft, cueRight]]);
+if (cueLeft[0] === 0 || cueRight[0] === 0 ||
+    processor.bufferedFrames !== 896)
+  throw new Error('dialog cue did not resume from its new PCM boundary');
+if (Math.abs(cueLeft[64] - 3000 / 32768) > 1e-6 ||
+    Math.abs(cueRight[64] - 3000 / 32768) > 1e-6)
+  throw new Error('dialog cue crossfade restarted a second fade-in');
+
+processor.port.onmessage({ data: { type: 'reset' } });
+processor.port.onmessage({ data: { type: 'buffer-target', frames: 4096 } });
+processor.port.onmessage({ data: { type: 'pcm', pcm: townPcm } });
+const fightLeft = new Float32Array(128);
+const fightRight = new Float32Array(128);
+processor.process([], [[fightLeft, fightRight]]);
+if (fightLeft.some(Boolean) || fightRight.some(Boolean) || processor.primed)
+  throw new Error('fight target started without its 4096-frame cushion');
+
+console.log('audio_worklet: PASS: adaptive PCM buffering and clean underrun');

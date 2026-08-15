@@ -59,6 +59,7 @@ void zel_opening_audio_toggle_sound(void);
 void zel_opening_audio_pause(void);
 void zel_opening_audio_resume(void);
 void zel_opening_audio_write_cue(u8 cue);
+void zel_opening_audio_write_immediate_cue(u8 cue);
 u8 zel_opening_audio_take_cue(void);
 size_t zel_opening_audio_read_pcm(short *stereo, size_t frames);
 size_t zel_opening_audio_pcm_available(void);

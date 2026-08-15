@@ -89,6 +89,22 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_music_chunk() == 91;
     ok &= monsters == 45 && items == 16 && families == 0x1E;
 
+    /* GFMCGA converts ENP6 tile 2Ah in place before MUS6 is handed to the
+     * sound driver. AL=5 must not copy the MSD payload over this sprite. */
+    static const u8 octopus_tile_2a[] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x66, 0x66,
+        0x06, 0x00, 0xAA, 0x65, 0x66, 0x00, 0x8A, 0x6A,
+        0xFF, 0x00, 0xAA, 0xAA, 0x85, 0x05, 0xAA, 0xFA,
+        0x05, 0x08, 0xAA, 0x4C, 0x84, 0x08, 0xA6, 0xC8,
+    };
+    int octopus_tile_intact = 1;
+    for (unsigned i = 0; i < sizeof(octopus_tile_2a); ++i)
+        octopus_tile_intact &= zeliard_fight_masm_vm_peek_data_u8(
+            (u16)(0x4540u + i)) == octopus_tile_2a[i];
+    printf("tesoro_octopus_sprite_bank_probe: intact=%d music=%02x\n",
+           octopus_tile_intact, zeliard_fight_masm_vm_music_chunk());
+    ok &= octopus_tile_intact;
+
     const u16 objects = (u16)zeliard_fight_masm_vm_peek_u16(0xC010);
     u8 before[61][16];
     for (unsigned object = 0; object < 61; ++object)
@@ -201,7 +217,7 @@ int main(void) {
     ok &= encounter_start == 7 && boss_music_frame == 58;
     ok &= encounter_finish == 114;
     ok &= first_frame == 0xC279435AE90D41A5ULL;
-    ok &= moving_frame == 0xECADCE12E43E5BF4ULL;
+    ok &= moving_frame == 0x5FED84170D6259C4ULL;
     ok &= encounter_hash == 0x8E1B768A0AEC4C05ULL;
     ok &= chamber_hash == 0x4E95A8CA69455F86ULL;
 

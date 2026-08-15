@@ -191,7 +191,14 @@ static void apply_driver_writes(void) {
         count = zel_mscadlib_vm_take_writes(&g_mscadlib, writes,
                                              sizeof(writes) / sizeof(writes[0]));
         for (size_t i = 0; i < count; ++i) {
-            opalWriteReg(&g_opl, writes[i].reg, writes[i].value);
+            /* The YM3812 requires time between register writes.  SNDADLIB
+             * relies on that delay when it keys channels 4/5 off and back
+             * on in one PIT service for the two-part boss-door thump.  An
+             * immediate batch leaves Opal no chip sample in the release
+             * state, so the second attack inherits the first envelope.
+             * Opal's buffered path spaces writes by its chip-accurate
+             * two-sample delay and preserves the intended retrigger. */
+            opalWriteRegBuffered(&g_opl, writes[i].reg, writes[i].value);
             g_opl_write_count++;
         }
     } while (count == sizeof(writes) / sizeof(writes[0]));
@@ -632,6 +639,15 @@ void zel_opening_audio_write_cue(u8 cue) {
          * next emulated driver service. */
         zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF75,
                                    g_sound_enabled ? cue : 0);
+}
+
+void zel_opening_audio_write_immediate_cue(u8 cue) {
+    /* A browser AudioWorklet may already hold a separate PCM cushion.  Mark
+     * town UI cues at a clean engine-ring boundary so the host can discard
+     * only audio rendered before the cue without also deleting its attack. */
+    if (cue && g_sound_enabled)
+        g_pcm_read = g_pcm_write;
+    zel_opening_audio_write_cue(cue);
 }
 
 u8 zel_opening_audio_take_cue(void) {

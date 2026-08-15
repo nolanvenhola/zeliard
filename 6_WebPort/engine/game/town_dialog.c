@@ -553,6 +553,12 @@ int zeliard_town_dialog_continue(zeliard_town_dialog_t *dialog,
     if (zeliard_gmmcga_restore_rect(vga, vga_size, scratch, 0x10000,
                                      dialog->panel_ax, dialog->panel_cx, 0))
         return -1;
+    /* 106TOWN:render_dialog_text calls fill_cursor_buf immediately after
+     * gfx_text_layout_b_fn restores the saved town pixels. The dialog wait
+     * loop has advanced NPCs and animated map tiles behind that foreground,
+     * so retaining its old cursor values makes GTMCGA believe the restored
+     * (stale) tiles are already current and leaves a corrupted rectangle. */
+    memset(cs + 0xE000, 0xFE, 0xE0);
     if (!dialog->scripted) {
         cs[(u16)(dialog->npc_offset + 5)] = dialog->original_npc_type;
         cs[(u16)(dialog->npc_offset + 2)] = dialog->original_npc_direction;

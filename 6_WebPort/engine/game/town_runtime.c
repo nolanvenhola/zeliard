@@ -40,20 +40,19 @@ typedef struct {
     u8 area_id;
     const char *map_asset;
     const char *pattern_asset;
-    const char *actor_asset;
 } town_area_asset_t;
 
 static const town_area_asset_t TOWN_AREA_ASSETS[] = {
-    {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt", "cpat.grp", "mman.grp"},
-    {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp", "mman.grp"},
-    {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt", "mpat.grp", "mman.grp"},
-    {ZEL_TOWN_AREA_HELADA, 0x84, "hlmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_TUMBA, 0x85, "tmmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_DORADO, 0x86, "drmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_LLAMA, 0x87, "llmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_PUREZA, 0x88, "prmp.mdt", "dpat.grp", "cman.grp"},
-    {ZEL_TOWN_AREA_ESCO, 0x89, "esmp.mdt", "dpat.grp", "cman.grp"},
+    {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt", "cpat.grp"},
+    {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp"},
+    {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt", "mpat.grp"},
+    {ZEL_TOWN_AREA_HELADA, 0x84, "hlmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_TUMBA, 0x85, "tmmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_DORADO, 0x86, "drmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_LLAMA, 0x87, "llmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_PUREZA, 0x88, "prmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_ESCO, 0x89, "esmp.mdt", "dpat.grp"},
 };
 
 static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {
@@ -73,6 +72,20 @@ static u16 read_u16(const u8 *memory, u16 offset) {
 static void write_u16(u8 *memory, u16 offset, u16 value) {
     memory[offset] = (u8)value;
     memory[(u16)(offset + 1)] = (u8)(value >> 8);
+}
+
+static const char *town_actor_asset_from_descriptor(const u8 *cs) {
+    /* game.asm:gfx_init_after_tile loads the MDT first, follows the pointer
+     * stored at C000h, skips its music-selector byte, and uses the following
+     * byte to select MMAN (0) or CMAN (1). Keeping this descriptor-owned
+     * prevents area-table guesses such as Dorado/Esco incorrectly using
+     * CMAN even though their release descriptors select MMAN. */
+    const u16 config = read_u16(cs, TOWN_DESCRIPTOR);
+    if (config < TOWN_DESCRIPTOR || config == 0xFFFF) return NULL;
+    const u8 selector = cs[(u16)(config + 1)];
+    if (selector == 0) return "mman.grp";
+    if (selector == 1) return "cman.grp";
+    return NULL;
 }
 
 static u8 *find_npc(u8 *cs, u16 position) {
@@ -415,28 +428,6 @@ static int town_enter_first_frame(zeliard_town_runtime_t *town,
     u8 *cs_3000 = game->segment[3];
     size_t loaded_size = 0;
 
-    /* game.asm loads MMAN at gvar_game_seg:4000; 106TOWN:init_load_tiles
-     * preprocesses 0A4h tiles to the CS+2000h mask bank at 7000h. */
-    if (!load_fill_chunk(area_assets->actor_asset, cs_1000 + 0x4000, 0xC000,
-                         &loaded_size) ||
-        zeliard_gtmcga_encode_tile_block(cs_1000, 0x10000, 0x4100,
-                                         cs_2000, 0x10000, 0x7000, 0xA4) ||
-        !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_PREPROCESS_MMAN, "106TOWN:init_load_tiles",
-            area_assets->actor_asset, 0x1000, 0x4000, 2}))
-        return -2;
-
-    /* 106TOWN:load_town_door_table performs the same conversion for the
-     * TMAN player bank at 6000h and its masks at CS+2000h:8000h. */
-    if (!load_fill_chunk("tman.grp", cs_1000 + 0x6000, 0xA000,
-                         &loaded_size) ||
-        zeliard_gtmcga_encode_tile_block(cs_1000, 0x10000, 0x6000,
-                                         cs_2000, 0x10000, 0x8000, 0x2E) ||
-        !append_event(town, (zeliard_town_event_t){
-            ZEL_TOWN_EVENT_PREPROCESS_TMAN, "106TOWN:load_town_door_table",
-            "tman.grp", 0x1000, 0x6000, 2}))
-        return -2;
-
     /* game.asm:start_load_game passes save_sage (C4h) as loader function 1's
      * AH selector.  The MDT and pattern bank must therefore be chosen as one
      * saved-area transaction; mixing Muralla position state with CMAP/CPAT
@@ -448,6 +439,32 @@ static int town_enter_first_frame(zeliard_town_runtime_t *town,
             area_assets->map_asset, 0, TOWN_DESCRIPTOR, 1}))
         return -2;
     if (!decode_town_header(cs, town)) return -3;
+
+    /* game.asm loads the descriptor-selected MMAN/CMAN bank at
+     * gvar_game_seg:4000; 106TOWN:init_load_tiles preprocesses 0A4h tiles to
+     * the CS+2000h mask bank at 7000h. */
+    const char *actor_asset = town_actor_asset_from_descriptor(cs);
+    if (!actor_asset ||
+        !load_fill_chunk(actor_asset, cs_1000 + 0x4000, 0xC000,
+                         &loaded_size) ||
+        zeliard_gtmcga_encode_tile_block(cs_1000, 0x10000, 0x4100,
+                                         cs_2000, 0x10000, 0x7000, 0xA4) ||
+        !append_event(town, (zeliard_town_event_t){
+            ZEL_TOWN_EVENT_PREPROCESS_MMAN, "106TOWN:init_load_tiles",
+            actor_asset, 0x1000, 0x4000, 2}))
+        return -2;
+
+    /* 106TOWN:load_town_door_table follows init_load_tiles and performs the
+     * same conversion for the TMAN player bank at 6000h and its masks at
+     * CS+2000h:8000h. */
+    if (!load_fill_chunk("tman.grp", cs_1000 + 0x6000, 0xA000,
+                         &loaded_size) ||
+        zeliard_gtmcga_encode_tile_block(cs_1000, 0x10000, 0x6000,
+                                         cs_2000, 0x10000, 0x8000, 0x2E) ||
+        !append_event(town, (zeliard_town_event_t){
+            ZEL_TOWN_EVENT_PREPROCESS_TMAN, "106TOWN:load_town_door_table",
+            "tman.grp", 0x1000, 0x6000, 2}))
+        return -2;
 
     /* 106TOWN:load_town_pattern_chunk selects the pattern paired with MDT. */
     if (load_pattern_bank(game, area_assets->pattern_asset))
@@ -817,10 +834,12 @@ static int enter_adjacent_town(zeliard_town_runtime_t *town,
      * bytes before loader mode 1 replaces the active MDT at CS:C000. */
     restore_tiles_under_npcs(cs);
     if (!load_raw_chunk(assets->map_asset, cs + TOWN_DESCRIPTOR,
-                        0x10000 - TOWN_DESCRIPTOR, NULL) ||
-        !decode_town_header(cs, town) ||
-        !load_fill_chunk(assets->actor_asset, game_data + 0x4000,
-                         0xC000, NULL) ||
+                         0x10000 - TOWN_DESCRIPTOR, NULL) ||
+        !decode_town_header(cs, town))
+        return -2;
+    const char *actor_asset = town_actor_asset_from_descriptor(cs);
+    if (!actor_asset ||
+        !load_fill_chunk(actor_asset, game_data + 0x4000, 0xC000, NULL) ||
         zeliard_gtmcga_encode_tile_block(game_data, 0x10000, 0x4100,
                                          mask_data, 0x10000, 0x7000, 0xA4) ||
         load_pattern_bank(game, assets->pattern_asset))

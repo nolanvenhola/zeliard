@@ -177,8 +177,8 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_exit_operation() == 1;
     ok &= zeliard_fight_masm_vm_exit_selector() == 0x86;
 
-    ok &= first_frame == 0x60A27AE85B34526AULL;
-    ok &= moving_frame == 0xB4B98904D7C503E8ULL;
+    ok &= first_frame == 0x8392713EDCEC5B4AULL;
+    ok &= moving_frame == 0x3C4D197AEE469740ULL;
 
     printf("VERDICT: %s: Plata exact fight VM, persistence, and routes\n",
            ok ? "PASS" : "FAIL");

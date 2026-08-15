@@ -442,6 +442,9 @@ int main(void) {
     record[0x9C] = 0xFF;       /* Hero's Crest inventory marker */
     record[0xA0] = 4;          /* Tears of Esmesanti */
     record[0x9D] = 3;          /* selected spell */
+    record[0x9E] = 2;          /* selected Pirika Shoes */
+    record[0xA1] = 4;          /* Ruzeria acquired first */
+    record[0xA2] = 2;          /* Pirika acquired second */
     record[0xAB] = 24;         /* Espada charge */
     record[0xAD] = 8;          /* Fuego charge */
     record[0xBB] = 0xFF;       /* Espada learned */
@@ -475,6 +478,9 @@ int main(void) {
         zeliard_test_game_u8(0x9C) == 0xFF &&
         zeliard_test_game_u8(0xA0) == 4 &&
          zeliard_test_game_u8(0x9D) == 3 &&
+         zeliard_test_game_u8(0x9E) == 2 &&
+         zeliard_test_game_u8(0xA1) == 4 &&
+         zeliard_test_game_u8(0xA2) == 2 &&
          zeliard_test_game_u8(0xBD) == 0xFF &&
          zeliard_test_game_u8(0xC4) == 0x81 &&
          zeliard_town_area() == 1 &&
@@ -701,6 +707,7 @@ int main(void) {
 
     const unsigned long long cavern_before_inventory =
         fnv1a64(g_framebuf, ZELIARD_FB_SIZE);
+    const int cavern_wear_before_inventory = zeliard_test_game_u8(0x9E);
     unsigned cavern_before_nonzero = 0;
     for (size_t pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
         cavern_before_nonzero += g_framebuf[pixel] != 0;
@@ -732,6 +739,10 @@ int main(void) {
         cavern_resume_nonzero += g_framebuf[pixel] != 0;
     const int cavern_inventory_restored = cavern_inventory_opened &&
         cavern_inventory_closed && zeliard_fight_active() &&
+        cavern_wear_before_inventory == 2 &&
+        zeliard_test_game_u8(0x9E) == 2 &&
+        zeliard_test_game_u8(0xA1) == 4 &&
+        zeliard_test_game_u8(0xA2) == 2 &&
         cavern_inventory_open_cue == 0x0B &&
         cavern_inventory_close_cue == 0x0B &&
         cavern_before_nonzero > 1000 && cavern_after_nonzero > 1000 &&
@@ -739,13 +750,14 @@ int main(void) {
     ok &= cavern_inventory_restored;
     printf("main_controls:malicia_inventory_return: %s "
            "before=%016llx close=%016llx resume=%016llx "
-           "nonzero=%u/%u/%u cues=%02x/%02x active=%d\n",
+           "nonzero=%u/%u/%u cues=%02x/%02x active=%d wear=%d>%d\n",
            cavern_inventory_restored ? "PASS" : "FAIL",
            cavern_before_inventory, cavern_after_inventory,
            cavern_after_resume, cavern_before_nonzero,
            cavern_after_nonzero, cavern_resume_nonzero,
            cavern_inventory_open_cue, cavern_inventory_close_cue,
-           zeliard_fight_active());
+           zeliard_fight_active(), cavern_wear_before_inventory,
+           zeliard_test_game_u8(0x9E));
 
     /* Exercise the real cavern selector path, not a synthetic state write:
      * select and consume a Kenshiko Potion, then prove its player record and
@@ -1529,7 +1541,7 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), tumba_playfield);
 
-    /* Dorado save records select DRMP/DPAT/CMAN, MGT2, and the exact
+    /* Dorado save records select DRMP/DPAT/MMAN, MGT2, and the exact
      * 200FIGHT-to-town coordinate handoff in one bootstrap transaction. */
     memset(record, 0, sizeof(record));
     record_file = fopen("assets/stdply.bin", "rb");
@@ -1549,7 +1561,7 @@ int main(void) {
         zeliard_test_game_u8(0x80) == 0x4B &&
         zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 6 &&
-        dorado_playfield == 0x060B67C28AF7A3D7ULL;
+        dorado_playfield == 0x99761BA19F906B6BULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/dorado-save-bootstrap.ppm", g_framebuf);
     ok &= dorado_bootstrap;
@@ -1621,7 +1633,7 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), pureza_playfield);
 
-    /* Esco save records select ESMP/DPAT/CMAN. Its release target ABh in a
+    /* Esco save records select ESMP/DPAT/MMAN. Its release target ABh in a
      * D7h-wide map resolves to start 009Ah / screen column 0Dh. */
     memset(record, 0, sizeof(record));
     record_file = fopen("assets/stdply.bin", "rb");
@@ -1641,7 +1653,7 @@ int main(void) {
         zeliard_test_game_u8(0x80) == 0x9A &&
         zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 4 &&
-        esco_playfield == 0xC6E95699DF8A3712ULL;
+        esco_playfield == 0x58E96A42F196797CULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/esco-save-bootstrap.ppm", g_framebuf);
     ok &= esco_bootstrap;

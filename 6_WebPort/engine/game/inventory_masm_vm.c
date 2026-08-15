@@ -89,6 +89,27 @@ static void normalize_selected_spell(u8 *game_seg) {
     game_seg[ZEL_PLAYER_SELECTED_SPELL] = last_learned;
 }
 
+static void normalize_selected_accessory(u8 *game_seg) {
+    const u8 selected = game_seg[ZEL_PLAYER_SELECTED_ACCESSORY];
+    if (!selected) return;
+
+    u8 last_owned = 0;
+    for (u8 slot = 0; slot < 5; ++slot) {
+        const u8 accessory =
+            game_seg[ZEL_PLAYER_ACCESSORY_SLOTS + slot];
+        if (!accessory) continue;
+        last_owned = accessory;
+        if (accessory == selected) return;
+    }
+
+    /* 201SELCT builds its WEAR cursor table from the unequipped entry plus
+     * the five persisted accessory slots. If 009Eh names an accessory that
+     * is absent from those slots, the release search falls through to the
+     * final blank cursor cell. Repair that inconsistent imported/legacy
+     * state to the final populated entry, matching the spell-panel guard. */
+    game_seg[ZEL_PLAYER_SELECTED_ACCESSORY] = last_owned;
+}
+
 static int load_raw_to(u8 *memory, size_t destination, const char *name) {
     size_t size = 0;
     u8 *file = platform_load_asset(name, &size);
@@ -202,6 +223,7 @@ int zeliard_inventory_masm_vm_start(u8 *game_seg, size_t game_size,
     const size_t itemp = linear(ITEMP_SEG, 0);
     const size_t asset2 = linear(ASSET_SEG_2, 0);
     normalize_selected_spell(game_seg);
+    normalize_selected_accessory(game_seg);
     memcpy(memory + game, game_seg, 0x10000);
     memcpy(memory + linear(VGA_SEG, 0), vga, 0x10000);
     size_t font_size = 0;

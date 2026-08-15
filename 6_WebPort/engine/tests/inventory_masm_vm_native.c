@@ -18,6 +18,13 @@ static int load_player(u8 *memory) {
     return read == 233;
 }
 
+static void pulse_direction(u8 *game, u8 *vga, u8 direction) {
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      1, direction, 0, 0);
+    zeliard_inventory_masm_vm_advance(game, 0x10000, vga, 0x10000,
+                                      100, 0, 0, 0);
+}
+
 static unsigned long long advanced_shield_frame(
     u8 *game, u8 *vga, u8 tier, u16 strength) {
     memset(game, 0, 0x10000);
@@ -382,6 +389,62 @@ int main(void) {
            pirika_none, pirika_owned);
     ok &= game[0x9E] == 2 && pirika_count == 2 && pirika_cursor == 1 &&
         pirika_none == 0 && pirika_owned == 2;
+    zeliard_inventory_masm_vm_stop();
+
+    /* TUMBA3's real ordering is Ruzeria, Pirika. Exercise the previously
+     * uncovered path that changes spell selection, switches down into WEAR,
+     * and navigates both owned entries. The equipped byte must only ever be
+     * zero or one of A1h..A5h; in particular, unavailable Feruza ID 1 cannot
+     * be synthesized by cross-panel input. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    memset(game + 0xBB, 0xFF, 7);
+    game[0x9D] = 3;
+    game[0x9E] = 2;
+    game[0xA1] = 4;
+    game[0xA2] = 2;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_TOWN);
+    pulse_direction(game, vga, 8);
+    pulse_direction(game, vga, 8);
+    const u8 tumba_spell = game[0x9D];
+    const u8 tumba_wear_before = game[0x9E];
+    pulse_direction(game, vga, 2);
+    const u8 tumba_panel = zeliard_inventory_masm_vm_peek(0xADF9);
+    const u8 tumba_wear_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    pulse_direction(game, vga, 4);
+    const u8 tumba_wear_left = game[0x9E];
+    pulse_direction(game, vga, 8);
+    const u8 tumba_wear_restored = game[0x9E];
+    printf("inventory_masm_tumba_cross_panel: spell=%u wear=%u "
+           "panel=%u cursor=%u left=%u restored=%u\n",
+           tumba_spell, tumba_wear_before, tumba_panel, tumba_wear_cursor,
+           tumba_wear_left, tumba_wear_restored);
+    ok &= tumba_spell == 5 && tumba_wear_before == 2 && tumba_panel == 1 &&
+        tumba_wear_cursor == 2 && tumba_wear_left == 4 &&
+        tumba_wear_restored == 2;
+    zeliard_inventory_masm_vm_stop();
+
+    /* DORADO1 contained selected Feruza (1) with only Ruzeria and Pirika
+     * in its owned slots. That impossible legacy state made release
+     * 201SELCT fall through to cursor five, the final blank WEAR cell.
+     * Entry repairs it to the last populated owned slot, Pirika. */
+    memset(game, 0, 0x10000);
+    memset(vga, 0, 0x10000);
+    ok &= load_player(game);
+    game[0x9E] = 1;
+    game[0xA1] = 4;
+    game[0xA2] = 2;
+    ok &= zeliard_inventory_masm_vm_start(
+        game, 0x10000, vga, 0x10000, ZEL_INVENTORY_CONTEXT_TOWN);
+    const u8 dorado_wear_count = zeliard_inventory_masm_vm_peek(0xADFC);
+    const u8 dorado_wear_cursor = zeliard_inventory_masm_vm_peek(0xADFD);
+    printf("inventory_masm_dorado_invalid_wear: selected=%u count=%u "
+           "cursor=%u slots=%u/%u\n", game[0x9E], dorado_wear_count,
+           dorado_wear_cursor, game[0xA1], game[0xA2]);
+    ok &= game[0x9E] == 2 && dorado_wear_count == 3 &&
+        dorado_wear_cursor == 2 && game[0xA1] == 4 && game[0xA2] == 2;
     zeliard_inventory_masm_vm_stop();
 
     /* The same owned-only table and selected-wearable state apply to

@@ -253,8 +253,8 @@ static int run_lion_key_routes(void) {
     zeliard_fight_masm_vm_stop();
 
     const int frames_match =
-        locked_frame == 0xDF17A50269DE13BCULL &&
-        opened_frame == 0x9A42F282121D01CFULL &&
+        locked_frame == 0x26D1A0793DD8DD9CULL &&
+        opened_frame == 0xDC9552395B19B87FULL &&
         entered_frame == 0x50FE5808AC150C69ULL &&
         revisit_frame == entered_frame;
 
@@ -474,7 +474,7 @@ static int run_all_persistent_objects(void) {
 int main(void) {
     static const cavern_case_t cases[] = {
         {"Reaccion", "mp71.mdt", 0x13, 196, 7, 92, 25, 10, 0x1E,
-         0x55381990B26D942FULL, 0x845AD63F57A4D9BFULL},
+         0xF1A83FF20CE8171DULL, 0x3822B43064B3BAE9ULL},
         {"Absor", "mp80.mdt", 0x17, 256, 8, 93, 45, 15, 0x1E,
          0xCC5CD9FA6D361CEAULL, 0x52F63ADD9ABAEAE8ULL},
         {"Milagro", "mp81.mdt", 0x18, 256, 8, 93, 58, 11, 0x1E,
