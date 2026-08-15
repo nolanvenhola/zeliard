@@ -51,6 +51,7 @@ int zeliard_sound_cue(void);
 int zeliard_test_game_u8(unsigned offset);
 int zeliard_test_game_u16(unsigned offset);
 int zeliard_test_fight_u8(unsigned offset);
+int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value);
 void zeliard_opening_set_phase_for_test(int phase);
 int zeliard_load_record(const u8 *record, int size);
 int zeliard_town_area(void);
@@ -1034,6 +1035,7 @@ int main(void) {
     const unsigned long long reverse_reference_sword =
         frame_rect_hash(192, 171, 20, 18);
     ok &= zeliard_test_begin_malicia_exit();
+    ok &= zeliard_fight_masm_vm_poke_u16(0x092B, 0x5A37);
     /* Return with real cavern damage rather than the full-health town
      * snapshot captured above. */
     /* Authored item/stash records OR their consumed/opened masks into the
@@ -1050,6 +1052,8 @@ int main(void) {
     unsigned reverse_music_samples = 0;
     int reverse_fade_peak = 0;
     int return_key_released = 0;
+    unsigned reverse_rng_at_transition = 0;
+    int reverse_rng_captured = 0;
     while ((zeliard_fight_active() || zeliard_cavern_transition_active()) &&
            return_ticks++ < 2000) {
         zeliard_tick(16);
@@ -1060,6 +1064,11 @@ int main(void) {
             (zeliard_test_game_u8(0xC2) & 1);
         if (zeliard_cavern_transition_active() &&
             zeliard_cavern_transition_step() > 0) {
+            if (!reverse_rng_captured) {
+                reverse_rng_at_transition =
+                    (unsigned)zeliard_test_game_u16(0x092B);
+                reverse_rng_captured = 1;
+            }
             ++reverse_music_samples;
             reverse_music_continued &= zeliard_music_track() == 7;
         }
@@ -1094,6 +1103,9 @@ int main(void) {
         zeliard_test_game_u8(0x02) == 0x40 &&
         zeliard_test_game_u8(0x0A) == 0x05 &&
         zeliard_test_game_u16(0x90) == 0x0040 &&
+        reverse_rng_captured &&
+        zeliard_test_game_u16(0x092B) ==
+            (int)reverse_rng_at_transition &&
         reverse_return_life == 0x814E303D8C7E90BDULL &&
         reverse_return_life != reverse_reference_life &&
         reverse_return_sword == reverse_reference_sword &&
@@ -1104,7 +1116,7 @@ int main(void) {
     printf("main_controls:malicia_reverse_cavern_return: %s ticks=%u "
            "area=%d pos=%02x/%02x/%02x facing=%02x hp=%04x diff=%u "
            "life=%016llx>%016llx sword=%016llx/%016llx "
-           "state=%02x/%02x music=%d/%u/%d fade=%d chrome=%u\n",
+           "state=%02x/%02x rng=%04x/%04x music=%d/%u/%d fade=%d chrome=%u\n",
            reverse_returned ? "PASS" : "FAIL", return_ticks,
            zeliard_town_area(), zeliard_test_game_u8(0x80),
            zeliard_test_game_u8(0x82), zeliard_test_game_u8(0x83),
@@ -1113,6 +1125,7 @@ int main(void) {
            reverse_reference_life, reverse_return_life,
            reverse_reference_sword, reverse_return_sword,
            zeliard_test_game_u8(0x02), zeliard_test_game_u8(0x0A),
+           reverse_rng_at_transition, zeliard_test_game_u16(0x092B),
            reverse_music_continued, reverse_music_samples,
            zeliard_music_track(), reverse_fade_peak,
            reverse_chrome_differences);

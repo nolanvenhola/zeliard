@@ -27,6 +27,7 @@ enum {
     SAR_STUB = 0x0500,
     FIGHT_LOAD_BASE = 0x6000,
     FIGHT_TOWN_ENTRY = 0x79DC,
+    STICK_SUBSAMPLE_ACCUMULATOR = 0x092B,
     INSTRUCTIONS_PER_SLICE = 50000,
 };
 
@@ -572,6 +573,13 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
         platform_log("200FIGHT VM base asset load failed");
         return 0;
     }
+    /* stick.bin remains resident in DOS while town/fight overlays change.
+     * Preserve its RNG accumulator: EAI6 uses it for the Tesoro/Plata
+     * ceiling-block release gate. Reloading it as zero at every cavern made
+     * those traps release in the same prematurely synchronized pattern. */
+    write_u16(memory, fight + STICK_SUBSAMPLE_ACCUMULATOR,
+              (u16)(game_seg[STICK_SUBSAMPLE_ACCUMULATOR] |
+                    ((u16)game_seg[STICK_SUBSAMPLE_ACCUMULATOR + 1] << 8)));
     apply_debug_patches();
     relocate_words(memory, linear(ASSET_SEG, 0x1800), 3, 0x1800);
     if (!prepare_sword_graphics(memory, game_seg[0x0092])) {
@@ -629,6 +637,8 @@ static void sync_host_state(u8 *game_seg, u8 *vga) {
     /* Four release-MASM Magia Stone orbit records. Keep their advancing
      * phase visible to 201SELCT if inventory is opened again. */
     memcpy(game_seg + 0xEB60, memory + fight + 0xEB60, 4u * 7u);
+    memcpy(game_seg + STICK_SUBSAMPLE_ACCUMULATOR,
+           memory + fight + STICK_SUBSAMPLE_ACCUMULATOR, 2);
     memcpy(game_seg + 0xFF00, memory + fight + 0xFF00, 0x80);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
 }

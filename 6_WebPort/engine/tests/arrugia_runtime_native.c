@@ -68,6 +68,8 @@ int main(void) {
     static u8 game[0x10000], vga[0x10000];
     int ok = 1;
     prepare_player(game, 16, 55, 39);
+    game[0x092B] = 0x37;
+    game[0x092C] = 0x5A;
     palette_set_game_mcga();
     const int started = zeliard_fight_masm_vm_start(
         game, sizeof(game), vga, sizeof(vga));
@@ -88,8 +90,14 @@ int main(void) {
     ok &= zeliard_fight_masm_vm_peek_u8(0xC012) == 6;
     ok &= zeliard_fight_masm_vm_music_chunk() == 91;
     ok &= monsters == 0 && items == 28 && families == 0;
+    /* Arrugia has no EAI6 family-4 ceiling traps, so bootstrap cannot consume
+     * the resident stick.asm RNG accumulator. This cleanly verifies that the
+     * cavern overlay preserves it instead of resetting it with stick.bin. */
+    ok &= zeliard_fight_masm_vm_peek_u16(0x092B) == 0x5A37;
     for (unsigned frame = 0; frame < 10; ++frame)
         ok &= advance_frame(game, vga, 8);
+    ok &= read_u16(game, 0x092B) ==
+        (u16)zeliard_fight_masm_vm_peek_u16(0x092B);
     const unsigned long long moving_frame = fnv1a64(vga, 64000);
     printf("arrugia_idle_probe: frame=%016llx\n", moving_frame);
 

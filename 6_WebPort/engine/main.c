@@ -42,6 +42,8 @@ typedef enum {
     GAMEPLAY_LOCATION_CAVERN = 1,
 } gameplay_location_t;
 
+enum { STICK_SUBSAMPLE_ACCUMULATOR = 0x092B };
+
 static game_scene_t g_scene = SCENE_OPENING;
 static gameplay_location_t g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
 static int g_paused;
@@ -304,6 +306,8 @@ static zel_music_track_t current_town_music(void) {
 
 static void finish_cavern_return_to_town(void) {
     u8 *cs = g_game_segments[0];
+    const u16 fight_subsample_accumulator =
+        game_read_u16(STICK_SUBSAMPLE_ACCUMULATOR);
     const u8 selector = g_cavern_transition.return_selector;
     const u8 transition_direction = g_cavern_transition.direction;
     const u8 fight_screen_position = cs[ZEL_PLAYER_SCREEN_POSITION];
@@ -335,6 +339,10 @@ static void finish_cavern_return_to_town(void) {
                sizeof(cavern_progress_a));
         memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
                sizeof(cavern_progress_b));
+        cs[STICK_SUBSAMPLE_ACCUMULATOR] =
+            (u8)fight_subsample_accumulator;
+        cs[STICK_SUBSAMPLE_ACCUMULATOR + 1] =
+            (u8)(fight_subsample_accumulator >> 8);
     }
     cs[ZEL_PLAYER_SAVE_SAGE] = selector;
     cs[ZEL_PLAYER_SCREEN_POSITION] = fight_screen_position;
@@ -381,6 +389,8 @@ static void finish_cavern_return_to_town(void) {
 
 static int finish_cavern_death_to_sage(void) {
     u8 *cs = g_game_segments[0];
+    const u16 fight_subsample_accumulator =
+        game_read_u16(STICK_SUBSAMPLE_ACCUMULATOR);
     u8 cavern_object_state[ZEL_PLAYER_CAVERN_OBJECT_STATE_END];
     const u8 death_map_scroll_row = cs[ZEL_PLAYER_MAP_SCROLL_ROW];
     u8 cavern_progress_a[ZEL_PLAYER_FRAME_SCRATCH - ZEL_PLAYER_GOLD];
@@ -404,6 +414,10 @@ static int finish_cavern_death_to_sage(void) {
                sizeof(cavern_progress_a));
         memcpy(cs + ZEL_PLAYER_TEARS, cavern_progress_b,
                sizeof(cavern_progress_b));
+        cs[STICK_SUBSAMPLE_ACCUMULATOR] =
+            (u8)fight_subsample_accumulator;
+        cs[STICK_SUBSAMPLE_ACCUMULATOR + 1] =
+            (u8)(fight_subsample_accumulator >> 8);
     }
     cs[ZEL_PLAYER_LAST_SAGE] = last_sage;
     cs[ZEL_PLAYER_SAVE_SAGE] = last_sage;
