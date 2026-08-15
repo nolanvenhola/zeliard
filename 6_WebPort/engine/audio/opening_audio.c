@@ -190,15 +190,38 @@ static void apply_driver_writes(void) {
     do {
         count = zel_mscadlib_vm_take_writes(&g_mscadlib, writes,
                                              sizeof(writes) / sizeof(writes[0]));
+        u16 buffered_retriggers = 0;
         for (size_t i = 0; i < count; ++i) {
-            /* The YM3812 requires time between register writes.  SNDADLIB
-             * relies on that delay when it keys channels 4/5 off and back
-             * on in one PIT service for the two-part boss-door thump.  An
-             * immediate batch leaves Opal no chip sample in the release
-             * state, so the second attack inherits the first envelope.
-             * Opal's buffered path spaces writes by its chip-accurate
-             * two-sample delay and preserves the intended retrigger. */
-            opalWriteRegBuffered(&g_opl, writes[i].reg, writes[i].value);
+            const u8 reg = writes[i].reg;
+            const int key_register = reg >= 0xB0 && reg <= 0xB8;
+            const u16 channel_bit = key_register
+                ? (u16)(1u << (reg - 0xB0)) : 0;
+            int starts_retrigger = 0;
+            if (key_register && !(writes[i].value & 0x20)) {
+                for (size_t next = i + 1; next < count; ++next) {
+                    if (writes[next].tick != writes[i].tick)
+                        break;
+                    if (writes[next].reg != reg)
+                        continue;
+                    starts_retrigger = (writes[next].value & 0x20) != 0;
+                    break;
+                }
+            }
+            /* SNDADLIB keys the boss-heartbeat channels off and immediately
+             * back on in one PIT service. Only that same-channel retrigger
+             * needs the YM3812's write spacing. Buffering the entire music
+             * batch puts the heartbeat behind unrelated cavern-score writes
+             * and can make it effectively disappear in the browser mix. */
+            if (starts_retrigger ||
+                (key_register && (buffered_retriggers & channel_bit))) {
+                opalWriteRegBuffered(&g_opl, reg, writes[i].value);
+                if (starts_retrigger)
+                    buffered_retriggers |= channel_bit;
+                else if (writes[i].value & 0x20)
+                    buffered_retriggers &= (u16)~channel_bit;
+            } else {
+                opalWriteReg(&g_opl, reg, writes[i].value);
+            }
             g_opl_write_count++;
         }
     } while (count == sizeof(writes) / sizeof(writes[0]));
