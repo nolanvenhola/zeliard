@@ -125,6 +125,7 @@ static int expect_dialog_sfx_continuity(void) {
     zel_opening_audio_tick(100);
     const size_t stale_frames = zel_opening_audio_pcm_available();
     const u32 serial = zel_opening_audio_cue_serial();
+    const u32 rebase_serial = zel_opening_audio_cue_rebase_serial();
     const u32 writes = zel_opening_audio_opl_write_count();
     zel_opening_audio_write_cue(0x1E);
 
@@ -137,6 +138,7 @@ static int expect_dialog_sfx_continuity(void) {
     const size_t delivered = zel_opening_audio_read_pcm(pcm, 512);
     const int ok = stale_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES &&
         zel_opening_audio_cue_serial() == serial + 1 &&
+        zel_opening_audio_cue_rebase_serial() == rebase_serial &&
         service_ms > 0 && service_ms <= 5 &&
         zel_opening_audio_opl_write_count() > writes &&
         buffered_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES && delivered == 512;
@@ -233,13 +235,15 @@ static int expect_immediate_dialog_sfx_boundary(void) {
     zel_opening_audio_tick(100);
     const size_t stale_frames = zel_opening_audio_pcm_available();
     const u32 serial = zel_opening_audio_cue_serial();
+    const u32 rebase_serial = zel_opening_audio_cue_rebase_serial();
     zel_opening_audio_write_immediate_cue(0x1E);
     const size_t at_cue = zel_opening_audio_pcm_available();
     zel_opening_audio_tick(1);
     const size_t cue_frames = zel_opening_audio_pcm_available();
     const int ok = stale_frames == ZEL_AUDIO_PCM_CUSHION_FRAMES &&
         at_cue == 0 && cue_frames == 48 &&
-        zel_opening_audio_cue_serial() == serial + 1;
+        zel_opening_audio_cue_serial() == serial + 1 &&
+        zel_opening_audio_cue_rebase_serial() == rebase_serial + 1;
     printf("opening_audio:immediate_dialog_sfx_boundary: %s "
            "before=%zu boundary=%zu after=%zu serial=%u\n",
            ok ? "PASS" : "FAIL", stale_frames, at_cue, cue_frames,

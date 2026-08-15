@@ -39,14 +39,33 @@ class ZeliardPcmProcessor extends AudioWorkletProcessor {
                 return;
             }
             if (event.data?.type === 'cue-rebase') {
+                /* Keep one render quantum from the head of the live stream.
+                 * Shop programs post a cue for every non-space character;
+                 * emptying and de-priming the queue on every cue turns that
+                 * cadence into repeated gaps.  Retaining 128 frames keeps
+                 * playback continuous while bounding cue latency to 2.7 ms
+                 * at 48 kHz. */
+                const retainFrames = Math.min(this.bufferedFrames, 128);
+                const retained = new Int16Array(retainFrames * 2);
+                let copiedFrames = 0;
+                for (let chunkIndex = 0;
+                     chunkIndex < this.chunks.length &&
+                     copiedFrames < retainFrames; ++chunkIndex) {
+                    const chunk = this.chunks[chunkIndex];
+                    const sourceOffset = chunkIndex === 0
+                        ? this.chunkOffset : 0;
+                    const availableFrames = (chunk.length - sourceOffset) / 2;
+                    const copyFrames = Math.min(
+                        availableFrames, retainFrames - copiedFrames);
+                    retained.set(chunk.subarray(
+                        sourceOffset, sourceOffset + copyFrames * 2),
+                        copiedFrames * 2);
+                    copiedFrames += copyFrames;
+                }
                 this.chunks.length = 0;
+                if (retainFrames) this.chunks.push(retained);
                 this.chunkOffset = 0;
-                this.bufferedFrames = 0;
-                this.primed = false;
-                this.fadeInFrames = 0;
-                this.crossfadeFrames = 64;
-                this.crossfadeLeft = this.lastLeft;
-                this.crossfadeRight = this.lastRight;
+                this.bufferedFrames = retainFrames;
                 return;
             }
             if (event.data?.type === 'buffer-target') {

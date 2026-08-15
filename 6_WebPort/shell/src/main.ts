@@ -55,6 +55,7 @@ type EngineExports = {
     _zeliard_audio_opl_write_count(): number;
     _zeliard_audio_generated_peak(): number;
     _zeliard_audio_cue_serial(): number;
+    _zeliard_audio_cue_rebase_serial(): number;
     _zeliard_audio_reset_serial(): number;
     _zeliard_exact_music_driver(): number;
     _zeliard_audio_set_backend(backend: number): number;
@@ -140,6 +141,7 @@ class OpeningMusic {
     private readonly pumpFrames = 3072;
     private activeTrack = -1;
     private cueSerial = 0;
+    private cueRebaseSerial = 0;
     private resetSerial = 0;
     private bufferTargetFrames = 4096;
     readonly stats = {
@@ -159,6 +161,8 @@ class OpeningMusic {
                         private readonly context: AudioContext) {
         this.module._zeliard_audio_set_sample_rate(this.context.sampleRate);
         this.cueSerial = this.module._zeliard_audio_cue_serial();
+        this.cueRebaseSerial =
+            this.module._zeliard_audio_cue_rebase_serial();
         this.resetSerial = this.module._zeliard_audio_reset_serial();
         this.pcmPointer = this.module._malloc(
             this.pumpFrames * 2 * Int16Array.BYTES_PER_ELEMENT);
@@ -196,9 +200,13 @@ class OpeningMusic {
             this.cueSerial = cueSerial;
             this.stats.cueSerial = cueSerial;
             this.stats.cueBypassCount++;
-            /* The town engine discarded its pre-cue PCM at the same serial
-             * boundary. Drop the worklet's older music too, otherwise the
-             * dialog effect still waits behind that independent queue. */
+        }
+        const cueRebaseSerial =
+            this.module._zeliard_audio_cue_rebase_serial();
+        if (cueRebaseSerial !== this.cueRebaseSerial) {
+            this.cueRebaseSerial = cueRebaseSerial;
+            /* Only the town NPC/page dialog path discards pre-cue PCM.
+             * Shop character cues remain continuous and never rebase. */
             if (this.bufferTargetFrames === 1024)
                 this.node.port.postMessage({ type: 'cue-rebase' });
         }

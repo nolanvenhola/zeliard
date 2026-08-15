@@ -71,6 +71,7 @@ int zel_opening_audio_backend_fallback(void);
 u32 zel_opening_audio_opl_write_count(void);
 u32 zel_opening_audio_generated_peak(void);
 u32 zel_opening_audio_cue_serial(void);
+u32 zel_opening_audio_cue_rebase_serial(void);
 u32 zel_opening_audio_reset_serial(void);
 
 #endif

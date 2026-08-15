@@ -75,20 +75,44 @@ const staleTownPcm = new Int16Array(512 * 2);
 staleTownPcm.fill(2000);
 processor.port.onmessage({ data: { type: 'pcm', pcm: staleTownPcm } });
 processor.port.onmessage({ data: { type: 'cue-rebase' } });
-if (processor.bufferedFrames !== 0 || processor.primed)
-  throw new Error('dialog cue retained pre-cue worklet audio');
+if (processor.bufferedFrames !== 128 || !processor.primed)
+  throw new Error('dialog cue did not retain one live audio quantum');
 const cuePcm = new Int16Array(1024 * 2);
 cuePcm.fill(3000);
 processor.port.onmessage({ data: { type: 'pcm', pcm: cuePcm } });
 const cueLeft = new Float32Array(128);
 const cueRight = new Float32Array(128);
 processor.process([], [[cueLeft, cueRight]]);
-if (cueLeft[0] === 0 || cueRight[0] === 0 ||
+if (cueLeft.some(sample => sample === 0) ||
+    cueRight.some(sample => sample === 0) ||
+    processor.bufferedFrames !== 1024)
+  throw new Error('dialog cue introduced a gap at its PCM boundary');
+const cueAttackLeft = new Float32Array(128);
+const cueAttackRight = new Float32Array(128);
+processor.process([], [[cueAttackLeft, cueAttackRight]]);
+if (Math.abs(cueAttackLeft[0] - 3000 / 32768) > 1e-6 ||
+    Math.abs(cueAttackRight[0] - 3000 / 32768) > 1e-6 ||
     processor.bufferedFrames !== 896)
-  throw new Error('dialog cue did not resume from its new PCM boundary');
-if (Math.abs(cueLeft[64] - 3000 / 32768) > 1e-6 ||
-    Math.abs(cueRight[64] - 3000 / 32768) > 1e-6)
-  throw new Error('dialog cue crossfade restarted a second fade-in');
+  throw new Error('dialog cue did not start after one retained quantum');
+
+/* Consecutive NPC/page cues must trim latency without de-priming or
+ * inserting silence between their attacks. Shop character cues never send
+ * this message and therefore remain in the continuous stream. */
+processor.port.onmessage({ data: { type: 'cue-rebase' } });
+const nextCuePcm = new Int16Array(1024 * 2);
+nextCuePcm.fill(4000);
+processor.port.onmessage({ data: { type: 'pcm', pcm: nextCuePcm } });
+const retainedCueLeft = new Float32Array(128);
+const retainedCueRight = new Float32Array(128);
+processor.process([], [[retainedCueLeft, retainedCueRight]]);
+const nextCueLeft = new Float32Array(128);
+const nextCueRight = new Float32Array(128);
+processor.process([], [[nextCueLeft, nextCueRight]]);
+if (retainedCueLeft.some(sample => sample === 0) ||
+    retainedCueRight.some(sample => sample === 0) ||
+    Math.abs(nextCueLeft[0] - 4000 / 32768) > 1e-6 ||
+    Math.abs(nextCueRight[0] - 4000 / 32768) > 1e-6)
+  throw new Error('consecutive dialog cue was choppy');
 
 processor.port.onmessage({ data: { type: 'reset' } });
 processor.port.onmessage({ data: { type: 'buffer-target', frames: 4096 } });

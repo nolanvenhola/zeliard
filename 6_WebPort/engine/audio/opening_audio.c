@@ -44,6 +44,7 @@ static size_t g_pcm_write;
 static u32 g_opl_write_count;
 static u32 g_generated_peak;
 static u32 g_cue_serial;
+static u32 g_cue_rebase_serial;
 static u32 g_reset_serial;
 
 typedef struct {
@@ -406,6 +407,7 @@ void zel_opening_audio_init(void) {
     g_opl_write_count = 0;
     g_generated_peak = 0;
     g_cue_serial = 0;
+    g_cue_rebase_serial = 0;
     g_backend_fallback = 0;
     reset_legacy_synth();
     opalInit(&g_opl, g_audio_rate);
@@ -668,8 +670,10 @@ void zel_opening_audio_write_immediate_cue(u8 cue) {
     /* A browser AudioWorklet may already hold a separate PCM cushion.  Mark
      * town UI cues at a clean engine-ring boundary so the host can discard
      * only audio rendered before the cue without also deleting its attack. */
-    if (cue && g_sound_enabled)
+    if (cue && g_sound_enabled) {
         g_pcm_read = g_pcm_write;
+        g_cue_rebase_serial++;
+    }
     zel_opening_audio_write_cue(cue);
 }
 
@@ -750,6 +754,10 @@ u32 zel_opening_audio_generated_peak(void) {
 
 u32 zel_opening_audio_cue_serial(void) {
     return g_cue_serial;
+}
+
+u32 zel_opening_audio_cue_rebase_serial(void) {
+    return g_cue_rebase_serial;
 }
 
 u32 zel_opening_audio_reset_serial(void) {

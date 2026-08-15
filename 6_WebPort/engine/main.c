@@ -1239,7 +1239,11 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             g_town_runtime.dialog.pending_sound_cue = 0;
         }
         if (g_town_runtime.room.pending_sound_cue) {
-            zel_opening_audio_write_immediate_cue(
+            /* Room programs (shops, bank, inn, church, king) can post a
+             * cue for every printed character. Keep those cues in the
+             * continuous SNDADLIB stream; rebasing every character clips
+             * the preceding attack. */
+            zel_opening_audio_write_cue(
                 g_town_runtime.room.pending_sound_cue);
             g_town_runtime.room.pending_sound_cue = 0;
         }
@@ -1457,6 +1461,7 @@ EXPORT void             zeliard_audio_set_sample_rate(int sample_rate) { zel_ope
 EXPORT u32              zeliard_audio_opl_write_count(void) { return zel_opening_audio_opl_write_count(); }
 EXPORT u32              zeliard_audio_generated_peak(void) { return zel_opening_audio_generated_peak(); }
 EXPORT u32              zeliard_audio_cue_serial(void) { return zel_opening_audio_cue_serial(); }
+EXPORT u32              zeliard_audio_cue_rebase_serial(void) { return zel_opening_audio_cue_rebase_serial(); }
 EXPORT u32              zeliard_audio_reset_serial(void) { return zel_opening_audio_reset_serial(); }
 EXPORT int              zeliard_audio_set_backend(int backend) { return zel_opening_audio_set_backend(backend); }
 EXPORT int              zeliard_audio_backend(void) { return zel_opening_audio_backend(); }
