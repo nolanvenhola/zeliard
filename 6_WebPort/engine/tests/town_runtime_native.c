@@ -1957,7 +1957,7 @@ int main(void) {
            ZEL_ROOM_BANK);
     free(dorado);
 
-    /* Ticket #84: Llama's release LLMP descriptor selects MGT1, DPAT,
+    /* Ticket #84: Llama's release LLMP descriptor selects MGT1, MPAT,
      * CMAN, and the 200FIGHT handoff target 47h -> start 36h/column 0Dh. */
     static u8 llama_segments[ZELIARD_GAME_SEGMENT_COUNT]
                              [ZELIARD_GAME_SEGMENT_SIZE];
@@ -2013,8 +2013,10 @@ int main(void) {
     ok &= llama_result == 0 && llama->area == ZEL_TOWN_AREA_LLAMA;
     ok &= llama->music_index == 2 && llama->map_side == 0 &&
           llama->palette_index == 1 && llama->town_text_record == 0xC8E0;
-    ok &= llama_frame == 0xA8D2A6F63DAA834AULL &&
-          llama_playfield == 0x490A5B10473F47A4ULL &&
+    ok &= llama->event_count > 3 && llama->events[3].asset &&
+          strcmp(llama->events[3].asset, "mpat.grp") == 0;
+    ok &= llama_frame == 0x794BDB1B406E7BE9ULL &&
+          llama_playfield == 0xAA3FD23307CEEBB7ULL &&
           llama_capture == 0xF2C3F82A0F93D06DULL &&
           llama_state == 0x9163832A08DECDB0ULL &&
           llama_npcs == 0x55B5FACA82E29E35ULL;
@@ -2410,15 +2412,17 @@ int main(void) {
                esco_actor_mman;
     esco_ok &= esco->music_index == 2 && esco->map_side == 0 &&
           esco->palette_index == 1 && esco->town_text_record == 0xC6D8;
-    esco_ok &= esco_frame == 0xC533A2131FBF07E7ULL &&
-               esco_playfield == 0x58E96A42F196797CULL &&
+    esco_ok &= esco->event_count > 3 && esco->events[3].asset &&
+               strcmp(esco->events[3].asset, "mpat.grp") == 0;
+    esco_ok &= esco_frame == 0xE80078C9320FE837ULL &&
+               esco_playfield == 0x9211CC39CF1304A2ULL &&
                esco_capture == 0xF2C3F82A0F93D06DULL &&
                esco_state == 0x90F5C82A0880BE0FULL &&
                esco_npcs == 0xFA227698AC7EE473ULL;
-
     static const struct { u16 position; u8 type; } esco_doors[] = {
         {57, 3}, {111, 4}, {138, 6}, {171, 5}, {205, 8},
     };
+    int esco_doors_ok = 1;
     for (size_t i = 0; i < sizeof(esco_doors) / sizeof(esco_doors[0]);
          ++i) {
         const u16 start = (u16)(esco_doors[i].position - 17);
@@ -2426,9 +2430,10 @@ int main(void) {
         esco_segments[0][0x0081] = (u8)(start >> 8);
         esco_segments[0][0x0083] = 13;
         zeliard_town_detect_facing_targets(esco, esco_segments[0], 1);
-        esco_ok &= esco->facing_door_found &&
+        esco_doors_ok &= esco->facing_door_found &&
               esco->facing_door_type == esco_doors[i].type;
     }
+    esco_ok &= esco_doors_ok;
 
     static u8 esco_snapshot[sizeof(esco_segments) + sizeof(esco_vga)];
     memcpy(esco_snapshot, esco_segments, sizeof(esco_segments));
@@ -2437,17 +2442,23 @@ int main(void) {
     const zeliard_town_runtime_t esco_runtime_snapshot = *esco;
     esco_segments[0][0x0080] = 0;
     esco_segments[0][0x0081] = 0;
-    esco_segments[0][0x0083] = 0;
+    /* The boundary dispatcher observes FFh after the preceding left walk.
+     * Start at that state so this route test remains independent of the
+     * active pattern bank's authored passability list. */
+    esco_segments[0][0x0083] = 0xFF;
     esco_segments[0][0xFF2A] = 0x17;
     esco_segments[0][0xFF2B] = 0xC0;
     const int esco_tunnel = zeliard_town_advance_pit(
-        esco, &esco_game, esco_vga, sizeof(esco_vga), 20, 4);
-    esco_ok &= esco_tunnel > 0 && esco->cavern_exit_requested &&
-          (u16)(esco_segments[0][0x0080] |
-                ((u16)esco_segments[0][0x0081] << 8)) == 0x006B &&
-          esco_segments[0][0x0082] == 0x3C &&
-          esco_segments[0][0x00C3] == 0 &&
-          esco_segments[0][0x00C4] == 0x18;
+        esco, &esco_game, esco_vga, sizeof(esco_vga), 1, 0);
+    const u16 esco_tunnel_start = (u16)(esco_segments[0][0x0080] |
+        ((u16)esco_segments[0][0x0081] << 8));
+    const u8 esco_tunnel_row = esco_segments[0][0x0082];
+    const u8 esco_tunnel_boss = esco_segments[0][0x00C3];
+    const u8 esco_tunnel_area = esco_segments[0][0x00C4];
+    const int esco_tunnel_ok = esco_tunnel > 0 && esco->cavern_exit_requested &&
+          esco_tunnel_start == 0x006B && esco_tunnel_row == 0x3C &&
+          esco_tunnel_boss == 0 && esco_tunnel_area == 0x18;
+    esco_ok &= esco_tunnel_ok;
 
     memcpy(esco_segments, esco_snapshot, sizeof(esco_segments));
     memcpy(esco_vga, esco_snapshot + sizeof(esco_segments),
@@ -2456,11 +2467,13 @@ int main(void) {
     esco_segments[0][0x0083] = 0x1C;
     const int esco_gardens = zeliard_town_advance_pit(
         esco, &esco_game, esco_vga, sizeof(esco_vga), 1, 8);
-    esco_ok &= esco_gardens > 0 && esco->area == ZEL_TOWN_AREA_HELADA &&
+    const int esco_gardens_ok =
+          esco_gardens > 0 && esco->area == ZEL_TOWN_AREA_HELADA &&
           esco_segments[0][0x00C4] == 0x84 &&
           (u16)(esco_segments[0][0x0080] |
                 ((u16)esco_segments[0][0x0081] << 8)) == 0x00BF &&
           esco_segments[0][0x0083] == 0x1A;
+    esco_ok &= esco_gardens_ok;
 
     printf("town_esco_entry: ok=%d rc=%d actor_mman=%d frame=%016llx playfield=%016llx "
            "capture=%016llx state=%016llx npc=%016llx music=%u\n",
@@ -2468,8 +2481,9 @@ int main(void) {
            esco_capture,
            esco_state, esco_npcs,
            (unsigned)esco_runtime_snapshot.music_index);
-    printf("town_esco_routes: tunnel=%d/006b/3c/00/18 "
-           "gardens=%d/84/00bf/1a\n", esco_tunnel, esco_gardens);
+    printf("town_esco_routes: doors=%d tunnel=%d/%d/006b/3c/00/18 "
+           "gardens=%d/%d/84/00bf/1a\n", esco_doors_ok,
+           esco_tunnel_ok, esco_tunnel, esco_gardens_ok, esco_gardens);
     ok &= esco_ok;
     free(esco);
     unsigned long long dirty_entry_hash = 0xCBF29CE484222325ULL;

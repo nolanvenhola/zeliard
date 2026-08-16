@@ -39,21 +39,28 @@ typedef struct {
     zeliard_town_area_t area;
     u8 area_id;
     const char *map_asset;
-    const char *pattern_asset;
 } town_area_asset_t;
 
 static const town_area_asset_t TOWN_AREA_ASSETS[] = {
-    {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt", "cpat.grp"},
-    {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt", "mpat.grp"},
-    {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt", "mpat.grp"},
-    {ZEL_TOWN_AREA_HELADA, 0x84, "hlmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_TUMBA, 0x85, "tmmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_DORADO, 0x86, "drmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_LLAMA, 0x87, "llmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_PUREZA, 0x88, "prmp.mdt", "dpat.grp"},
-    {ZEL_TOWN_AREA_ESCO, 0x89, "esmp.mdt", "dpat.grp"},
+    {ZEL_TOWN_AREA_FELISHIKA, 0x80, "cmap.mdt"},
+    {ZEL_TOWN_AREA_MURALLA, 0x81, "mrmp.mdt"},
+    {ZEL_TOWN_AREA_SATONO, 0x82, "stmp.mdt"},
+    {ZEL_TOWN_AREA_BOSQUE, 0x83, "bsmp.mdt"},
+    {ZEL_TOWN_AREA_HELADA, 0x84, "hlmp.mdt"},
+    {ZEL_TOWN_AREA_TUMBA, 0x85, "tmmp.mdt"},
+    {ZEL_TOWN_AREA_DORADO, 0x86, "drmp.mdt"},
+    {ZEL_TOWN_AREA_LLAMA, 0x87, "llmp.mdt"},
+    {ZEL_TOWN_AREA_PUREZA, 0x88, "prmp.mdt"},
+    {ZEL_TOWN_AREA_ESCO, 0x89, "esmp.mdt"},
 };
+
+static const char *town_pattern_asset_from_descriptor(u8 palette_index) {
+    static const char *const assets[] = {
+        "cpat.grp", "mpat.grp", "dpat.grp",
+    };
+    return palette_index < sizeof(assets) / sizeof(assets[0])
+        ? assets[palette_index] : NULL;
+}
 
 static const town_area_asset_t *town_assets_for_area_id(u8 area_id) {
     for (size_t index = 0;
@@ -466,12 +473,15 @@ static int town_enter_first_frame(zeliard_town_runtime_t *town,
             "tman.grp", 0x1000, 0x6000, 2}))
         return -2;
 
-    /* 106TOWN:load_town_pattern_chunk selects the pattern paired with MDT. */
-    if (load_pattern_bank(game, area_assets->pattern_asset))
+    /* 106TOWN:load_town_pattern_chunk indexes CPAT/MPAT/DPAT with the byte
+     * decoded into town_palette_idx from the active MDT descriptor. */
+    const char *pattern_asset =
+        town_pattern_asset_from_descriptor(town->palette_index);
+    if (!pattern_asset || load_pattern_bank(game, pattern_asset))
         return -4;
     if (!append_event(town, (zeliard_town_event_t){
             ZEL_TOWN_EVENT_LOAD_CPAT, "106TOWN:load_town_pattern_chunk",
-            area_assets->pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2}))
+            pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2}))
         return -4;
 
     /* game.asm loads 207MOLE as a fresh overlay before invoking its entry.
@@ -838,11 +848,14 @@ static int enter_adjacent_town(zeliard_town_runtime_t *town,
         !decode_town_header(cs, town))
         return -2;
     const char *actor_asset = town_actor_asset_from_descriptor(cs);
+    const char *pattern_asset =
+        town_pattern_asset_from_descriptor(town->palette_index);
     if (!actor_asset ||
+        !pattern_asset ||
         !load_fill_chunk(actor_asset, game_data + 0x4000, 0xC000, NULL) ||
         zeliard_gtmcga_encode_tile_block(game_data, 0x10000, 0x4100,
                                          mask_data, 0x10000, 0x7000, 0xA4) ||
-        load_pattern_bank(game, assets->pattern_asset))
+        load_pattern_bank(game, pattern_asset))
         return -2;
 
     town->area = area;
@@ -886,7 +899,7 @@ static int enter_adjacent_town(zeliard_town_runtime_t *town,
         assets->map_asset, 0, TOWN_DESCRIPTOR, 1});
     append_event(town, (zeliard_town_event_t){
         ZEL_TOWN_EVENT_LOAD_PATTERN, "106TOWN:load_town_pattern_chunk",
-        assets->pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2});
+        pattern_asset, 0x1000, TOWN_PATTERN_DEST, 2});
     return 0;
 }
 

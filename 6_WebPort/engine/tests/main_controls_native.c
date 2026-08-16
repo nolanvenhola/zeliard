@@ -1584,7 +1584,7 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), dorado_playfield);
 
-    /* Llama save records select LLMP/DPAT/CMAN, MGT2, and the exact
+    /* Llama save records select LLMP/MPAT/CMAN, MGT2, and the exact
      * 200FIGHT-to-town coordinate handoff in one bootstrap transaction. */
     memset(record, 0, sizeof(record));
     record_file = fopen("assets/stdply.bin", "rb");
@@ -1605,7 +1605,7 @@ int main(void) {
         zeliard_test_game_u8(0x80) == 0x36 &&
         zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 4 &&
-        llama_playfield == 0x490A5B10473F47A4ULL;
+        llama_playfield == 0xAA3FD23307CEEBB7ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/llama-save-bootstrap.ppm", g_framebuf);
     ok &= llama_bootstrap;
@@ -1646,7 +1646,7 @@ int main(void) {
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), pureza_playfield);
 
-    /* Esco save records select ESMP/DPAT/MMAN. Its release target ABh in a
+    /* Esco save records select ESMP/MPAT/MMAN. Its release target ABh in a
      * D7h-wide map resolves to start 009Ah / screen column 0Dh. */
     memset(record, 0, sizeof(record));
     record_file = fopen("assets/stdply.bin", "rb");
@@ -1666,7 +1666,7 @@ int main(void) {
         zeliard_test_game_u8(0x80) == 0x9A &&
         zeliard_test_game_u8(0x83) == 0x0D &&
         zeliard_music_track() == 4 &&
-        esco_playfield == 0x58E96A42F196797CULL;
+        esco_playfield == 0x9211CC39CF1304A2ULL;
     if (getenv("ZELIARD_DUMP"))
         write_frame_ppm("build/esco-save-bootstrap.ppm", g_framebuf);
     ok &= esco_bootstrap;
