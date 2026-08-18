@@ -1,5 +1,6 @@
 #include "../core/types.h"
 #include "../core/framebuf.h"
+#include "../audio/opening_audio.h"
 #include "../render/palette.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +27,7 @@ int zeliard_test_game_set_u8(unsigned offset, unsigned value);
 int zeliard_test_redraw_town(void);
 int zeliard_fight_active(void);
 int zeliard_fight_map_width(void);
+int zeliard_fight_music_chunk(void);
 int zeliard_cavern_transition_active(void);
 int zeliard_cavern_transition_step(void);
 int zeliard_inventory_active(void);
@@ -1645,6 +1647,16 @@ int main(void) {
            pureza_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), pureza_playfield);
+
+    const int pureza_cavern_started = zeliard_test_restart_fight(
+        0x17, 4, 21, 12);
+    const int pureza_cavern_music = pureza_cavern_started &&
+        zeliard_fight_active() && zeliard_fight_music_chunk() == 93 &&
+        zeliard_music_track() == ZEL_MUSIC_MUS8;
+    ok &= pureza_cavern_music;
+    printf("main_controls:pureza_cavern_music: %s chunk=%d track=%d\n",
+           pureza_cavern_music ? "PASS" : "FAIL",
+           zeliard_fight_music_chunk(), zeliard_music_track());
 
     /* Esco save records select ESMP/MPAT/MMAN. Its release target ABh in a
      * D7h-wide map resolves to start 009Ah / screen column 0Dh. */

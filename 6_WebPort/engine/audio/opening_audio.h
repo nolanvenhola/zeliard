@@ -19,7 +19,9 @@ typedef enum {
     ZEL_MUSIC_MUS3 = 11,
     ZEL_MUSIC_MUS4 = 12,
     ZEL_MUSIC_MUS5 = 13,
-    ZEL_MUSIC_MUS6 = 14
+    ZEL_MUSIC_MUS6 = 14,
+    ZEL_MUSIC_MUS7 = 15,
+    ZEL_MUSIC_MUS8 = 16
 } zel_music_track_t;
 
 typedef zel_music_track_t zel_opening_music_track_t;
