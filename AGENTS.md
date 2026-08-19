@@ -1,8 +1,8 @@
 # Zeliard Project — AGENTS.md
 
 Zeliard (Game Arts 1987 / Sierra On-Line 1990) reverse-engineering project.
-Goal: bit-perfect assembly reconstruction, full mechanics documentation,
-and a behaviorally-faithful web port.
+Goal: bit-perfect assembly reconstruction and a behaviorally faithful,
+complete web port.
 
 ---
 
@@ -41,7 +41,6 @@ zelres3.sar: BIT-PERFECT (342,434 bytes)
     working/             Source files (core/, drivers/, zelres1-3/)
     bin/                 Release output (matches 1_OriginalGame binaries)
     bin_debug/           Debug output (DEBUG_BUILD=1, larger binaries)
-    Documentation/       MECHANICS_TO_UNDERSTAND.md + 11 topic docs
     build_all.py         Batch build + SAR pack
     verify1.py           Single-file fast verify
     pack_tasm_sar.py     SAR packer
@@ -56,7 +55,6 @@ zelres3.sar: BIT-PERFECT (342,434 bytes)
   engine/                C source (core/, load/, render/, game/, audio/, platform/)
   shell/                 TypeScript browser host (Vite + WebGL2)
   opening_demo_flow.md   Step-by-step trace of 100OPDMO.asm for web port reference
-6_DOSBoxMCP/             DOSBox-X MCP server — CURRENTLY BROKEN, do not use
 ```
 
 ---
@@ -207,17 +205,14 @@ cd 6_WebPort/shell && npm run dev
 
 - **MASM build**: all 60 files, 3 SARs BIT-PERFECT ✓; canonical behavior-oracle tree
 - **TASM build**: historical compatibility build remains bit-perfect
-- **Mechanics**: 178/229 (78%) fully code-traced in `tasm/Documentation/MECHANICS_TO_UNDERSTAND.md`
 - **Web port**: complete and playable from the opening cinematic through the ending
 
 ---
 
 ## What NOT to Do
 
-- **DOSBox-X MCP** (`6_DOSBoxMCP/`) is broken — do not propose MCP-based workflows
 - **Spice86** traces are stale — do not propose new traces
 - **IDA names** are LLM-guessed — do not use as evidence for symbol renames
-- **Mark mechanics ✓** in MECHANICS_TO_UNDERSTAND.md without an asm trace with code citations
 - **Use TASM behavior as porting truth** — MASM release/debug code and bytes are authoritative
 - **Break MASM bit-perfect** — assembly changes must pass `build_masm.py --verify`
 - **Use --serial** in build commands unless debugging a single failure
@@ -236,8 +231,6 @@ cd 6_WebPort/shell && npm run dev
 | Opening cinematic | `masm/working/zelres1/code/100OPDMO.asm` |
 | Enemy AI (8 worlds) | `masm/working/zelres3/code/301-308EAI*.asm` |
 | Boss handlers | `masm/working/zelres3/code/309-319*.asm` |
-| Mechanics checklist | `tasm/Documentation/MECHANICS_TO_UNDERSTAND.md` |
-| Chunk directory | `tasm/Documentation/code_chunks_overview.md` |
 | Opening cinematic trace | `6_WebPort/opening_demo_flow.md` |
 | MASM debug macros | `masm/working/zelres1/code/debug.inc` |
 | MASM build/SAR pack | `masm/build_masm.py` |

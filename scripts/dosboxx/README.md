@@ -2,7 +2,7 @@
 
 This is the supported automation entry point for running the original release or
 the bit-perfect MASM build in a pinned DOSBox-X environment. It does not use the
-legacy `6_DOSBoxMCP` OCR/debugger automation.
+retired OCR/debugger automation.
 
 ## Commands
 
