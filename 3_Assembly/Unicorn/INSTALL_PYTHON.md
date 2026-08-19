@@ -83,7 +83,7 @@ This is often the easiest option on Windows!
 
 If Python installation is problematic, we can:
 
-**Plan B**: Continue MonoGame development without extraction
+**Plan B**: Continue C/WebAssembly development without extraction
 - Current physics constants are tuned and playable
 - ~90% accurate to DOS behavior
 - Can extract constants later when needed

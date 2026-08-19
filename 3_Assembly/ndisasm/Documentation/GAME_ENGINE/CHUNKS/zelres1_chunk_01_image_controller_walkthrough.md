@@ -1414,6 +1414,6 @@ void update_sprite_frame(Sprite* spr) {
 - ⭐ **Wipe effects**: Sophisticated scene transitions with timing
 - ⭐ **Box drawing**: Decorative borders with gradient effects
 
-**Critical for Port**: This chunk demonstrates advanced VGA programming techniques that are essential for understanding Zeliard's visual effects. The bitplane manipulation, timer-based animation, and hardware-assisted masking must be replicated in MonoGame using shaders or equivalent techniques.
+**Critical for Port**: This chunk demonstrates advanced VGA programming techniques that are essential for understanding Zeliard's visual effects. The bitplane manipulation, timer-based animation, and hardware-assisted masking must be replicated by the portable renderer.
 
 **Size**: 5.5KB of dense assembly containing the entire opening scene graphics engine. This is masterful code - modular, efficient, and feature-rich for 1990 standards!

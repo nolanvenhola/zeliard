@@ -1056,6 +1056,6 @@ uint16_t music_track = music_table[current_level];
 - ✅ **Music Management** - Starts appropriate background music
 - ✅ **Timing Control** - Synchronized with DOS 18.2 Hz timer
 
-**Critical for Port**: This chunk defines the level loading sequence. Understanding its data structures, animation system, and resource management is essential for recreating Zeliard's level transitions in MonoGame.
+**Critical for Port**: This chunk defines the level loading sequence. Understanding its data structures, animation system, and resource management is essential for recreating Zeliard's level transitions in the portable engine.
 
 **Size**: 3KB of highly optimized code managing complex multi-stage loading with animations!

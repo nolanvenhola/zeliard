@@ -1,19 +1,31 @@
-# Zeliard Reverse Engineering Project
+# Zeliard — Bit-Perfect Reconstruction and Complete Web Port
 
-Complete reverse engineering of Zeliard (Game Arts, 1987/1990) — a DOS
-action-RPG. Primary goal: a fully reconstructed, bit-perfect assembly
-source tree that compiles back to the original game binaries, with
-every byte and every mechanic explained.
+**[Play the complete game in your browser](https://nolanvenhola.github.io/zeliard/)**
 
-## Public Web Demo
+A complete reverse engineering and preservation project for **Zeliard**
+(Game Arts, 1987; Sierra On-Line, 1990), the classic action RPG/platformer.
+The repository contains a bit-perfect MASM reconstruction of the DOS game,
+mechanics documentation, format and archive tooling, behavioral test oracles,
+and a complete C/WebAssembly port playable from beginning to end in a modern
+browser.
 
-Play the current WASM opening-demo port at
-[nolanvenhola.github.io/zeliard](https://nolanvenhola.github.io/zeliard/).
-The site is built from the C engine and reconstructed MASM assets by the
-repository's GitHub Pages workflow.
+## Play Zeliard in Your Browser
+
+**[Play the complete game](https://nolanvenhola.github.io/zeliard/)** — no
+installation or DOS emulator required.
+
+The web edition is a behaviorally faithful reimplementation rather than a DOS
+emulator wrapper. Its portable C engine compiles to WebAssembly, with a
+TypeScript browser host providing display, audio, input, gamepad, and save-file
+integration. It runs the full adventure through the ending and uses resources
+reconstructed from the canonical MASM source tree.
 
 ## Current State
 
+- **Complete browser port** — fully playable from the opening cinematic to the ending
+- **Portable C/WebAssembly engine** with a TypeScript/Vite browser shell
+- **Original-compatible 256-byte `.USR` saves** import and export between DOS and web editions
+- **Oracle-driven compatibility suite** covering gameplay, rendering, input, transitions, and audio
 - **60 ASM source files** — all compile bit-perfect to original binaries
 - **All three SAR archives** (zelres1/2/3.sar) rebuild bit-perfect from source
 - **Zero raw-hex memory operands** without symbolic EQU names (`find_missing_equs.py` reports 0 MISSING + 0 UNUSED)
@@ -24,13 +36,12 @@ repository's GitHub Pages workflow.
 ## Quick Build
 
 ```bash
-cd 3_Assembly/tasm
-python3 build_all.py --verify
+cd 3_Assembly/masm
+python build_masm.py --verify
 ```
 
-Compiles all 60 ASM files in a single DOSBox-X session, copies data,
-packs zelres1/2/3.sar, and verifies bit-perfect output. Required success
-output:
+Compiles all 60 canonical MASM source files, copies data, packs
+zelres1/2/3.sar, and verifies bit-perfect output. Required success output:
 
 ```
 zelres1.sar: BIT-PERFECT (256,952 bytes)
@@ -38,7 +49,7 @@ zelres2.sar: BIT-PERFECT (345,218 bytes)
 zelres3.sar: BIT-PERFECT (342,434 bytes)
 ```
 
-For single-file iteration: `python3 verify1.py <relpath>` (sub-second
+For single-file iteration: `python verify1.py <relpath>` (sub-second
 per file) before running the full SAR rebuild.
 
 ## Project Structure
@@ -133,10 +144,10 @@ Reference materials — game manual (PDF), maps (BMP), MIDI music,
 sprites, playthrough notes. Includes `MdtViewer/` (Avalonia UI for
 .MDT dungeon maps).
 
-### 5_MonoGame/MONOGAME_AUTHENTIC/
-Active C# port using MonoGame. Loads real SAR data and renders via
-the same nibble-pair palette system the original game uses. Status:
-opening cinematic + title screen working; gameplay scenes WIP.
+### 6_WebPort/
+Complete, start-to-finish playable browser port. A portable C engine implements
+the game while the TypeScript/Vite shell supplies the web platform, audio,
+display, input, gamepad, save-file, automated-playthrough, and deployment layers.
 
 ### 6_DOSBoxMCP/
 MCP server for live DOSBox-X control from Claude Code (breakpoints,

@@ -924,6 +924,6 @@ Typical breakdown:
 - ✅ **Resource management** loads levels, graphics, music dynamically
 - ✅ **Event system** processes game events (item pickup, level complete)
 
-**Critical for Port**: This chunk defines the game loop structure. Understanding its flow is essential for replicating Zeliard's timing, state management, and system coordination in MonoGame.
+**Critical for Port**: This chunk defines the game loop structure. Understanding its flow is essential for replicating Zeliard's timing, state management, and system coordination in the portable engine.
 
 **Size**: 16KB of tightly-packed assembly code managing all core systems. This is excellent game architecture for 1990 - modular, event-driven, and efficient!

@@ -40,12 +40,12 @@ The original DOS game used:
 - **Roland MT-32** for enhanced audio (recommended)
 - **PC Speaker** for basic audio
 
-## Usage in MonoGame Port
+## Usage in the Web Port
 
-The MonoGame port (`../../5_MonoGame/MONOGAME_AUTHENTIC/`) can use these tracks:
-- Convert `.ogg` to MonoGame-compatible format
-- Use as background music via `MediaPlayer` class
-- Implement music switching per level/town
+The C/WebAssembly port (`../../6_WebPort/`) recreates the original legacy audio
+path from the reconstructed game resources. Reference recordings in this
+directory are useful for comparison and verification, not as replacement game
+audio.
 
 ## Playing the Music
 

@@ -546,57 +546,17 @@ Color GetPixelColor(int paletteIndex)
 
 ## Implementation Notes
 
-### MonoGame C# Implementation
+### C/WebAssembly Implementation
 
-**Current Status** (as of 2026-02-10):
-- ✅ Format 0x06 decompression working (`GrpDecoder.DecompressFormat6`)
-- ✅ 6-bit packed pixel decode working (`GrpDecoder.DecodeGameplaySprites`)
-- ✅ Sprite sheet rendering working (8 frames × N rows)
-- ✅ 64-color palette verified from DOSBox
-- ⚠️ Individual sprite extraction needs boundary detection
-- ❌ Animation frame timing not yet implemented
+The completed portable engine decodes the original resources directly and
+keeps their DOS timing and palette behavior behind oracle-backed tests.
 
 **Files**:
-- `MONOGAME_AUTHENTIC/Core/GrpDecoder.cs` - Decoder implementation
-- `MONOGAME_AUTHENTIC/Core/DOSPalette.cs` - Palette system
-- `MONOGAME_AUTHENTIC/Scenes/ChunkExplorer.cs` - Testing interface
-
-### Remaining Work
-
-**Sprite System**:
-1. Detect animation set boundaries (vertical stacking)
-2. Extract individual sprites with bounding boxes
-3. Build sprite atlas with named frames
-4. Implement frame timing (18.2 Hz DOS timer)
-5. Add sprite flipping (left/right facing)
-
-**Dialogue System**:
-1. Implement format 0xC6 decompressor
-2. Extract all dialogue to JSON
-3. Map dialogue IDs to NPCs
-4. Add text rendering with character wrapping
-
-**Integration**:
-1. Load sprites on-demand (not all at once)
-2. Cache decompressed data
-3. Implement sprite batching for performance
-
-### Testing
-
-**Chunk Explorer** (F2 in-game):
-- Mode 18: "VGA Framebuf" - Raw VGA framebuffer render
-- Mode 19: "GRP Full" - Two-stage .grp decompression
-- Mode 20: "Gameplay Sprites" - 6-bit packed sprite render
-
-**Verification**:
-```bash
-cd MONOGAME_AUTHENTIC
-dotnet run
-# Press F2 to open Chunk Explorer
-# Navigate to zelres2 → chunk_18
-# Press right arrow to cycle decode modes
-# Mode 20 should show 8×N grid of sprites
-```
+- `6_WebPort/engine/load/grp.c` - GRP decoder
+- `6_WebPort/engine/load/fill_buffer.c` - compressed resource decoder
+- `6_WebPort/engine/render/mcga_render.c` - MCGA rendering primitives
+- `6_WebPort/engine/render/palette.c` - palette conversion
+- `6_WebPort/engine/tests/` - native parity coverage
 
 ### Performance Notes
 
@@ -620,9 +580,9 @@ dotnet run
 - [UNKNOWN_CHUNKS_CLASSIFIED.md](UNKNOWN_CHUNKS_CLASSIFIED.md) - Chunk type identification
 
 **Source Code**:
-- `MONOGAME_AUTHENTIC/Core/GrpDecoder.cs:852` - `DecodeGameplaySprites()`
-- `MONOGAME_AUTHENTIC/Core/GrpDecoder.cs:455` - `DecompressFormat6()`
-- `MONOGAME_AUTHENTIC/Scenes/ChunkExplorer.cs` - Testing interface
+- `6_WebPort/engine/load/grp.c` - GRP decoding
+- `6_WebPort/engine/load/fill_buffer.c` - resource decompression
+- `6_WebPort/engine/render/mcga_render.c` - framebuffer rendering
 
 **External Resources**:
 - DOSBox memory dumps: `c:\Projects\Zeliard\DOSBOX DUMPS\MEMDUMP12.BIN`
@@ -700,5 +660,5 @@ The gameplay palette is **computed by driver code** (not stored in chunks). It's
 
 *Documentation completed: 2026-02-10*
 *Reverse engineered by: Claude Sonnet 4.5*
-*Verified against: DOSBox-X memory dumps, original DOS binary, MonoGame decoder*
+*Verified against: DOSBox-X memory dumps, original DOS binary, portable C decoder*
 *Status: Production-ready reference*

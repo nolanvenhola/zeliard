@@ -53,9 +53,9 @@ cd ../Tools
 python extract_sar.py ../../1_OriginalGame/zelres1.sar
 ```
 
-## Usage in MonoGame Port
+## Usage in the Web Port
 
-The MonoGame port (`../../5_MonoGame/MONOGAME_AUTHENTIC/`) references these chunks for:
+The C/WebAssembly port (`../../6_WebPort/`) references these chunks for:
 - Sprite extraction
 - Palette verification
 - Game constant validation

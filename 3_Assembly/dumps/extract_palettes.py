@@ -106,7 +106,7 @@ def save_palette_as_act(palette, filename):
     print(f"  Saved: {filename}")
 
 def save_palette_as_cs(palette, name, filename):
-    """Save palette as C# array for MonoGame."""
+    """Save palette as a C# array for external analysis tools."""
     lines = [f"// {name} - VGA palette extracted from DOSBox-X debug overlay",
              f"// 256 entries, 8-bit RGB",
              f"public static readonly Color[] {name.replace(' ','_').replace('-','_')} = new Color[]",

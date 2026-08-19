@@ -738,7 +738,7 @@ Particle Array (shared with chunk_04):
 
 ---
 
-## Porting to C#/MonoGame
+## Historical C# Porting Sketch
 
 ### Recommended Architecture (extends chunk_04 approach)
 

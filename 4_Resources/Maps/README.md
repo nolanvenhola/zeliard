@@ -60,7 +60,7 @@ Double-click to open in default image viewer (Paint, Photos, etc.)
 - **ImageMagick**: Command-line: `magick display <map-file>.bmp`
 - **Web browser**: Drag and drop into browser window
 
-## Usage in MonoGame Port
+## Usage in the Web Port
 
 These maps can be used for:
 - Level layout reference
@@ -68,7 +68,7 @@ These maps can be used for:
 - Tile placement verification
 - Minimap rendering
 
-See `../../5_MonoGame/MONOGAME_AUTHENTIC/Physics/CollisionMap.cs` for collision system.
+See `../../6_WebPort/engine/game/` for the active gameplay implementation.
 
 ## Related Resources
 

@@ -374,7 +374,7 @@ reds/pinks) in the upper 192 entries.
 
 ## 9. Port implications
 
-For the MonoGame port:
+For the C/WebAssembly port:
 - **Sprite source**: keep at-source-byte format (48 B per tile or
   16 B per UI tile); decode on load into RGBA texture sheets.
 - **HUD buffer**: implement as a 28×19 byte mini-grid; each cell maps

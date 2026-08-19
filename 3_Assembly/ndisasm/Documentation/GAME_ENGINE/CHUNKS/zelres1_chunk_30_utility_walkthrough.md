@@ -571,4 +571,4 @@ if (Keyboard.IsKeyPressed(Keys.F2))
 
 **ZELRES1/Chunk_30** is likely remnant of development tools. It's very small (429 bytes) and contains specialized functions that aren't part of core gameplay. In the C# port, these should be implemented as debug-only features that can be toggled on/off.
 
-**Recommendation**: Implement similar debug utilities for the MonoGame port to aid development and testing!
+**Recommendation**: Implement similar debug utilities in the portable port to aid development and testing!

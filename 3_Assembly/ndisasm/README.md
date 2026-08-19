@@ -68,8 +68,5 @@ mov ax, N; call [cs:0x3008] ; Palette switch (driver function 4)
 
 ## Regenerating Disassembly
 
-To regenerate from original binaries:
-```bash
-cd ../../../5_MonoGame/BuildScripts
-./disassemble_all_complete.bat
-```
+The archived disassemblies are retained as historical references. Canonical
+reverse-engineering work now lives in `../masm/working/`.
