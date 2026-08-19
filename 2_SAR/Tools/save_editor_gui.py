@@ -35,7 +35,6 @@ ENUMS: dict[str, list[tuple[int, str]]] = {
         (4, "Knight's Sword"),
         (5, 'Illumination Sword'),
         (6, 'Enchantment Sword'),
-        (7, 'Sword of the Fairy Flame (secret)'),
     ],
     'selected_spell': [
         (0, 'none'),

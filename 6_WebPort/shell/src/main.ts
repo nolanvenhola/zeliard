@@ -50,8 +50,6 @@ type EngineExports = {
     _zeliard_debug_set_no_gravity(enabled: number): void;
     _zeliard_debug_restore_shield_magic(): void;
     _zeliard_debug_add_item(itemId: number): number;
-    _zeliard_test_defeat_jashiin(): number;
-    _zeliard_test_start_ending(): number;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
@@ -126,10 +124,6 @@ const invincibleToggleEl = document.getElementById(
     'invincible-toggle') as HTMLButtonElement;
 const unlimitedMagicToggleEl = document.getElementById(
     'unlimited-magic-toggle') as HTMLButtonElement;
-const debugKillBossEl = document.getElementById(
-    'debug-kill-boss') as HTMLButtonElement;
-const debugStartEndingEl = document.getElementById(
-    'debug-start-ending') as HTMLButtonElement;
 const restoreResourcesEl = document.getElementById(
     'restore-resources') as HTMLButtonElement;
 const debugItemSelectEl = document.getElementById(
@@ -407,14 +401,22 @@ async function boot() {
     const checkpointKey = (slot: string) =>
         `zeliard.debugCheckpoint.${slot}`;
     const townNames = [
-        'Felishika', 'Muralla', 'Satono', 'Bosque', 'Helada',
-        'Tumba', 'Dorado', 'Llama', 'Pureza', 'Esco',
+        'Felishika Castle', 'Muralla Town', 'Satono Town', 'Bosque Village',
+        'Helada Town', 'Tumba Town', 'Dorado Town', 'Llama Town',
+        'Pureza Town', 'Esco Village',
     ];
     const cavernMapNames = [
-        'MP10', 'MP1D', 'MP20', 'MP21', 'MP2D', 'MP30', 'MP31', 'MP3D',
-        'MP40', 'MP41', 'MP4D', 'MP50', 'MP51', 'MP5D', 'MP60', 'MP61',
-        'MP62', 'MP6D', 'MP70', 'MP71', 'MP72', 'MP73', 'MP7D', 'MP80',
-        'MP81', 'MP82', 'MP83', 'MP84', 'MP8D', 'MP90', 'MPA0',
+        'Cavern of Malicia', 'Cavern of Malicia',
+        'Cavern of Peligro', 'Cavern of Peligro', 'Cavern of Peligro',
+        'Cavern of Madera', 'Cavern of Riza', 'Cavern of Riza',
+        'Cavern of Glacial', 'Cavern of Escarcha', 'Cavern of Glacial',
+        'Cavern of Corroer', 'Cavern of Cementar', 'Cavern of Cementar',
+        'Cavern of Tesoro', 'Cavern of Plata', 'Cavern of Arrugia',
+        'Cavern of Tesoro', 'Cavern of Caliente', 'Cavern of Reaccion',
+        'Cavern of Correr', "Paguro's Hut", 'Cavern of Caliente',
+        'Cavern of Absor', 'Cavern of Milagro', 'Cavern of Desleal',
+        'Cavern of Falter', 'Cavern of Final', 'Cavern of Absor',
+        "Jashiin's room", "Jashiin's room",
     ];
     const isCheckpoint = (value: any): value is DebugCheckpoint =>
         value?.version === 1 && typeof value.name === 'string' &&
@@ -831,8 +833,6 @@ async function boot() {
         debugWarpRoomEl.disabled = !debugEnabled;
         const fightActive = debugEnabled &&
             Module._zeliard_fight_active() !== 0;
-        debugKillBossEl.disabled = !fightActive;
-        debugStartEndingEl.disabled = !debugEnabled;
         if (!fightActive) minimapWarpArmed = false;
         debugWarpMapEl.disabled = !fightActive;
         debugWarpMapEl.textContent = `Warp on Map: ${
@@ -965,25 +965,6 @@ async function boot() {
     unlimitedMagicToggleEl.addEventListener('click', () => {
         Module._zeliard_debug_set_unlimited_magic(
             Module._zeliard_debug_unlimited_magic() ? 0 : 1);
-        refreshGameControls();
-    });
-    debugKillBossEl.addEventListener('click', () => {
-        Module._zeliard_release_all_keys();
-        const defeated = Module._zeliard_test_defeat_jashiin() !== 0;
-        debugKillBossEl.textContent = defeated ? 'Boss Defeated' : 'Not in Jashiin Fight';
-        window.setTimeout(() => {
-            debugKillBossEl.textContent = 'Kill Boss';
-        }, 1200);
-        refreshGameControls();
-    });
-    debugStartEndingEl.addEventListener('click', () => {
-        Module._zeliard_release_all_keys();
-        const started = Module._zeliard_test_start_ending() !== 0;
-        debugStartEndingEl.textContent = started ? 'Ending Started' : 'Start Failed';
-        window.setTimeout(() => {
-            debugStartEndingEl.textContent = 'Start Final Ending';
-        }, 1200);
-        minimapWarpArmed = false;
         refreshGameControls();
     });
     restoreResourcesEl.addEventListener('click', () => {
@@ -1307,7 +1288,11 @@ async function boot() {
             if (checkpoint.location === 'cavern' &&
                 checkpoint.record[0xC4] < 0x80)
                 checkpoint.selector = checkpoint.record[0xC4];
-            checkpoint.name = safeCheckpointName(checkpoint.name || file.name);
+            /* The file picker is the source of truth for an imported
+             * checkpoint's visible name. This keeps the slot label aligned
+             * when a .zstate file was renamed on disk or the browser added
+             * a duplicate-download suffix. */
+            checkpoint.name = safeCheckpointName(file.name);
             localStorage.setItem(checkpointKey(checkpointSlotEl.value),
                 JSON.stringify(checkpoint));
             checkpointNameEl.value = checkpoint.name;

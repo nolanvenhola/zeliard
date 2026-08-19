@@ -21,7 +21,7 @@ What you get:
   per-cavern bitmaps, etc.) — every named field is editable.
 - **Booleans as checkboxes**.
 - **Enumerated values as dropdowns** with human-readable labels — weapons
-  (Training/WiseMan/Spirit/Knight/Illumination/Enchantment/Fairy Flame),
+  (Training/WiseMan/Spirit/Knight/Illumination/Enchantment),
   shields (Clay/WiseMan/Stone/Honor/Light/Titanium), towns (Muralla
   through Esco), spells (Espada/Saeta/Fuego/Lanzar/Rascar/Agua/Guerra),
   items (Ken'ko/Juu-en/Elixir/Chikara/Magia/HolyWater/SabreOil/Kioku),

@@ -74,6 +74,9 @@
         #game-controls, #debug-controls {
             flex-wrap: wrap; justify-content: center;
         }
+        #save-controls { order: 1; }
+        #debug-toggle { order: 2; }
+        #debug-controls { order: 3; }
         #game-stats {
             display: flex; gap: 14px; padding: 5px 10px;
             border: 1px solid #555; background: #080808;
@@ -82,7 +85,8 @@
         #debug-warp-destination,
         #checkpoint-slot, #checkpoint-name,
         #music-toggle, #sound-toggle, #debug-toggle, #minimap-toggle,
-        #invincible-toggle, #flying-toggle, #debug-warp-room, #debug-warp-map,
+        #invincible-toggle, #unlimited-magic-toggle, #flying-toggle,
+        #debug-warp-room, #debug-warp-map,
         #restore-resources, #debug-add-item, #checkpoint-save, #checkpoint-load,
         #checkpoint-clear, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
@@ -96,7 +100,8 @@
         #checkpoint-name { width: 170px; padding: 0 8px; }
         #game-speed { min-width: 52px; padding: 0 6px; }
         #music-toggle, #sound-toggle, #debug-toggle, #minimap-toggle,
-        #invincible-toggle, #flying-toggle, #debug-warp-room, #debug-warp-map,
+        #invincible-toggle, #unlimited-magic-toggle, #flying-toggle,
+        #debug-warp-room, #debug-warp-map,
         #restore-resources, #debug-add-item, #checkpoint-save, #checkpoint-load,
         #checkpoint-clear, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
@@ -104,7 +109,9 @@
         }
         #music-toggle[aria-pressed="false"], #sound-toggle[aria-pressed="false"],
         #debug-toggle[aria-pressed="false"], #minimap-toggle[aria-pressed="false"],
-        #invincible-toggle[aria-pressed="false"], #flying-toggle[aria-pressed="false"],
+        #invincible-toggle[aria-pressed="false"],
+        #unlimited-magic-toggle[aria-pressed="false"],
+        #flying-toggle[aria-pressed="false"],
         #debug-warp-map[aria-pressed="false"] {
             color: #999; border-color: #555;
         }
@@ -180,17 +187,13 @@
                 <span>Level <output id="player-level">0</output></span>
                 <span>Experience <output id="player-experience">0</output> / <output id="player-experience-threshold">0</output></span>
             </span>
-            <button id="debug-toggle" type="button" aria-pressed="false"
-                    aria-controls="debug-controls">Testing Tools: Off</button>
             <button id="keymap-open" type="button">Controls</button>
         </div>
         <div id="debug-controls" aria-label="Testing and debugging controls" hidden>
             <button id="minimap-toggle" type="button" aria-pressed="false">Map: Off</button>
             <button id="invincible-toggle" type="button" aria-pressed="false">Invincible: Off</button>
             <button id="unlimited-magic-toggle" type="button" aria-pressed="false">Unlimited Magic: Off</button>
-            <button id="debug-kill-boss" type="button">Kill Boss</button>
-            <button id="debug-start-ending" type="button">Start Final Ending</button>
-            <button id="restore-resources" type="button">Restore Health + Shield + Magic</button>
+            <button id="restore-resources" type="button">Restore</button>
             <select id="debug-item-select" aria-label="Item to add">
                 <option value="1">Ken'ko Potion</option>
                 <option value="2">Juu-en Fruit</option>
@@ -265,6 +268,8 @@
             <label class="file-button" for="open-save">Open .usr</label>
             <input id="open-save" type="file" accept=".usr,application/octet-stream" hidden />
         </div>
+        <button id="debug-toggle" type="button" aria-pressed="false"
+                aria-controls="debug-controls">Testing Tools: Off</button>
     </div>
     <dialog id="keymap-dialog" aria-labelledby="keymap-title">
         <div id="keymap-header">
@@ -308,7 +313,7 @@
                     </tbody>
                 </table>
             </section>
-            <p id="keymap-note">Enable Testing Tools below the game to reveal the cavern map, Invincible, Unlimited Magic, Kill Boss, Restore Health + Shield + Magic, add-item, and Flying controls.</p>
+            <p id="keymap-note">Enable Testing Tools below the game to reveal the cavern map, Invincible, Unlimited Magic, Restore, add-item, and Flying controls.</p>
         </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>
