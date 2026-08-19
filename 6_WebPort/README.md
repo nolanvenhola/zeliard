@@ -159,14 +159,17 @@ until their game-tick boundary can be observed directly.
 
 ## Status
 
-Milestone | What works
----|---
-M1     | **COMPLETE** - WASM/TypeScript shell, MCGA framebuffer, palette, input, and deployment pipeline
-M2     | **COMPLETE** - opening cinematic, pause/input, exact MSCADLIB music, and exact SNDADLIB effects
-**M3** | _ACTIVE_ - executable `game.asm` handoff, first playable Felishika castle, and exact MSCADLIB castle music
-M4     | Muralla cavern + Cangrejo boss
-M5     | Remaining content + MT-32 audio
+**Complete.** The web port is playable from the opening cinematic through the
+final battle and ending. It includes every town and cavern, combat, bosses,
+inventory and shops, save-file import/export, keyboard and gamepad input,
+legacy audio playback, and the original display modes.
 
-The frozen M2 production and oracle contract is recorded in
-[`OPENING_REGRESSION_BASELINE.md`](OPENING_REGRESSION_BASELINE.md). Gameplay
-work must preserve that baseline while extending the same MASM-shaped runtime.
+This is a native reimplementation of the game's behavior in portable C, not an
+emulator-hosted release. The bit-perfect MASM reconstruction remains the
+behavior oracle, backed by native parity tests, browser integration tests,
+deterministic captures, and full-playthrough regression coverage. The v86-based
+hybrid page is retained only as a development reference lane.
+
+The frozen opening production and oracle contract is recorded in
+[`OPENING_REGRESSION_BASELINE.md`](OPENING_REGRESSION_BASELINE.md); the broader
+test suite extends those parity guarantees across the complete game.
