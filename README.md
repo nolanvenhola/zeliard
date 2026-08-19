@@ -2,6 +2,8 @@
 
 **[Play the complete game in your browser](https://nolanvenhola.github.io/zeliard/)**
 
+**[Read the source-code and reverse-engineering overview](https://nolanvenhola.github.io/zeliard/source-code/)**
+
 A complete reverse engineering and preservation project for **Zeliard**
 (Game Arts, 1987; Sierra On-Line, 1990), the classic action RPG/platformer.
 The repository contains a bit-perfect MASM reconstruction of the DOS game,
