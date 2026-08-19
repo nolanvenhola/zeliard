@@ -77,20 +77,102 @@ async function reachEnding(page, route, checkpoints) {
     m._zeliard_test_game_set_u8(0x91, 0x00);
     const started = m._zeliard_test_restart_fight(0x1e, 4, 21, 12);
     for (let i = 0; i < 12; ++i) m._zeliard_tick(20);
+    m._zeliard_test_game_set_u8(0xff26, 0xff);
+    const defeated = m._zeliard_test_defeat_jashiin();
+    /* remaining_caverns_native owns MAO2's complete boss-death animation.
+       Compose its verified outputs here so this broad route gate starts at
+       200FIGHT's subsequent faint/castle-loader boundary, matching
+       main_controls_native and debug_support_native. */
+    if (defeated) {
+      m._zeliard_test_game_set_u8(0xc2, 0);
+      m._zeliard_test_game_set_u8(0x49, 0xff);
+    }
     return { started, width: m._zeliard_fight_map_width(),
-      defeated: m._zeliard_test_defeat_jashiin() };
+      defeated };
   });
   requireAt(`${route}:jashiin`, start.started && start.width === 73 && start.defeated,
     JSON.stringify(start));
-  let result = await page.evaluate(() => {
+  const castle = await page.evaluate(() => {
     const m = window.__zeliard;
     let ticks = 0;
-    while (!m._zeliard_ending_active() && ticks++ < 400) m._zeliard_tick(20);
-    return { ticks, active: m._zeliard_ending_active(),
+    let faintSilent = false;
+    while (!m._zeliard_town_dialog_active() && ticks++ < 1800) {
+      m._zeliard_tick(20);
+      /* Headless Chromium has no listener-driven end-of-track callback.
+         Release the same FF26h waits that the live WebAudio driver releases
+         when Jashiin's score/fanfare reaches its authored end. */
+      const track = m._zeliard_music_track();
+      if (track > 0) m._zeliard_music_complete(track);
+      if (m._zeliard_fight_active() && m._zeliard_test_game_u8(0x49) &&
+          m._zeliard_music_track() === 0)
+        faintSilent = true;
+    }
+    return {
+      ticks,
+      faintSilent,
+      dialog: m._zeliard_town_dialog_active(),
+      fight: m._zeliard_fight_active(),
+      area: m._zeliard_town_area(),
+      selector: m._zeliard_test_game_u8(0xc4),
+      quest: m._zeliard_test_game_u8(0x49),
+      position: m._zeliard_test_game_u16(0x80),
+      column: m._zeliard_test_game_u8(0x83),
+      ending: m._zeliard_ending_active(),
+    };
+  });
+  requireAt(`${route}:castle-greeting`, castle.ticks < 1800 &&
+    castle.faintSilent && castle.dialog && !castle.fight &&
+    castle.area === 0 && castle.selector === 0x80 &&
+    castle.quest === 0xff && castle.position === 0x11 &&
+    castle.column === 0x0d && !castle.ending, JSON.stringify(castle));
+  checkpoints.push(await checkpoint(page, `${route}:castle-greeting`));
+
+  const king = await page.evaluate(() => {
+    const m = window.__zeliard;
+    let greetingTicks = 0;
+    while (m._zeliard_town_dialog_active() && greetingTicks++ < 500) {
+      m._zeliard_key(32);
+      m._zeliard_tick(90);
+    }
+    const greetingClosed = !m._zeliard_town_dialog_active();
+    const princessBlocked = m._zeliard_test_enter_room(3) === -2;
+    const entered = m._zeliard_test_enter_room(1) === 0;
+    let roomTicks = 0;
+    let sawRoom = false;
+    while (roomTicks++ < 5000) {
+      m._zeliard_key(32);
+      m._zeliard_tick(90);
+      if (m._zeliard_room_kind() === 1) sawRoom = true;
+      if (sawRoom && m._zeliard_room_kind() === 0) break;
+    }
+    return {
+      greetingTicks,
+      greetingClosed,
+      princessBlocked,
+      entered,
+      roomTicks,
+      sawRoom,
+      room: m._zeliard_room_kind(),
+      ending: m._zeliard_ending_active(),
+    };
+  });
+  requireAt(`${route}:post-victory-king`, king.greetingTicks < 500 &&
+    king.greetingClosed && king.princessBlocked && king.entered &&
+    king.roomTicks < 5000 && king.sawRoom && king.room === 0 &&
+    !king.ending, JSON.stringify(king));
+  checkpoints.push(await checkpoint(page, `${route}:king-complete`));
+
+  const result = await page.evaluate(() => {
+    const m = window.__zeliard;
+    const entered = m._zeliard_test_enter_room(3) === 0;
+    let ticks = 0;
+    while (!m._zeliard_ending_active() && ticks++ < 100)
+      m._zeliard_tick(90);
+    return { entered, ticks, active: m._zeliard_ending_active(),
       scene: m._zeliard_ending_scene(), music: m._zeliard_fight_music_chunk() };
   });
-  requireAt(`${route}:250ENDMO`, result.active && result.ticks < 400,
-    JSON.stringify(result));
+  requireAt(`${route}:princess-hut-250ENDMO`, result.entered &&
+    result.active && result.ticks < 100, JSON.stringify(result));
   checkpoints.push(await checkpoint(page, `${route}:ending-first-frame`));
 }
 
