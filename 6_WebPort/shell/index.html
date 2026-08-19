@@ -3,7 +3,43 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zeliard</title>
+    <title>Zeliard Source Code Reconstruction &amp; Complete Browser Game</title>
+    <meta name="description" content="Play the complete Zeliard DOS action RPG in your browser and explore its bit-perfect MASM source reconstruction, C/WebAssembly port, tools, and parity tests." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://nolanvenhola.github.io/zeliard/" />
+    <link rel="sitemap" type="application/xml" href="https://nolanvenhola.github.io/zeliard/sitemap.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zeliard Reconstruction Project" />
+    <meta property="og:title" content="Zeliard Source Code Reconstruction &amp; Complete Browser Game" />
+    <meta property="og:description" content="Play Zeliard from beginning to end and explore the bit-perfect MASM reconstruction and complete C/WebAssembly port." />
+    <meta property="og:url" content="https://nolanvenhola.github.io/zeliard/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Zeliard Source Code Reconstruction &amp; Browser Game" />
+    <meta name="twitter:description" content="A complete playable web port backed by a bit-perfect reconstruction of the original DOS source." />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "VideoGame",
+          "name": "Zeliard Browser Port",
+          "url": "https://nolanvenhola.github.io/zeliard/",
+          "description": "A complete, behaviorally faithful browser reimplementation of the 1990 DOS action RPG Zeliard.",
+          "gamePlatform": "Web browser",
+          "playMode": "SinglePlayer",
+          "applicationCategory": "Game"
+        },
+        {
+          "@type": "SoftwareSourceCode",
+          "name": "Zeliard Bit-Perfect Source Reconstruction",
+          "url": "https://nolanvenhola.github.io/zeliard/source-code/",
+          "codeRepository": "https://github.com/nolanvenhola/zeliard",
+          "description": "Bit-perfect MASM reconstruction of Zeliard with a complete C and WebAssembly port, reverse-engineering tools, and oracle-backed parity tests.",
+          "programmingLanguage": ["Assembly", "C", "TypeScript", "WebAssembly"]
+        }
+      ]
+    }
+    </script>
     <style>
         :root { color-scheme: dark; }
         html, body {
@@ -25,6 +61,22 @@
             border-radius: 3px; background: rgba(1, 7, 8, .78);
             color: #d9ffff; box-shadow: 0 2px 10px rgba(0, 0, 0, .7);
             pointer-events: none; box-sizing: border-box;
+        }
+        #project-intro {
+            position: fixed; top: 8px; left: 10px; z-index: 4;
+            max-width: 300px; padding: 7px 9px;
+            border: 1px solid #333; background: rgba(0, 0, 0, .82);
+            color: #aaa; font-size: 10px; line-height: 1.35;
+        }
+        #project-intro h1 {
+            margin: 0 0 3px; color: #eee; font-size: 12px; font-weight: 600;
+        }
+        #project-intro p { margin: 0; }
+        #project-intro a { color: #9ee; }
+        @media (max-width: 1350px), (max-height: 760px) {
+            #project-intro { top: auto; bottom: 8px; max-width: 250px; }
+            #project-intro p { display: none; }
+            #project-intro h1 { margin: 0; }
         }
         #minimap.expanded {
             top: 50%; right: 50%; width: 86%; padding: 8px;
@@ -162,6 +214,10 @@
     </style>
 </head>
 <body>
+    <header id="project-intro">
+        <h1>Zeliard Source Reconstruction</h1>
+        <p>Bit-perfect MASM reverse engineering with a complete C/WebAssembly game. <a href="./source-code/">Explore the source project</a>.</p>
+    </header>
     <div id="stage">
         <div id="screen-wrap">
             <canvas id="screen" width="320" height="200"></canvas>

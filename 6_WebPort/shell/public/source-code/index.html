@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeliard Source Code &amp; Reverse Engineering Project</title>
+    <meta name="description" content="Explore the complete Zeliard reverse-engineering project: a bit-perfect MASM source reconstruction, C/WebAssembly port, archive tools, and behavior tests." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://nolanvenhola.github.io/zeliard/source-code/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zeliard Reconstruction Project" />
+    <meta property="og:title" content="Zeliard Source Code &amp; Reverse Engineering Project" />
+    <meta property="og:description" content="A bit-perfect MASM reconstruction and complete C/WebAssembly port of the classic DOS action RPG." />
+    <meta property="og:url" content="https://nolanvenhola.github.io/zeliard/source-code/" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareSourceCode",
+      "name": "Zeliard Bit-Perfect Source Reconstruction",
+      "url": "https://nolanvenhola.github.io/zeliard/source-code/",
+      "codeRepository": "https://github.com/nolanvenhola/zeliard",
+      "description": "Complete reverse engineering of Zeliard: a bit-perfect MASM reconstruction, a playable C/WebAssembly port, resource tools, and behavioral parity tests.",
+      "programmingLanguage": ["Assembly", "C", "TypeScript", "WebAssembly"]
+    }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; background: #070909; color: #d8dddd;
+            font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        main { width: min(860px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0 72px; }
+        h1, h2 { color: #fff; line-height: 1.2; }
+        h1 { margin: 0 0 18px; font-size: clamp(2rem, 6vw, 3.6rem); }
+        h2 { margin-top: 42px; font-size: 1.45rem; }
+        .lede { color: #b8c5c5; font-size: 1.2rem; }
+        a { color: #8fe7e7; }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 38px; }
+        .actions a {
+            display: inline-block; padding: 10px 15px; border: 1px solid #62baba;
+            border-radius: 4px; background: #0d2424; color: #eaffff;
+            font-weight: 650; text-decoration: none;
+        }
+        .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+        .fact { padding: 18px; border: 1px solid #293333; background: #0b0f0f; }
+        .fact strong { display: block; color: #fff; font-size: 1.12rem; }
+        code { color: #d6ffff; }
+        footer { margin-top: 52px; padding-top: 20px; border-top: 1px solid #293333; color: #899393; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Zeliard Source Code and Reverse Engineering</h1>
+        <p class="lede">This project reconstructs the 1990 DOS release of <strong>Zeliard</strong> at the source level and provides a complete, start-to-finish playable browser port.</p>
+
+        <nav class="actions" aria-label="Project links">
+            <a href="../">Play Zeliard online</a>
+            <a href="https://github.com/nolanvenhola/zeliard">Browse the source on GitHub</a>
+        </nav>
+
+        <section aria-labelledby="project-results">
+            <h2 id="project-results">A complete preservation project</h2>
+            <div class="facts">
+                <div class="fact"><strong>Bit-perfect MASM</strong>All 60 reconstructed assembly files and all three SAR resource archives reproduce the original release bytes.</div>
+                <div class="fact"><strong>Complete web port</strong>The portable C engine and TypeScript host run the entire game in WebAssembly, from the opening through the ending.</div>
+                <div class="fact"><strong>Behavior oracles</strong>Native tests, browser tests, deterministic captures, and MASM function probes guard gameplay, graphics, input, saves, and audio.</div>
+            </div>
+        </section>
+
+        <section aria-labelledby="reconstruction">
+            <h2 id="reconstruction">Bit-perfect Zeliard source reconstruction</h2>
+            <p>The canonical source tree targets MASM 5.1 and rebuilds the DOS loader, game engine, graphics and input drivers, town and cavern systems, enemy AI, bosses, cinematics, and resource archives. Release output is compared byte-for-byte with the original game. Instrumented debug builds provide a behavior oracle without changing the canonical release artifacts.</p>
+        </section>
+
+        <section aria-labelledby="port">
+            <h2 id="port">C and WebAssembly reimplementation</h2>
+            <p>The browser edition is a native reimplementation, not an emulator-hosted release. A portable C engine implements the game while the TypeScript shell supplies browser display, audio, keyboard and gamepad input, compatible <code>.USR</code> saves, and deployment. The original MASM behavior and reconstructed bytes remain the authority for compatibility decisions.</p>
+        </section>
+
+        <section aria-labelledby="repository">
+            <h2 id="repository">Reverse-engineering tools and research</h2>
+            <p>The repository includes SAR extraction and decompression tools, GRP image decoding, save-file utilities, symbol and data audits, function-level behavior probes, deterministic replay fixtures, and visual parity artifacts. The project is useful both as playable game preservation and as a detailed example of reverse engineering a segmented 16-bit DOS game into a modern portable runtime.</p>
+            <p><a href="https://github.com/nolanvenhola/zeliard">Open the Zeliard source-code repository on GitHub</a>.</p>
+        </section>
+
+        <footer>Zeliard was developed by Game Arts and published in English by Sierra On-Line. This independent preservation project is not affiliated with either company.</footer>
+    </main>
+</body>
+</html>
