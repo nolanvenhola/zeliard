@@ -21,7 +21,6 @@ archive
 3_Assembly/masm/working/**/*.EXE
 3_Assembly/masm/working/**/*.sdf
 3_Assembly/tasm/SourcerRunner/obj
-MONOGAME_AUTHENTIC/.idea
 4_Resources/GrpViewer/__pycache__
 3_Assembly/cutter/source/.github
 3_Assembly/cutter/source/.vscode

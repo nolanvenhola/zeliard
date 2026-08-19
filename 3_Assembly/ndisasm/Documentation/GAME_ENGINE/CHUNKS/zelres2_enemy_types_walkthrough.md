@@ -1051,7 +1051,7 @@ Example for HP:
 
 ---
 
-## Implementation Notes for MonoGame Port
+## Historical C# Implementation Notes
 
 ### Recommended C# Structure
 
@@ -1101,7 +1101,7 @@ public class Slime : Enemy {
 
 ### Sprite Loading
 
-The assembly uses decompressed sprite data at segment offsets. For MonoGame:
+The assembly uses decompressed sprite data at segment offsets. A managed renderer could use:
 
 ```csharp
 // Load from extracted/decompressed sprite sheets

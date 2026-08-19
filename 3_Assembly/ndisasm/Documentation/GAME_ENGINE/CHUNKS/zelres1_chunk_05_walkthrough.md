@@ -961,6 +961,6 @@ Rendering at 18.2 Hz (55ms per frame):
 - ✅ **Message boxes** - Color gradients and smooth borders
 - ✅ **Performance** - 2× faster than CGA mode due to linear addressing
 
-**Critical for Port**: This chunk represents the "enhanced" graphics mode. Understanding the Mode 13h linear framebuffer, palette management, and 4× pixel expansion is essential for implementing high-quality graphics in MonoGame.
+**Critical for Port**: This chunk represents the "enhanced" graphics mode. Understanding the Mode 13h linear framebuffer, palette management, and 4× pixel expansion is essential for faithfully implementing the portable renderer.
 
 **Size**: 8KB of optimized 256-color rendering for 1990s VGA hardware!

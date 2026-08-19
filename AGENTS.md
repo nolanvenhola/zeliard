@@ -52,7 +52,6 @@ zelres3.sar: BIT-PERFECT (342,434 bytes)
     build_masm.py        Batch build + SAR pack (parallel, 8 workers)
     verify1.py           Single-file fast verify
 4_Resources/             Manual, maps, MIDI, sprites, FAQ
-5_MonoGame/              Archived C# prototype — do not extend
 6_WebPort/               Active web port (C engine + TypeScript shell)
   engine/                C source (core/, load/, render/, game/, audio/, platform/)
   shell/                 TypeScript browser host (Vite + WebGL2)
@@ -209,8 +208,7 @@ cd 6_WebPort/shell && npm run dev
 - **MASM build**: all 60 files, 3 SARs BIT-PERFECT ✓; canonical behavior-oracle tree
 - **TASM build**: historical compatibility build remains bit-perfect
 - **Mechanics**: 178/229 (78%) fully code-traced in `tasm/Documentation/MECHANICS_TO_UNDERSTAND.md`
-- **Web port**: opening demo finalized; exact game bootstrap landed; oracle-backed town rendering in progress
-- **5_MonoGame**: archived prototype, do not extend
+- **Web port**: complete and playable from the opening cinematic through the ending
 
 ---
 

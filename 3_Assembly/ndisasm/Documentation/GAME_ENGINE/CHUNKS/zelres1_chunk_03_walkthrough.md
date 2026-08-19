@@ -1025,6 +1025,6 @@ Typical rendering at 18.2 Hz (55ms per frame):
 - ✅ **Message boxes** - Bordered dialogs with animated decorations
 - ✅ **Vsync timing** - Uses DOS 18.2 Hz timer for frame pacing
 
-**Critical for Port**: This chunk defines the low-level graphics rendering. Understanding bitplane formats, VGA addressing, and timing is essential for replicating authentic visual behavior in MonoGame.
+**Critical for Port**: This chunk defines the low-level graphics rendering. Understanding bitplane formats, VGA addressing, and timing is essential for replicating authentic visual behavior in the portable renderer.
 
 **Size**: 8KB of optimized assembly for fast 320x200 CGA-mode rendering on 1990s hardware!

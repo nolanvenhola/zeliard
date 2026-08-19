@@ -526,7 +526,7 @@ Percentage: 4.5% of frame time
 - **zeliad.exe**: Loads stick.bin if joystick enabled in RESOURCE.CFG
 - **game.bin**: Calls joystick functions via function pointers
 - **RESOURCE.CFG**: Contains joystick enable/disable setting
-- **Input/InputManager.cs** (MonoGame port): Modern equivalent using XInput/DirectInput
+- **6_WebPort/engine/core/input.c**: Portable input-state implementation
 
 ---
 

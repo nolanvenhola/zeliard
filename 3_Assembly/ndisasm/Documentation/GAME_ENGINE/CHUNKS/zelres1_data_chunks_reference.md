@@ -1200,7 +1200,7 @@ byte[] chunk14 = File.ReadAllBytes(
 Texture2D necBackground = GrpDecoder.DecodeGrpFull(
     GraphicsDevice, chunk14, displayWidth: 160);
 
-// Draw in MonoGame
+// Draw with a sprite batch
 spriteBatch.Draw(necBackground,
     new Vector2(80, 20),  // Center on 320x200 screen
     Color.White);
@@ -1244,7 +1244,7 @@ font.DrawText(spriteBatch, "ZELIARD", 100, 50, Color.White);
 - **Title logo renderer**: zelres1/chunk_00 at CS:0xE71
 - **Palette setup**: zelres1/chunk_05 at CS:0x128D
 
-### MonoGame Implementation
+### Historical C# Implementation Sketch
 
 - **GrpDecoder.cs**: Complete two-stage .grp decompression
 - **SpriteExtractor.cs**: Sprite loading infrastructure (needs chunk_16 format)

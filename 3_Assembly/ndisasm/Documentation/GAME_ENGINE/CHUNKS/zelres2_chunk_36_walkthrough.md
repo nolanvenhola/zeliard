@@ -570,7 +570,7 @@ Collecting Nine Tears → Confronting Jashiin
 - ✅ **Localization** - English translation from Japanese original
 - ✅ **Integration** - Works with rendering systems in other chunks
 
-**Critical for Port**: This chunk contains the game's narrative content. Understanding the compression format and text structure is essential for localization and ensuring story sequences play correctly in MonoGame.
+**Critical for Port**: This chunk contains the game's narrative content. Understanding the compression format and text structure is essential for localization and ensuring story sequences play correctly in the portable engine.
 
 **Size**: 2KB of compressed story text - the entire narrative of Zeliard!
 
@@ -599,7 +599,7 @@ Collecting Nine Tears → Confronting Jashiin
 
 ## Port Implementation Notes
 
-For MonoGame implementation:
+For a modern implementation:
 1. Extract all text entries to JSON/XML
 2. Implement decompression algorithm
 3. Create dialogue manager class

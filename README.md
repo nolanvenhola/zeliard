@@ -144,10 +144,6 @@ Reference materials — game manual (PDF), maps (BMP), MIDI music,
 sprites, playthrough notes. Includes `MdtViewer/` (Avalonia UI for
 .MDT dungeon maps).
 
-### 5_MonoGame/
-Archived C# prototype retained for project history. Active port development
-moved to the complete C/WebAssembly implementation in `6_WebPort/`.
-
 ### 6_WebPort/
 Complete, start-to-finish playable browser port. A portable C engine implements
 the game while the TypeScript/Vite shell supplies the web platform, audio,
