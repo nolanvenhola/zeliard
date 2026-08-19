@@ -43,7 +43,7 @@ counter graphics, etc.). The `0xAA`, `0xEE`, `0xBF` byte patterns are classic
 Zeliard sprite bitplane values, not code.
 
 To properly annotate these files the code/data sections need to be separated first:
-- Use execution tracing (DOSBox MCP) to identify which bytes actually execute
+- Use MASM function tests or pinned DOSBox-X traces to identify which bytes execute
 - Annotate data sections with explicit `db` labels and section headers
 - This is a prerequisite for understanding the building interaction logic
 

@@ -51,12 +51,6 @@ For higher-level analysis, see:
 - **Sourcer**: `../sourcer/` - Commercial disassembler with better symbol resolution
 - **Unicorn**: `../Unicorn/` - CPU emulator for runtime constant extraction
 
-## Documentation
-
-Detailed walkthroughs of disassembled code:
-- `../Documentation/GAME_ENGINE/` - 46+ chunk-by-chunk analysis files
-- `../Documentation/ASSEMBLY_PATTERNS.md` - Common x86 patterns in Zeliard
-
 ## Key Assembly Patterns
 
 ```asm

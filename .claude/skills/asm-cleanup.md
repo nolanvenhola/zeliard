@@ -503,4 +503,4 @@ git commit -m "Annotate and clean up XXX.asm
 | `fmt_asm.py <file>` | Format blank lines + loop indentation |
 | `split_db_ctrl.py` | Split multi-constant db lines (one-time use) |
 | `trace_script.py [start] [end]` | Simulate script interpreter on a byte range |
-| DOSBox MCP | Set breakpoints, inspect registers/memory at runtime |
+| Pinned DOSBox-X runner | Capture deterministic runtime evidence |

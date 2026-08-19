@@ -42,7 +42,6 @@ Each `.bin` file structure:
 ## Analysis
 
 For detailed chunk analysis, see:
-- `../../3_Assembly/Documentation/GAME_ENGINE/` - 46+ detailed walkthroughs
 - `../../3_Assembly/ndisasm/output/zelres*_chunks/` - Disassembled code chunks
 
 ## Extraction
