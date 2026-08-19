@@ -356,6 +356,7 @@ static const char *music_asset(zel_music_track_t track) {
     case ZEL_MUSIC_MUS8: return "mus8.msd";
     case ZEL_MUSIC_MBOS: return "mbos.msd";
     case ZEL_MUSIC_MFAN: return "mfan.msd";
+    case ZEL_MUSIC_MMAO: return "mmao.msd";
     default: return NULL;
     }
 }
@@ -581,6 +582,18 @@ void zel_opening_audio_tick(u32 dt_ms) {
             g_transition_fade = 0;
             g_music_complete = 1; /* MSCADLIB sub_463 writes FF26h = FFh. */
         }
+    }
+}
+
+void zel_opening_audio_begin_gameplay_music_change_fade(void) {
+    /* 200FIGHT:copy_combat_flags_and_tileset writes 0Ah to FF24h when a
+     * cavern boundary changes level music.  Entering MP90 from Final is the
+     * last such boundary: MUS8 fades before MMAO starts for Jashiin. */
+    if (g_music_track != ZEL_MUSIC_NONE && !g_music_complete) {
+        g_transition_fade = 1;
+        g_fade_interval_counter = 1;
+        if (g_exact_driver)
+            zel_mscadlib_vm_set_global(&g_mscadlib, 0xFF24, 0x0A);
     }
 }
 

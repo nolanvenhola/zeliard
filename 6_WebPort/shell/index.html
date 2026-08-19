@@ -18,6 +18,36 @@
             height: 100vh; gap: 1em;
         }
         #screen-wrap { position: relative; }
+        #minimap {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            width: 280px; padding: 5px;
+            border: 1px solid rgba(190, 235, 235, .58);
+            border-radius: 3px; background: rgba(1, 7, 8, .78);
+            color: #d9ffff; box-shadow: 0 2px 10px rgba(0, 0, 0, .7);
+            pointer-events: none; box-sizing: border-box;
+        }
+        #minimap.expanded {
+            top: 50%; right: 50%; width: 86%; padding: 8px;
+            transform: translate(50%, -50%);
+            border-color: rgba(210, 255, 255, .82);
+            background: rgba(1, 6, 7, .93);
+            pointer-events: auto;
+        }
+        #minimap-canvas {
+            display: block; width: 100%; height: auto;
+            image-rendering: pixelated; background: #030606;
+        }
+        #minimap.expanded #minimap-canvas {
+            cursor: crosshair; touch-action: none;
+        }
+        #minimap.expanded.warp-armed #minimap-canvas { cursor: cell; }
+        #minimap.expanded #minimap-canvas.dragging { cursor: grabbing; }
+        #minimap-details {
+            margin-top: 4px; overflow: hidden; color: #b7dada;
+            font-size: 10px; line-height: 1.2; white-space: nowrap;
+            text-align: center;
+        }
+        #minimap.expanded #minimap-details { font-size: 12px; }
         canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
@@ -49,24 +79,40 @@
             border: 1px solid #555; background: #080808;
         }
         #save-select, #audio-backend, #display-mode, #game-speed, #debug-item-select,
-        #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
-        #restore-resources, #debug-add-item, #keymap-open, #keymap-close, #load-save,
+        #debug-warp-destination,
+        #checkpoint-slot, #checkpoint-name,
+        #music-toggle, #sound-toggle, #debug-toggle, #minimap-toggle,
+        #invincible-toggle, #flying-toggle, #debug-warp-room, #debug-warp-map,
+        #restore-resources, #debug-add-item, #checkpoint-save, #checkpoint-load,
+        #checkpoint-clear, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
             height: 30px; border: 1px solid #777; border-radius: 2px;
             background: #111; color: #fff; font: inherit;
             box-sizing: border-box;
         }
-        #save-select, #audio-backend, #display-mode, #debug-item-select { min-width: 160px; padding: 0 8px; }
+        #save-select, #audio-backend, #display-mode, #debug-item-select,
+        #debug-warp-destination { min-width: 160px; padding: 0 8px; }
+        #checkpoint-slot { min-width: 190px; padding: 0 8px; }
+        #checkpoint-name { width: 170px; padding: 0 8px; }
         #game-speed { min-width: 52px; padding: 0 6px; }
-        #music-toggle, #sound-toggle, #invincible-toggle, #flying-toggle,
-        #restore-resources, #debug-add-item, #keymap-open, #keymap-close, #load-save,
+        #music-toggle, #sound-toggle, #debug-toggle, #minimap-toggle,
+        #invincible-toggle, #flying-toggle, #debug-warp-room, #debug-warp-map,
+        #restore-resources, #debug-add-item, #checkpoint-save, #checkpoint-load,
+        #checkpoint-clear, #keymap-open, #keymap-close, #load-save,
         #download-save, #restart, .file-button {
             padding: 5px 12px; cursor: pointer;
         }
         #music-toggle[aria-pressed="false"], #sound-toggle[aria-pressed="false"],
-        #invincible-toggle[aria-pressed="false"], #flying-toggle[aria-pressed="false"] {
+        #debug-toggle[aria-pressed="false"], #minimap-toggle[aria-pressed="false"],
+        #invincible-toggle[aria-pressed="false"], #flying-toggle[aria-pressed="false"],
+        #debug-warp-map[aria-pressed="false"] {
             color: #999; border-color: #555;
         }
+        #checkpoint-controls {
+            display: inline-flex; flex-wrap: wrap; align-items: center;
+            justify-content: center; gap: 6px;
+        }
+        #checkpoint-status { min-width: 72px; color: #b7dada; font-size: 11px; }
         #keymap-dialog {
             width: min(720px, calc(100vw - 32px));
             max-height: calc(100vh - 32px); overflow: auto;
@@ -112,6 +158,10 @@
     <div id="stage">
         <div id="screen-wrap">
             <canvas id="screen" width="320" height="200"></canvas>
+            <aside id="minimap" aria-label="Cavern testing map" hidden>
+                <canvas id="minimap-canvas" width="512" height="256"></canvas>
+                <div id="minimap-details"></div>
+            </aside>
             <button id="start" type="button" title="Start opening demo" aria-label="Start opening demo" hidden>&#9654;</button>
         </div>
         <div id="game-controls" aria-label="Game settings and player status">
@@ -130,9 +180,16 @@
                 <span>Level <output id="player-level">0</output></span>
                 <span>Experience <output id="player-experience">0</output> / <output id="player-experience-threshold">0</output></span>
             </span>
+            <button id="debug-toggle" type="button" aria-pressed="false"
+                    aria-controls="debug-controls">Testing Tools: Off</button>
+            <button id="keymap-open" type="button">Controls</button>
         </div>
-        <div id="debug-controls" aria-label="Testing and debugging controls">
+        <div id="debug-controls" aria-label="Testing and debugging controls" hidden>
+            <button id="minimap-toggle" type="button" aria-pressed="false">Map: Off</button>
             <button id="invincible-toggle" type="button" aria-pressed="false">Invincible: Off</button>
+            <button id="unlimited-magic-toggle" type="button" aria-pressed="false">Unlimited Magic: Off</button>
+            <button id="debug-kill-boss" type="button">Kill Boss</button>
+            <button id="debug-start-ending" type="button">Start Final Ending</button>
             <button id="restore-resources" type="button">Restore Health + Shield + Magic</button>
             <select id="debug-item-select" aria-label="Item to add">
                 <option value="1">Ken'ko Potion</option>
@@ -146,7 +203,39 @@
             </select>
             <button id="debug-add-item" type="button">Add Item</button>
             <button id="flying-toggle" type="button" aria-pressed="false">Flying: Off</button>
-            <button id="keymap-open" type="button">Controls</button>
+            <select id="debug-warp-destination" aria-label="Sage or Church destination">
+                <option value="1:2">Muralla — Sage</option>
+                <option value="1:6">Muralla — Church</option>
+                <option value="2:2">Satono — Sage</option>
+                <option value="3:2">Bosque — Sage</option>
+                <option value="4:2">Helada — Sage</option>
+                <option value="5:2">Tumba — Sage</option>
+                <option value="6:2">Dorado — Sage</option>
+                <option value="7:2">Llama — Sage</option>
+                <option value="8:2">Pureza — Sage</option>
+                <option value="9:6">Esco — Church</option>
+            </select>
+            <button id="debug-warp-room" type="button">Warp to Room</button>
+            <button id="debug-warp-map" type="button" aria-pressed="false">Warp on Map: Off</button>
+            <span id="checkpoint-controls" aria-label="Debug state checkpoints">
+                <select id="checkpoint-slot" aria-label="Checkpoint slot">
+                    <option value="1">Checkpoint 1 — empty</option>
+                    <option value="2">Checkpoint 2 — empty</option>
+                    <option value="3">Checkpoint 3 — empty</option>
+                    <option value="4">Checkpoint 4 — empty</option>
+                    <option value="5">Checkpoint 5 — empty</option>
+                </select>
+                <input id="checkpoint-name" type="text" maxlength="40"
+                       aria-label="Checkpoint name" placeholder="Checkpoint name">
+                <button id="checkpoint-save" type="button">Save to Disk</button>
+                <button id="checkpoint-load" type="button" disabled>Load State</button>
+                <label class="file-button">Open State
+                    <input id="checkpoint-open" type="file"
+                           accept=".zstate,application/json" hidden>
+                </label>
+                <button id="checkpoint-clear" type="button" disabled>Clear</button>
+                <output id="checkpoint-status" aria-live="polite"></output>
+            </span>
         </div>
         <div id="save-controls">
             <label>Audio
@@ -196,6 +285,7 @@
                         <tr><th><kbd>F2</kbd></th><td>Toggle sound effects</td></tr>
                         <tr><th><kbd>F7</kbd></th><td>Open the load-game menu</td></tr>
                         <tr><th><kbd>F9</kbd></th><td>Open the game-speed menu</td></tr>
+                        <tr><th><kbd>M</kbd> / <kbd>Shift</kbd>+<kbd>M</kbd></th><td>Toggle the compact / large cavern map when Testing Tools are enabled</td></tr>
                         <tr><th><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> + <kbd>E</kbd></th><td>Show Level and EXP in the inventory screen</td></tr>
                         <tr><th>At the bank</th><td><kbd>&uarr;</kbd> +1, <kbd>&darr;</kbd> &minus;1, <kbd>&larr;</kbd> +10, <kbd>&rarr;</kbd> &minus;10. Hold a direction to accelerate.</td></tr>
                         <tr><th>Letters / numbers</th><td>Enter saved-game names and menu values</td></tr>
@@ -218,7 +308,7 @@
                     </tbody>
                 </table>
             </section>
-            <p id="keymap-note">Testing controls are available below the game: Invincible, Restore Health + Shield + Magic, add any witchcraft item, and Flying. They intentionally have no keyboard shortcuts.</p>
+            <p id="keymap-note">Enable Testing Tools below the game to reveal the cavern map, Invincible, Unlimited Magic, Kill Boss, Restore Health + Shield + Magic, add-item, and Flying controls.</p>
         </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>

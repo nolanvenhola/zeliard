@@ -23,6 +23,10 @@ int zeliard_test_begin_malicia_transition(void);
 int zeliard_test_begin_malicia_exit(void);
 int zeliard_test_restart_fight(int selector, int start_position,
                                int map_scroll_row, int screen_position);
+int zeliard_test_defeat_jashiin(void);
+int zeliard_test_start_ending(void);
+int zeliard_ending_active(void);
+int zeliard_ending_scene(void);
 int zeliard_test_game_set_u8(unsigned offset, unsigned value);
 int zeliard_test_redraw_town(void);
 int zeliard_fight_active(void);
@@ -52,6 +56,7 @@ int zeliard_sound_enabled(void);
 int zeliard_sound_cue(void);
 int zeliard_test_game_u8(unsigned offset);
 int zeliard_test_game_u16(unsigned offset);
+int zeliard_test_king_script(void);
 int zeliard_test_fight_u8(unsigned offset);
 int zeliard_fight_masm_vm_poke_u16(u16 offset, u16 value);
 void zeliard_opening_set_phase_for_test(int phase);
@@ -131,7 +136,7 @@ int main(void) {
     ok &= zeliard_test_fight_returns_to_town(0, 0, 0x601C);
     ok &= !zeliard_test_fight_returns_to_town(0, 0, 0x6000);
     ok &= zeliard_test_fight_returns_to_town(1, 0x81, 0);
-    ok &= !zeliard_test_fight_returns_to_town(1, 0x80, 0);
+    ok &= zeliard_test_fight_returns_to_town(1, 0x80, 0);
 
     zeliard_init();
     zeliard_opening_set_phase_for_test(3);
@@ -1687,6 +1692,92 @@ int main(void) {
            esco_bootstrap ? "PASS" : "FAIL", zeliard_town_area(),
            zeliard_test_game_u8(0x80), zeliard_test_game_u8(0x83),
            zeliard_music_track(), esco_playfield);
+
+    /* 319MAO2 -> 200FIGHT:game_over_sequence is a special captured/faint
+     * return, not an ordinary death-to-Sage or reverse cavern-door walk.
+     * MASM forces selector 80h, runs level_start against CMAP's target 22h,
+     * and resumes outdoors in front of Felishika Castle.  The facing NPC's
+     * authored post-victory greeting must then start on the normal town
+     * pump before the player can enter the castle. */
+    memset(record, 0, sizeof(record));
+    record_file = fopen("assets/stdply.bin", "rb");
+    ok &= record_file && fread(record, 1, sizeof(record), record_file) > 0;
+    if (record_file) fclose(record_file);
+    record[0x90] = 0;
+    record[0x91] = 2;
+    record[0x98] = 1;
+    record[0xA0] = 8;
+    record[0xB2] = 0;
+    record[0xB3] = 2;
+    const int jashiin_loaded = zeliard_load_record(record, sizeof(record));
+    const int jashiin_started = jashiin_loaded &&
+        zeliard_test_restart_fight(0x1D, 4, 21, 12);
+    if (jashiin_started) zeliard_test_game_set_u8(0xFF26, 0xFF);
+    const int jashiin_defeated = jashiin_started &&
+        zeliard_test_defeat_jashiin();
+    /* remaining_caverns_native pins MAO2's full death animation through
+     * its write of 49h.  Seed that already-proven output here so this
+     * composed test starts at 200FIGHT's faint/loader boundary. */
+    if (jashiin_defeated) {
+        zeliard_test_game_set_u8(0xC2, 0);
+        zeliard_test_game_set_u8(0x49, 0xFF);
+    }
+    unsigned jashiin_return_ticks = 0;
+    int jashiin_saw_fight_exit = 0;
+    int jashiin_faint_silent = 0;
+    while (jashiin_defeated && jashiin_return_ticks++ < 1500 &&
+           !zeliard_test_town_dialog_active()) {
+        zeliard_tick(20);
+        if (zeliard_fight_active() && zeliard_test_game_u8(0x49) &&
+            zeliard_music_track() == ZEL_MUSIC_NONE)
+            jashiin_faint_silent = 1;
+        if (!zeliard_fight_active()) jashiin_saw_fight_exit = 1;
+    }
+    const int jashiin_princess_hut_locked = jashiin_defeated &&
+        zeliard_test_enter_room(3) == -2;
+    const int jashiin_king_script = zeliard_test_king_script();
+    const int jashiin_castle_greeting = jashiin_defeated &&
+        jashiin_faint_silent && jashiin_saw_fight_exit &&
+        !zeliard_fight_active() &&
+        zeliard_town_area() == 0 &&
+        zeliard_test_game_u8(0x49) == 0xFF &&
+        zeliard_test_game_u8(0xC4) == 0x80 &&
+        zeliard_test_game_u16(0x80) == 0x0011 &&
+        zeliard_test_game_u8(0x83) == 0x0D &&
+        zeliard_test_game_u16(0xC00F) == 0xC894 &&
+        zeliard_test_game_u16(0xC894) == 0x0024 &&
+        zeliard_test_game_u8(0xC89B) == 4 &&
+        jashiin_king_script == 0xA6C1 &&
+        jashiin_princess_hut_locked &&
+        zeliard_room_kind() == 0 && zeliard_test_town_dialog_active();
+    ok &= jashiin_castle_greeting;
+    printf("main_controls:jashiin_faint_castle_greeting: %s ticks=%u "
+           "fight=%d area=%d selector=%02x pos=%04x/%02x quest=%02x "
+           "dialog=%d npcs=%04x npc=%04x dialog_id=%u king=%04x "
+           "hut_locked=%d faint_silent=%d\n",
+           jashiin_castle_greeting ? "PASS" : "FAIL",
+           jashiin_return_ticks, zeliard_fight_active(), zeliard_town_area(),
+           zeliard_test_game_u8(0xC4), zeliard_test_game_u16(0x80),
+           zeliard_test_game_u8(0x83), zeliard_test_game_u8(0x49),
+           zeliard_test_town_dialog_active(),
+           zeliard_test_game_u16(0xC00F),
+           zeliard_test_game_u16(0xC894),
+           zeliard_test_game_u8(0xC89B), jashiin_king_script,
+           jashiin_princess_hut_locked, jashiin_faint_silent);
+
+    const int debug_ending_started = zeliard_test_start_ending();
+    unsigned debug_ending_pixels = 0;
+    for (unsigned pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+        debug_ending_pixels += g_framebuf[pixel] != 0;
+    const int debug_ending_ready = debug_ending_started &&
+        zeliard_ending_active() && zeliard_ending_scene() == 0 &&
+        zeliard_test_game_u8(0xFF77) == 0xFF &&
+        debug_ending_pixels >= 5000;
+    ok &= debug_ending_ready;
+    printf("main_controls:debug_start_final_ending: %s started=%d active=%d scene=%d cinematic=%02x pixels=%u\n",
+           debug_ending_ready ? "PASS" : "FAIL", debug_ending_started,
+           zeliard_ending_active(), zeliard_ending_scene(),
+           zeliard_test_game_u8(0xFF77), debug_ending_pixels);
 
     printf("VERDICT: %s: MASM keyboard controls\n", ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;

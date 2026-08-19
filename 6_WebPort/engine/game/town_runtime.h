@@ -77,6 +77,8 @@ typedef struct {
     zeliard_room_kind_t pending_room_kind;
     u8 building_transition_pass;
     u8 building_transition_ticks;
+    u8 post_victory_king_required;
+    u8 post_victory_king_complete;
     zeliard_town_dialog_t dialog;
     zeliard_room_runtime_t room;
 } zeliard_town_runtime_t;

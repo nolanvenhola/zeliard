@@ -26,6 +26,10 @@ enum {
     VGA_SEG = 0xA000,
     SAR_STUB = 0x0500,
     FIGHT_LOAD_BASE = 0x6000,
+    PLAYER_AREA_SELECTOR = 0x00C4,
+    MAO2_APPEAR_GATE = 0xFF21,
+    CINEMATIC_ACTIVE = 0xFF77,
+    JASHIIN_FINAL_SELECTOR = 0x1E,
     FIGHT_TOWN_ENTRY = 0x79DC,
     STICK_SUBSAMPLE_ACCUMULATOR = 0x092B,
     INSTRUCTIONS_PER_SLICE = 50000,
@@ -44,17 +48,20 @@ typedef struct {
     u8 exit_scroll_dir;
     u8 exit_player_y;
     u8 music_chunk;
-    u8 ending_requested;
     u8 ending_mode;
     u8 ending_finished;
     u8 ending_at_wait;
     u8 ending_allow_wait_once;
     u8 ending_driver_init;
     u8 ending_driver_ready;
+    u8 ending_present_pending;
+    u8 ending_host_action_latched;
+    u8 ending_graphics_in_progress;
     u8 bootstrap_clock;
     u8 authored_wait_sequence;
     u16 exit_dispatch_slot;
     u16 exit_scroll_count;
+    u16 ending_graphics_return_ip;
     u32 instructions;
     u32 frame_pit_ticks;
     u16 trace[32];
@@ -120,6 +127,33 @@ static void write_u16(u8 *memory, size_t address, u16 value) {
 
 static u16 read_u16(const u8 *memory, size_t address) {
     return (u16)(memory[address] | ((u16)memory[address + 1] << 8));
+}
+
+static int ending_graphics_dispatch(const u8 *memory, size_t instruction) {
+    if (memory[instruction] != 0x2E || memory[instruction + 1] != 0xFF ||
+        (memory[instruction + 2] != 0x16 &&
+         memory[instruction + 2] != 0x26))
+        return 0;
+
+    const u16 slot = read_u16(memory, instruction + 3);
+    switch (slot) {
+        case 0x3004: /* gfx_draw_fn */
+        case 0x3006: /* gfx_update_fn */
+        case 0x3008: /* gfx_palette_fn */
+        case 0x3010: /* gfx_blit_fn */
+        case 0x3020: /* gfx_scene_fn1 */
+        case 0x3022: /* gfx_scene_fn2 */
+        case 0x3024: /* gfx_scene_fn3 */
+        case 0x3028: /* gfx_sprite_fn */
+        case 0x302A: /* drv2_fn_21 */
+        case 0x302C: /* drv2_fn_22 */
+        case 0x302E: /* gfx_scroll_jmp */
+        case 0x3030: /* gfx_putchar_fn */
+        case 0x8584: /* full_scroll_fn_ptr */
+            return 1;
+        default:
+            return 0;
+    }
 }
 
 static void relocate_words(u8 *memory, size_t address, unsigned count,
@@ -351,6 +385,25 @@ static int fight_step(void *context, u16 cs, u16 ip) {
         ++state->instructions;
         if (state->ending_driver_init && ip == 0x0502) {
             state->ending_driver_ready = 1;
+            /* Return from the exact 211OMOYP `call cs:[3006h]`. ENDDEMO is
+             * already resident, so assert FF77h and perform its authored
+             * indirect jump as soon as the GDMCGA full-screen pass returns. */
+            if (state->ending_mode) {
+                const size_t fight = linear(FIGHT_SEG, 0);
+                registers[ZEL_TINY86_AX] = 0;
+                registers[ZEL_TINY86_CS] = FIGHT_SEG;
+                registers[ZEL_TINY86_DS] = FIGHT_SEG;
+                registers[ZEL_TINY86_ES] = FIGHT_SEG;
+                registers[ZEL_TINY86_SS] = FIGHT_SEG;
+                registers[ZEL_TINY86_SP] = 0x2000;
+                memory[fight + CINEMATIC_ACTIVE] = 0xFF;
+                zel_fight86_set_ip(read_u16(
+                    memory, fight + FIGHT_LOAD_BASE));
+                zel_fight86_set_flags(0x0202);
+                state->ending_driver_init = 0;
+                state->ending_at_wait = 0;
+                state->ending_allow_wait_once = 1;
+            }
             return 1;
         }
         const size_t instruction = linear(cs, ip);
@@ -367,13 +420,6 @@ static int fight_step(void *context, u16 cs, u16 ip) {
             memory[opcode + 2] == 0x75 &&
             memory[opcode + 3] == 0xFF)
             post_sound_cue(state, memory[opcode + 4]);
-        if (!state->ending_mode && memory[opcode] == 0xC6 &&
-            memory[opcode + 1] == 0x06 &&
-            memory[opcode + 2] == 0x30 &&
-            memory[opcode + 3] == 0xFF &&
-            memory[opcode + 4] == 0xFF &&
-            memory[linear(FIGHT_SEG, 0x00C4)] == 0x1E)
-            state->ending_requested = 1;
         if (state->bootstrap_clock &&
             (state->instructions & 0x7FFu) == 0) {
             ++memory[linear(FIGHT_SEG, 0xFF1A)];
@@ -384,6 +430,29 @@ static int fight_step(void *context, u16 cs, u16 ip) {
     }
     if (cs == FIGHT_SEG && state->ending_mode) {
         const size_t instruction = linear(cs, ip);
+        /* 250ENDMO changes the private VGA page through several GMMCGA
+         * dispatch slots.  Those draws often occur after the timer poll and
+         * before the next one, so ending_at_wait alone leaves the browser on
+         * the preceding credit page (including immediately before FIN).
+         * Publish every authored graphics dispatch, both CALL and JMP, once
+         * its driver routine has returned.  Some full-screen blits exceed a
+         * host CPU slice; publishing at call entry exposes a half-drawn page. */
+        if (state->ending_graphics_in_progress &&
+            ip == state->ending_graphics_return_ip) {
+            state->ending_present_pending = 1;
+            state->ending_graphics_in_progress = 0;
+        }
+        if (ending_graphics_dispatch(memory, instruction)) {
+            state->ending_graphics_in_progress = 1;
+            if (memory[instruction + 2] == 0x16) {
+                state->ending_graphics_return_ip = (u16)(ip + 5u);
+            } else {
+                /* gfx_scroll_jmp is a tail call.  Its eventual RET consumes
+                 * the caller's already-present return address at SS:SP. */
+                state->ending_graphics_return_ip = read_u16(
+                    memory, linear(registers[10], registers[4]));
+            }
+        }
         if (ip == 0x66C8 || ip == 0x66CB || ip == 0x66CC) {
             state->ending_finished = 1;
             state->ending_at_wait = 1;
@@ -487,6 +556,25 @@ static int fight_step(void *context, u16 cs, u16 ip) {
                 : load_payload_to(memory, destination, asset);
             if (loaded && operation == 2 && archive == 2 && chunk == 56)
                 state->authored_wait_sequence = 1;
+            if (loaded && operation == 1 &&
+                selector == JASHIIN_FINAL_SELECTOR) {
+                /* MP90's release script loads MPA0 directly, without
+                 * returning through the host selector. Preserve that live
+                 * handoff in the player record so saves and the final-ending
+                 * detector both see the active MAO2 arena. */
+                memory[linear(FIGHT_SEG, PLAYER_AREA_SELECTOR)] = selector;
+            }
+            if (loaded && archive == 2 &&
+                ((operation == 3 && chunk == 20) ||
+                 (operation == 2 && chunk == 74))) {
+                /* 319MAO2 gates Jashiin's first appearance on FF21h. The DOS
+                 * resident handoff leaves this shared byte asserted; a fresh
+                 * zero-filled WASM segment did not, so MAO2 returned forever
+                 * with every animation flag clear. Assert it again after the
+                 * MAO2 sprite load because cold/direct arena initialization
+                 * clears shared scratch state after loading the code chunk. */
+                memory[linear(FIGHT_SEG, MAO2_APPEAR_GATE)] = 0xFF;
+            }
         }
         platform_log("200FIGHT loader: AL=%u AH=%u SI=%04X ref=%u/%u asset=%s loaded=%d ES=%04X DI=%04X",
                      (unsigned)operation, (unsigned)selector, si, archive, chunk,
@@ -615,6 +703,8 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
             break;
         }
     }
+    if (memory[fight + PLAYER_AREA_SELECTOR] == JASHIIN_FINAL_SELECTOR)
+        memory[fight + MAO2_APPEAR_GATE] = 0xFF;
     memcpy(game_seg, memory + fight, 0x10000);
     memcpy(vga, memory + linear(VGA_SEG, 0), 0x10000);
     g_fight_vm.bootstrap_clock = 0;
@@ -659,22 +749,30 @@ int zeliard_fight_masm_vm_advance(u8 *game_seg, size_t game_size,
             (u8)(memory[fight + 0xFF1A] + (u8)pit_ticks);
         write_u16(memory, fight + 0xFF50,
                   (u16)(read_u16(memory, fight + 0xFF50) + (u16)pit_ticks));
-        if (game_seg[0xFF16]) {
+        const u8 action_down = (u8)(game_seg[0xFF16] & 3u);
+        if (!action_down)
+            g_fight_vm.ending_host_action_latched = 0;
+        if (action_down && !g_fight_vm.ending_host_action_latched) {
             memory[fight + 0xFF1D] = 0xFF;
             memory[fight + 0xFF21] = 0xFF;
+            g_fight_vm.ending_host_action_latched = 1;
         }
         g_fight_vm.ending_at_wait = 0;
         g_fight_vm.ending_allow_wait_once = 1;
-        for (unsigned pass = 0; pass < 256 && g_fight_vm.active &&
-                !g_fight_vm.ending_at_wait; ++pass) {
-            if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) ==
-                    ZEL_TINY86_HALTED) {
-                g_fight_vm.active = 0;
-                break;
-            }
+        g_fight_vm.ending_present_pending = 0;
+        /* Keep the browser event loop available to paint and refill the
+         * AudioWorklet.  Some 250ENDMO draws contain millions of guest
+         * instructions between timer polls; running all of them in one host
+         * callback starves both video and PCM.  Resume one bounded CPU slice
+         * per host tick, but expose the VGA page only at the authored MASM
+         * timer/input boundary detected by ending_poll_instruction(). */
+        if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED) {
+            g_fight_vm.active = 0;
         }
         sync_host_state(game_seg, vga);
-        return 1;
+        return g_fight_vm.active &&
+            (g_fight_vm.ending_at_wait ||
+             g_fight_vm.ending_present_pending);
     }
 
     g_fight_vm.frame_pit_ticks += pit_ticks;
@@ -829,21 +927,58 @@ u8 zeliard_fight_masm_vm_exit_player_y(void) {
 u8 zeliard_fight_masm_vm_music_chunk(void) {
     return g_fight_vm.music_chunk;
 }
-int zeliard_fight_masm_vm_ending_requested(void) {
-    return g_fight_vm.ending_requested;
-}
-int zeliard_fight_masm_vm_begin_ending(void) {
-    if (!g_fight_vm.active || !g_fight_vm.ending_requested) return 0;
+int zeliard_fight_masm_vm_begin_ending(u8 *game_seg, size_t game_size,
+                                       u8 *vga, size_t vga_size) {
+    if (!game_seg || game_size < 0x10000 || !vga || vga_size < 0x10000)
+        return 0;
+
+    /* 211OMOYP starts the ending from Felishika's Castle, after 200FIGHT
+     * and the Jashiin arena have already been unloaded. Build the small
+     * resident environment that DOS still has around the newly loaded
+     * endmo.bin instead of depending on stale fight-VM memory. */
+    memset(&g_fight_vm, 0, sizeof(g_fight_vm));
+    size_t bios_size = 0;
+    u8 *bios = platform_load_asset("8086tiny-bios.bin", &bios_size);
+    if (!bios) return 0;
+    zel_fight86_reset(bios, (unsigned)bios_size);
+    free(bios);
+
     u8 *memory = zel_fight86_memory();
     const size_t fight = linear(FIGHT_SEG, 0);
-    /* The release handoff replaces GFMCGA with the same GDMCGA image
-     * driver used by OPDMO before loading 250ENDMO at 6000h.  Keeping the
-     * existing game and VGA segments preserves Jashiin's final frame while
-     * switching only the two authored overlays. */
-    if (!load_payload_to(memory, fight + 0x3000, "gdmcga.bin"))
+    memcpy(memory + fight, game_seg, 0x10000);
+    memcpy(memory + linear(GAME_SEG, 0), game_seg, 0x10000);
+    memcpy(memory + linear(VGA_SEG, 0), vga, 0x10000);
+    if (!load_raw_to(memory, fight + 0x0100, "stick.bin") ||
+        !load_raw_to(memory, fight + 0x2000, "gmmcga.bin") ||
+        !load_fill_to(memory, fight + 0xF500, "font.grp"))
+        return 0;
+    /* game.asm keeps FONT.GRP resident at F500h and relocates its three
+     * internal glyph-table pointers before any cinematic runs.  Ending can
+     * begin after a room VM has replaced the shared segment, so provision
+     * that resident dependency explicitly instead of trusting stale bytes.
+     * 250ENDMO's gfx_putchar_fn calls read these exact relocated pointers. */
+    relocate_words(memory, fight + 0xF500, 3, 0xF500);
+    write_u16(memory, fight + 0x010C, SAR_STUB);
+    memory[fight + SAR_STUB] = 0xC3;
+    write_u16(memory, fight + 0xFF2C, GAME_SEG);
+    zel_fight86_set_step_callback(fight_step, &g_fight_vm);
+    zel_fight86_set_out_callback(fight_out, &g_fight_vm);
+    g_fight_vm.active = 1;
+    g_fight_vm.music_chunk = 0xFF;
+
+    /* 211OMOYP loads ENDDEMO and GDMCGA without clearing the visible
+     * Princess-hut frame, holds that frame for 012Ch ticks, then calls
+     * dispatch slot 3006h with BX=0000h/CX=50C8h.  The town host has just
+     * completed the same hold, so install both chunks now and let the exact
+     * driver call own the transition into 250ENDMO. */
+    if (!load_payload_to(memory, fight + FIGHT_LOAD_BASE, "endmo.bin") ||
+        !load_payload_to(memory, fight + 0x3000, "gdmcga.bin"))
         return 0;
     u16 *registers = zel_fight86_registers();
-    registers[ZEL_TINY86_AX] = 0;
+    registers[ZEL_TINY86_AX] = 3;
+    registers[ZEL_TINY86_BX] = 0;
+    registers[ZEL_TINY86_CX] = 0x50C8;
+    registers[ZEL_TINY86_DI] = 0x3000;
     registers[ZEL_TINY86_CS] = FIGHT_SEG;
     registers[ZEL_TINY86_DS] = FIGHT_SEG;
     registers[ZEL_TINY86_ES] = FIGHT_SEG;
@@ -852,31 +987,17 @@ int zeliard_fight_masm_vm_begin_ending(void) {
     write_u16(memory, fight + 0x1FFE, 0x0502);
     g_fight_vm.ending_driver_init = 1;
     g_fight_vm.ending_driver_ready = 0;
-    zel_fight86_set_ip(read_u16(memory, fight + 0x3000));
-    zel_fight86_set_flags(0x0202);
-    for (unsigned pass = 0; pass < 200 && g_fight_vm.active &&
-            !g_fight_vm.ending_driver_ready; ++pass)
-        if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED)
-            g_fight_vm.active = 0;
-    g_fight_vm.ending_driver_init = 0;
-    if (!g_fight_vm.active || !g_fight_vm.ending_driver_ready ||
-        !load_payload_to(memory, fight + FIGHT_LOAD_BASE, "endmo.bin"))
-        return 0;
-    registers[ZEL_TINY86_AX] = 0;
-    registers[ZEL_TINY86_CS] = FIGHT_SEG;
-    registers[ZEL_TINY86_DS] = FIGHT_SEG;
-    registers[ZEL_TINY86_ES] = FIGHT_SEG;
-    registers[ZEL_TINY86_SS] = FIGHT_SEG;
-    registers[ZEL_TINY86_SP] = 0x2000;
-    zel_fight86_set_ip(FIGHT_LOAD_BASE);
-    zel_fight86_set_flags(0x0202);
-    g_fight_vm.ending_requested = 0;
     g_fight_vm.ending_mode = 1;
     g_fight_vm.ending_finished = 0;
     g_fight_vm.ending_at_wait = 0;
     g_fight_vm.ending_allow_wait_once = 1;
     g_fight_vm.at_frame = 0;
+    zel_fight86_set_ip(read_u16(memory, fight + 0x3006));
+    zel_fight86_set_flags(0x0202);
     g_fight_vm.music_chunk = 0xFF;
+    /* Run only to GDMCGA's first authored timer boundary.  Subsequent host
+     * ticks expose the complete assembly-driven transition; its RET loads
+     * ENDDEMO and jumps through [6000h] in fight_step above. */
     for (unsigned pass = 0; pass < 2000 && g_fight_vm.active &&
             !g_fight_vm.ending_at_wait; ++pass) {
         if (zel_fight86_run(INSTRUCTIONS_PER_SLICE) == ZEL_TINY86_HALTED) {
@@ -884,6 +1005,7 @@ int zeliard_fight_masm_vm_begin_ending(void) {
             break;
         }
     }
+    sync_host_state(game_seg, vga);
     return g_fight_vm.active && g_fight_vm.ending_at_wait;
 }
 int zeliard_fight_masm_vm_ending_active(void) {

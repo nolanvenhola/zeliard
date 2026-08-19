@@ -85,6 +85,7 @@ static u8 g_death_sage_chrome_active;
 static u32 g_fight_regen_pit_ticks;
 static u8 g_fight_regen_frames;
 static u8 g_debug_invincible;
+static u8 g_debug_unlimited_magic;
 static u8 g_debug_no_gravity;
 
 static void debug_refresh_open_inventory(void);
@@ -133,14 +134,18 @@ static void debug_restore_health(void) {
     debug_write_u16(ZEL_PLAYER_HP, game_read_u16(ZEL_PLAYER_HP_MAX));
 }
 
-static void debug_restore_shield_magic_state(void) {
-    debug_write_u16(ZEL_PLAYER_SHIELD_HP,
-                    game_read_u16(ZEL_PLAYER_SHIELD_HP_MAX));
+static void debug_restore_magic_state(void) {
     for (u16 spell = 0; spell < 7; ++spell) {
         if (g_game_segments[0][ZEL_PLAYER_SPELL_KNOWN + spell])
             debug_write_u8((u16)(ZEL_PLAYER_SPELL_CHARGES + spell),
                 g_game_segments[0][ZEL_PLAYER_SPELL_CHARGES_MAX + spell]);
     }
+}
+
+static void debug_restore_shield_magic_state(void) {
+    debug_write_u16(ZEL_PLAYER_SHIELD_HP,
+                    game_read_u16(ZEL_PLAYER_SHIELD_HP_MAX));
+    debug_restore_magic_state();
 }
 
 static int advance_fight_passive_life_restoration(u32 pit_ticks,
@@ -215,22 +220,52 @@ static int fight_boundary_returns_to_town(u8 operation, u8 selector,
     const int town_dispatch = operation == 0 &&
         (dispatch == 0x6002 || dispatch == 0x601C);
     /* Release-byte contract: test_fight_level_handoff_oracle.py proves that
-     * 200FIGHT calls the loader with AL=1 and sets bit 7 on door targets;
-     * 0x80 is the death handoff while 0x81 returns from Malicia to Muralla. */
-    const int town_warp = operation == 1 &&
-        (selector & 0x80u) && selector != 0x80u;
+     * 200FIGHT calls the loader with AL=1 and sets bit 7 on every town
+     * target.  Selector 80h is Felishika itself; it is also the destination
+     * selected by the post-Jashiin faint sequence. */
+    const int town_warp = operation == 1 && (selector & 0x80u);
     return town_dispatch || town_warp;
 }
 
+static u8 fight_music_chunk_for_selector(u8 selector) {
+    /* 200FIGHT's selector table groups MP10..MP8D by authored level. MP8D
+     * is the boss handoff and selects MBOS rather than the level-8 score. */
+    if (selector <= 0x01) return 86;
+    if (selector <= 0x04) return 87;
+    if (selector <= 0x07) return 88;
+    if (selector <= 0x0A) return 89;
+    if (selector <= 0x0D) return 90;
+    if (selector <= 0x11) return 91;
+    if (selector <= 0x16) return 92;
+    if (selector <= 0x1B) return 93;
+    if (selector == 0x1C) return 94;
+    return 0xFF;
+}
+
 static void sync_fight_music(void) {
-    const u8 chunk = zeliard_fight_masm_vm_music_chunk();
+    u8 chunk = zeliard_fight_masm_vm_music_chunk();
     if (zeliard_fight_masm_vm_ending_active()) {
-        if (chunk == g_fight_music_chunk) return;
+        if (chunk == g_fight_music_chunk &&
+            zel_opening_audio_music_track() == ZEL_MUSIC_ZEND)
+            return;
         if (chunk == 39) {
             if (!zel_audio_play_music(ZEL_MUSIC_ZEND))
                 platform_log("250ENDMO: ending score start failed");
             g_fight_music_chunk = chunk;
         }
+        return;
+    }
+    if (zeliard_fight_masm_vm_active() &&
+        g_game_segments[0][0x0049] != 0) {
+        /* 319MAO2 sets player byte 49h when Jashiin's defeat switches
+         * 200FIGHT into the special captured/faint sequence.  MMAO has
+         * finished by this point in the original presentation: Duke's
+         * collapse and the fade back to Felishika play in silence.  Do not
+         * let the browser-side music synchronizer restart the boss score
+         * while 200FIGHT animates that sequence. */
+        if (zel_opening_audio_music_track() != ZEL_MUSIC_NONE)
+            zel_opening_audio_stop();
+        g_fight_music_chunk = chunk;
         return;
     }
     const u16 map_width = zeliard_fight_masm_vm_active()
@@ -247,7 +282,15 @@ static void sync_fight_music(void) {
         g_fight_connector_music_fade = 0;
         g_fight_music_chunk = 0xFF;
     }
-    if (chunk == g_fight_music_chunk) return;
+    if (chunk == 0xFF && zeliard_fight_masm_vm_active()) {
+        /* 200FIGHT:new_game_init deliberately leaves the resident score
+         * running when the new cavern uses the same level music. A browser
+         * checkpoint/warp has bootstrapped through town, however, so its
+         * audio driver no longer holds that resident score. Reconstruct the
+         * authored music-table chunk from the active cavern selector. */
+        chunk = fight_music_chunk_for_selector(
+            zeliard_fight_masm_vm_peek_u8(0x00C4));
+    }
     const zel_music_track_t track = chunk == 86 ? ZEL_MUSIC_MUS1
                                   : chunk == 87 ? ZEL_MUSIC_MUS2
                                   : chunk == 88 ? ZEL_MUSIC_MUS3
@@ -258,7 +301,28 @@ static void sync_fight_music(void) {
                                   : chunk == 93 ? ZEL_MUSIC_MUS8
                                   : chunk == 94 ? ZEL_MUSIC_MBOS
                                   : chunk == 95 ? ZEL_MUSIC_MFAN
+                                  : chunk == 96 ? ZEL_MUSIC_MMAO
                                                 : ZEL_MUSIC_NONE;
+    if (track == ZEL_MUSIC_MMAO &&
+        zel_opening_audio_music_track() != ZEL_MUSIC_MMAO) {
+        if (g_fight_music_chunk != chunk) {
+            /* MP90 is Jashiin's dialogue room. MASM marks its level change
+             * with FF24h=0Ah before loading MMAO, so let Final's MUS8 score
+             * fade fully instead of replacing it at the loader callback. */
+            g_fight_music_chunk = chunk;
+            zel_opening_audio_begin_gameplay_music_change_fade();
+            return;
+        }
+        if (!zel_opening_audio_ready_for_transition())
+            return;
+    }
+    /* Debug checkpoints and map warps bootstrap through a town before
+     * restarting 200FIGHT.  Several late caverns share MUS8, so the cached
+     * chunk can still be 93 even though the active audio driver now holds a
+     * town score.  Suppress a restart only when both states agree. */
+    if (chunk == g_fight_music_chunk &&
+        zel_opening_audio_music_track() == (int)track)
+        return;
     if (track == ZEL_MUSIC_MFAN) {
         /* MSCADLIB clears the caller's FF26h completion byte while the
          * reward fanfare is active.  300ROKAD polls that same byte before
@@ -628,6 +692,25 @@ static bool game_load_direct(const char *name, u16 destination) {
         return false;
     }
     memcpy(g_game_segments[0] + destination, data, size);
+    free(data);
+    return true;
+}
+
+static bool game_load_chunk_payload(const char *name, u16 destination) {
+    size_t size = 0;
+    u8 *data = platform_load_asset(name, &size);
+    if (!data || size < 4) {
+        free(data);
+        return false;
+    }
+    const u32 payload_size = (u32)data[0] | ((u32)data[1] << 8) |
+        ((u32)data[2] << 16) | ((u32)data[3] << 24);
+    if (payload_size > size - 4 ||
+        payload_size > (u32)ZELIARD_GAME_SEGMENT_SIZE - destination) {
+        free(data);
+        return false;
+    }
+    memcpy(g_game_segments[0] + destination, data + 4, payload_size);
     free(data);
     return true;
 }
@@ -1019,16 +1102,16 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 g_game_segments[0], sizeof(g_game_segments[0]),
                 g_game_vga, sizeof(g_game_vga), input_ticks,
                 g_game_segments[0][0xFF17]);
-            if (zeliard_fight_masm_vm_ending_requested()) {
-                g_fight_death_pending = 0;
-                g_fight_death_return_pending = 0;
-                g_fight_death_audio_fade_started = 0;
-                g_fight_music_chunk =
-                    zeliard_fight_masm_vm_music_chunk();
-                if (!zeliard_fight_masm_vm_begin_ending())
-                    platform_log("319MAO2: 250ENDMO overlay handoff failed");
-                zel_opening_audio_tick(dt_ms);
-                return;
+            if (g_debug_unlimited_magic) {
+                const u8 selected = g_game_segments[0]
+                    [ZEL_PLAYER_SELECTED_SPELL];
+                const u8 charge_before = selected >= 1 && selected <= 7
+                    ? g_game_segments[0][ZEL_PLAYER_SPELL_CHARGES + selected - 1]
+                    : 0;
+                debug_restore_magic_state();
+                if (selected >= 1 && selected <= 7 && charge_before !=
+                    g_game_segments[0][ZEL_PLAYER_SPELL_CHARGES + selected - 1])
+                    debug_redraw_hud(0, 0, 1);
             }
             const u16 hp_after_vm = (u16)(
                 g_game_segments[0][ZEL_PLAYER_HP] |
@@ -1108,7 +1191,10 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 const u16 dispatch =
                     zeliard_fight_masm_vm_exit_dispatch_slot();
                 const int town_warp = operation == 1 &&
-                    (selector & 0x80u) && selector != 0x80u;
+                    (selector & 0x80u);
+                const int jashiin_faint_return = town_warp &&
+                    selector == 0x80u &&
+                    g_game_segments[0][0x0049] != 0;
                 if (fight_boundary_returns_to_town(
                         operation, selector, dispatch)) {
                     g_cavern_transition.complete = 0;
@@ -1120,7 +1206,8 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                         zel_opening_audio_tick(dt_ms);
                         return;
                     }
-                    if (town_warp && !g_fight_death_pending) {
+                    if (town_warp && !g_fight_death_pending &&
+                        !jashiin_faint_return) {
                         /* 200FIGHT:check_c3 keeps the cavern score running
                          * throughout the reverse ROKA walk.  level_start is
                          * the first subsequent INT 60h AX=1 boundary. */
@@ -1144,6 +1231,40 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                     }
                     g_fight_death_pending = 0;
                     g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
+                    if (jashiin_faint_return) {
+                        /* 319MAO2 sets player byte 49h, then
+                         * 200FIGHT:game_over_sequence fades Duke out and
+                         * forces stat_XC5/current_area_id to 80h.  The mode-1
+                         * loader installs CMAP and level_start computes the
+                         * authored outdoor castle arrival from target 22h:
+                         * start 11h, screen column 0Dh.  Stop at the same
+                         * overlay boundary, but finish that resident
+                         * arithmetic before entering 106TOWN so its facing
+                         * NPC begins the post-victory greeting normally. */
+                        if (zeliard_town_prepare_level_start(
+                                g_game_segments[0],
+                                sizeof(g_game_segments[0]), selector) != 0) {
+                            platform_log(
+                                "200FIGHT: Jashiin castle level-start failed");
+                        }
+                        /* The mode-1 loader also replaces 200FIGHT at 6000h
+                         * with 106TOWN.  Unlike an ordinary cavern-door
+                         * return, this final-boss path has no reverse ROKA
+                         * transition that restores the suspended town
+                         * segment.  Reload the resident overlay explicitly;
+                         * its text metrics at 7B82h/7BE2h are required by
+                         * the automatic "Brave knight" greeting. */
+                        if (!game_load_chunk_payload("town.bin", 0x6000)) {
+                            platform_log(
+                                "200FIGHT: Jashiin town overlay load failed");
+                        }
+                        g_game_segments[0][ZEL_PLAYER_BOSS_INTRO_FLAG] = 0;
+                        g_game_segments[0][ZEL_PLAYER_POSE] = 0;
+                        zel_input_init(&g_input, g_game_segments[0]);
+                        g_cavern_town_origin.valid = 0;
+                        g_cavern_transition.complete = 0;
+                        g_cavern_transition.return_to_town = 0;
+                    }
                     if (!zeliard_town_area_supported(
                             g_game_segments[0][0x00C4])) {
                         const u8 saved_area = g_game_segments[0][0x00C5];
@@ -1161,6 +1282,10 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                     } else {
                         memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
                         zel_audio_play_music(current_town_music());
+                    }
+                    if (jashiin_faint_return) {
+                        g_town_runtime.post_victory_king_required = 1;
+                        g_town_runtime.post_victory_king_complete = 0;
                     }
                 } else {
                     g_fight_boundary_selector = selector;
@@ -1201,6 +1326,27 @@ EXPORT void zeliard_tick(u32 dt_ms) {
         const int frames = zeliard_town_advance_pit(
             &g_town_runtime, &g_game_exec, g_game_vga, sizeof(g_game_vga),
             input_ticks, g_game_segments[0][0xFF17]);
+        if (g_town_runtime.room.alternate_transition_requested) {
+            /* 211OMOYP:A041 takes this path only in the princess shrine
+             * after Jashiin's door/warp sequence has set player byte 49h.
+             * The normal authored route first visits 210KINGP, whose A6C1h
+             * post-victory script sends Duke to Felicia's chamber.  This is
+             * the subsequent handoff to 250ENDMO; FF30h merely marks the
+             * boss arena complete and must not bypass the outdoor greeting
+             * or the King's chamber. */
+            zel_opening_audio_stop();
+            g_fight_music_chunk = 0xFF;
+            if (!zeliard_fight_masm_vm_begin_ending(
+                    g_game_segments[0], sizeof(g_game_segments[0]),
+                    g_game_vga, sizeof(g_game_vga))) {
+                platform_log("211OMOYP: 250ENDMO overlay handoff failed");
+            } else {
+                memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+                framebuf_rgb_disable();
+            }
+            zel_opening_audio_tick(dt_ms);
+            return;
+        }
         if (g_death_sage_chrome_active) {
             if (g_town_runtime.room.active)
                 restore_death_sage_chrome();
@@ -1440,12 +1586,34 @@ EXPORT void             zeliard_debug_set_invincible(int enabled) {
         debug_redraw_hud(1, 0, 0);
     }
 }
+EXPORT int              zeliard_debug_unlimited_magic(void) {
+    return g_debug_unlimited_magic;
+}
+EXPORT void             zeliard_debug_set_unlimited_magic(int enabled) {
+    g_debug_unlimited_magic = enabled != 0;
+    if (g_debug_unlimited_magic) {
+        debug_restore_magic_state();
+        debug_redraw_hud(0, 0, 1);
+    }
+}
 EXPORT int              zeliard_debug_no_gravity(void) {
     return g_debug_no_gravity;
 }
 EXPORT void             zeliard_debug_set_no_gravity(int enabled) {
     g_debug_no_gravity = enabled != 0;
     zeliard_fight_masm_vm_set_debug_no_gravity(g_debug_no_gravity);
+}
+EXPORT int              zeliard_debug_kill_boss(void) {
+    /* Preserve MAO2's canonical death sequence: this changes only the same
+     * boss state used by the final-fight regression probe. 319MAO2 still
+     * owns the animation, Tear award, faint, and Felishika return. */
+    if (!zeliard_fight_masm_vm_active() ||
+        zeliard_fight_masm_vm_peek_u16(0xC002) != 73 ||
+        g_game_segments[0][0xC4] != 0x1E)
+        return 0;
+    return zeliard_fight_masm_vm_poke_u16(0xAC06, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xAC20, 0) &&
+           zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
 }
 EXPORT void             zeliard_debug_restore_shield_magic(void) {
     debug_restore_health();
@@ -1489,6 +1657,10 @@ EXPORT void             zeliard_opening_set_phase_for_test(int phase) {
 EXPORT u32              zeliard_opening_nec_hou_sprite_debug_word(void) { return opening_nec_hou_sprite_debug_word(); }
 #ifndef __EMSCRIPTEN__
 int zeliard_test_town_dialog_active(void) { return g_town_runtime.dialog.active; }
+int zeliard_test_king_script(void) {
+    return zeliard_king_select_script(
+        g_game_segments[0], sizeof(g_game_segments[0]));
+}
 int zeliard_test_fight_returns_to_town(int operation, int selector,
                                        int dispatch) {
     return fight_boundary_returns_to_town(
@@ -1724,13 +1896,57 @@ EXPORT int              zeliard_test_defeat_pulpo(void) {
            zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
 }
 EXPORT int              zeliard_test_defeat_jashiin(void) {
-    if (!zeliard_fight_masm_vm_active() ||
-        zeliard_fight_masm_vm_peek_u16(0xC002) != 73 ||
-        g_game_segments[0][0xC4] != 0x1E)
+    return zeliard_debug_kill_boss();
+}
+EXPORT int              zeliard_test_start_ending(void) {
+    if (g_scene != SCENE_GAME) return 0;
+
+    /* Debug-only direct equivalent of 211OMOYP's princess-hut handoff.
+     * Keep 250ENDMO itself intact so this shortcut still exercises every
+     * authored restoration, narration, credit page, delay, and FIN draw. */
+    zeliard_room_masm_vm_stop();
+    zeliard_inventory_masm_vm_stop();
+    zeliard_fight_masm_vm_stop();
+    zel_input_release_all(&g_input, g_game_segments[0], 1);
+    g_cavern_transition.active = 0;
+    g_cavern_transition.complete = 0;
+    g_cavern_transition.return_to_town = 0;
+    g_fight_death_pending = 0;
+    g_fight_death_return_pending = 0;
+    g_fight_death_audio_fade_started = 0;
+    g_fight_started = 1;
+    g_gameplay_location = GAMEPLAY_LOCATION_CAVERN;
+    g_paused = 0;
+    zel_opening_audio_stop();
+    g_fight_music_chunk = 0xFF;
+    if (!zeliard_fight_masm_vm_begin_ending(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            g_game_vga, sizeof(g_game_vga)))
         return 0;
-    return zeliard_fight_masm_vm_poke_u16(0xAC06, 0) &&
-           zeliard_fight_masm_vm_poke_u8(0xAC20, 0) &&
-           zeliard_fight_masm_vm_poke_u8(0xFF2E, 0xFF);
+    /* A testing shortcut must visibly arrive at its destination.  Skip the
+     * princess-hut driver's 012Ch handoff hold, then stop at 250ENDMO's
+     * first completed graphics presentation.  From that frame onward the
+     * original timer, input gates, music, narration, and credits run live. */
+    for (unsigned pass = 0; pass < 256 &&
+            zeliard_fight_masm_vm_peek_u8(0xFF77) != 0xFF; ++pass) {
+        (void)zeliard_fight_masm_vm_advance(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            g_game_vga, sizeof(g_game_vga), 255, 0);
+    }
+    unsigned ending_pixels = 0;
+    for (unsigned pass = 0; pass < 4000 && ending_pixels < 5000; ++pass) {
+        (void)zeliard_fight_masm_vm_advance(
+            g_game_segments[0], sizeof(g_game_segments[0]),
+            g_game_vga, sizeof(g_game_vga), 1, 0);
+        ending_pixels = 0;
+        for (unsigned pixel = 0; pixel < ZELIARD_FB_SIZE; ++pixel)
+            ending_pixels += g_game_vga[pixel] != 0;
+    }
+    if (ending_pixels < 5000) return 0;
+    memcpy(g_framebuf, g_game_vga, ZELIARD_FB_SIZE);
+    framebuf_rgb_disable();
+    sync_fight_music();
+    return 1;
 }
 EXPORT int              zeliard_test_fight_u8(unsigned offset) {
     return zeliard_fight_masm_vm_active() && offset <= 0xFFFF
@@ -1784,7 +2000,13 @@ EXPORT int zeliard_test_restart_town(int area) {
     g_fight_started = 0;
     g_cavern_transition.active = 0;
     g_cavern_transition.complete = 0;
-    return enter_game_scene() ? 1 : 0;
+    if (!enter_game_scene()) return 0;
+    if (area == ZEL_TOWN_AREA_FELISHIKA &&
+        g_game_segments[0][ZEL_PLAYER_AREA_LOAD_FLAG]) {
+        g_town_runtime.post_victory_king_required = 1;
+        g_town_runtime.post_victory_king_complete = 0;
+    }
+    return 1;
 }
 
 #if !defined(__EMSCRIPTEN__) && !defined(ZELIARD_NO_MAIN)

@@ -820,6 +820,9 @@ int zeliard_town_begin_room_transition(zeliard_town_runtime_t *town,
     if (!town || kind == ZEL_ROOM_NONE ||
         town->building_transition != ZEL_TOWN_BUILDING_TRANSITION_NONE)
         return -1;
+    if (kind == ZEL_ROOM_VIEWING && town->post_victory_king_required &&
+        !town->post_victory_king_complete)
+        return -2;
     if (zeliard_room_prepare_enter(&town->room, vga, vga_size)) return -1;
     town->building_transition = ZEL_TOWN_BUILDING_TRANSITION_ENTER;
     town->pending_room_kind = kind;
@@ -1060,6 +1063,16 @@ static int run_live_frame(zeliard_town_runtime_t *town,
         return 0;
     }
     zeliard_town_detect_facing_targets(town, cs, input_direction);
+    /* Byte 49h alone makes 211OMOYP jump to 250ENDMO, but the authored
+     * story route first runs 210KINGP's A6C1h post-victory speech. Keep the
+     * princess hut inert until that speech has actually reached its end. */
+    if (town->facing_door_found && town->facing_door_type == 1 &&
+        town->post_victory_king_required &&
+        !town->post_victory_king_complete) {
+        cs[GVAR_FRAME_TIMER] = 0;
+        town->frame_count++;
+        return 0;
+    }
     if (town->facing_door_found &&
         draw_building_entry_pose(cs, game_data, mask_data, vga, vga_size))
         return -4;
@@ -1257,6 +1270,18 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
         cs[GVAR_FRAME_TIMER]++;
         write_u16(cs, 0xFF1B, (u16)(read_u16(cs, 0xFF1B) + 1));
         write_u16(cs, 0xFF50, (u16)(read_u16(cs, 0xFF50) + 1));
+        if (town->room.active &&
+            town->room.alternate_transition_pending) {
+            /* 211OMOYP:end_demo_transition zeroes FF50h and spins on the
+             * raw interrupt counter, not on 106TOWN's slower frame gate.
+             * No redraw occurs: the stone Princess remains displayed for
+             * all 012Ch PIT ticks. */
+            if (++town->room.alternate_transition_ticks >= 0x012C) {
+                town->room.alternate_transition_pending = 0;
+                town->room.alternate_transition_requested = 1;
+            }
+            continue;
+        }
         if (town->dialog.active &&
             (town->dialog.prompt_cursor_anim_active ||
              town->dialog.scroll_active ||
@@ -1276,6 +1301,10 @@ int zeliard_town_advance_pit(zeliard_town_runtime_t *town,
             const int result = zeliard_room_advance_pit(
                 &town->room, cs, 0x10000, vga, vga_size);
             if (result < 0) return result;
+            if (town->post_victory_king_required &&
+                town->room.kind == ZEL_ROOM_KING &&
+                town->room.exit_requested)
+                town->post_victory_king_complete = 1;
             /* The MASM room loop writes directly to A000 between normal
              * 106TOWN frames. Tell the host that its VGA mirror changed. */
             frames = 1;

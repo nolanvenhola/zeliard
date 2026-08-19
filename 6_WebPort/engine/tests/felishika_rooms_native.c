@@ -173,7 +173,8 @@ static int runtime_round_trip(void) {
     cs[0x0049] = 0xFF;
     ok &= zeliard_room_enter(room, ZEL_ROOM_VIEWING, cs, 0x10000,
                              vga, 0x10000) == 0;
-    ok &= room->alternate_transition_requested;
+    ok &= room->alternate_transition_pending;
+    ok &= !room->alternate_transition_requested;
     ok &= zeliard_room_leave(room, cs, 0x10000, vga, 0x10000) == 0;
     const struct {
         zeliard_room_kind_t kind;
@@ -1690,6 +1691,11 @@ static int king_branch_selection(void) {
     int ok = zeliard_king_select_script(cs, sizeof(cs)) == 0xA42F;
     cs[5] = 0xFF;
     ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA53C;
+    /* Web checkpoint recovery: MASM cannot author this combination, but
+     * older web saves can have final victory without byte 06h. */
+    cs[0x49] = 0xFF;
+    ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA6C1;
+    cs[0x49] = 0;
     cs[6] = 0xFF;
     ok &= zeliard_king_select_script(cs, sizeof(cs)) == 0xA5D2;
     cs[0x49] = 0xFF;
@@ -1808,6 +1814,7 @@ static int king_followup_scripts(void) {
         ok &= zeliard_room_enter(room, ZEL_ROOM_KING, cs, 0x10000,
                                  vga, 0x10000) == 0;
         ok &= room->script_ip == cases[index].start;
+        const unsigned long long entry_frame = fnv1a64(vga, 0x10000);
         u32 ticks = 0;
         u16 wait_ips[16] = {0};
         u8 wait_prompt[16] = {0};
@@ -1832,12 +1839,20 @@ static int king_followup_scripts(void) {
         }
         const u32 gold = ((u32)cs[0x85] << 16) |
                          (u16)(cs[0x86] | ((u16)cs[0x87] << 8));
+        const unsigned long long final_frame = fnv1a64(vga, 0x10000);
         ok &= room->exit_requested && ticks < 30000 && gold == 321;
+        /* 210KINGP ends every branch on portrait variant 6. The victory
+         * branch must already have that same overlay at entry because
+         * render_portrait selects it directly from player byte 49h. */
+        ok &= final_frame == 0xD235184DB1CDEE19ULL;
+        if (cases[index].quest)
+            ok &= entry_frame == 0xD235184DB1CDEE19ULL;
         ok &= wait_count == 2 && wait_ips[0] == cases[index].automatic_wait &&
               wait_ips[1] == cases[index].explicit_wait &&
               wait_prompt[0] == 1 && wait_prompt[1] == 0;
-        printf("king_script_%04x: ticks=%u gold=%u exit=%u\n",
-               cases[index].start, ticks, gold, room->exit_requested);
+        printf("king_script_%04x: ticks=%u gold=%u exit=%u entry=%016llx final=%016llx\n",
+               cases[index].start, ticks, gold, room->exit_requested,
+               entry_frame, final_frame);
         printf("king_waits_%04x:", cases[index].start);
         for (size_t wait = 0; wait < wait_count; ++wait)
             printf(" %04x", wait_ips[wait]);

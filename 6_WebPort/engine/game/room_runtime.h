@@ -18,6 +18,7 @@ typedef enum {
 typedef struct {
     zeliard_room_kind_t kind;
     u8 active;
+    u8 alternate_transition_pending;
     u8 alternate_transition_requested;
     u8 entry_frame_prepared;
     u8 exit_requested;
@@ -40,6 +41,7 @@ typedef struct {
     u8 menu_item_ids[12];
     u16 script_ip;
     u16 script_wait_ticks;
+    u16 alternate_transition_ticks;
     u32 entry_gold;
     u16 entry_almas;
     u16 entry_hp;

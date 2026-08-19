@@ -340,13 +340,17 @@ static int run_alguien_case(void) {
 
 static int run_jashiin_case(void) {
     static u8 game[0x10000], vga[0x10000];
-    prepare_player(game, 0x1E);
+    /* Exercise the authored MP90 dialog-to-MPA0 handoff. Starting directly
+     * in 1Eh previously let an empty chamber pass this test. */
+    prepare_player(game, 0x1D);
     game[0x98] = 1;
     game[0xA0] = 8;
     palette_set_game_mcga();
     int ok = zeliard_fight_masm_vm_start(
         game, sizeof(game), vga, sizeof(vga));
     const u16 position = zeliard_fight_masm_vm_peek_u16(0xAC06);
+    const u8 appear_gate = zeliard_fight_masm_vm_peek_u8(0xFF21);
+    const u8 anim_active = zeliard_fight_masm_vm_peek_u8(0xAC21);
     const unsigned long long first_hash = fnv1a64(vga, 64000);
     ok &= zeliard_fight_masm_vm_poke_u16(0xAC06, 0);
     ok &= zeliard_fight_masm_vm_poke_u8(0xAC20, 0);
@@ -362,14 +366,63 @@ static int run_jashiin_case(void) {
             completion_hash = fnv1a64(vga, 64000);
         }
     }
-    printf("jashiin_final_probe: position=%04x frames=%u completion=%u/%02x "
-           "tears=%02x hash=%016llx/%016llx\n", position, frames,
+    printf("jashiin_final_probe: selector=%02x gate=%02x anim=%02x "
+           "position=%04x frames=%u completion=%u/%02x tears=%02x "
+           "active=%d hash=%016llx/%016llx\n", game[0xC4], appear_gate,
+           anim_active, position, frames,
            completion, zeliard_fight_masm_vm_peek_u8(0xFF30), game[0xA0],
+           zeliard_fight_masm_vm_active(),
            first_hash, completion_hash);
+    ok &= game[0xC4] == 0x1E;
+    ok &= appear_gate == 0xFF;
+    ok &= anim_active == 0xFF;
     ok &= position == 0x0320;
-    ok &= completion == 121;
-    ok &= first_hash == 0x23D025DB28E274EBULL;
-    ok &= completion_hash == 0xBAC3070BD3942E86ULL;
+    ok &= completion == 161;
+    ok &= first_hash == 0xEC4322843F255355ULL;
+    ok &= completion_hash == 0xA72C46C41F12249DULL;
+    return ok;
+}
+
+/* 200FIGHT increments each ordinary object's +0Fh byte once per completed
+ * combat frame.  A dead enemy is not even considered for restoration until
+ * that byte wraps after 256 frames; viewport and tile-clearance checks can
+ * defer the actual restoration further. */
+static int run_absor_respawn_case(void) {
+    static u8 game[0x10000], vga[0x10000];
+    prepare_player(game, 0x17);
+    game[0x90] = game[0xB2] = 0xFF;
+    game[0x91] = game[0xB3] = 0x7F;
+    palette_set_game_mcga();
+    int ok = zeliard_fight_masm_vm_start(
+        game, sizeof(game), vga, sizeof(vga));
+    const u16 objects = zeliard_fight_masm_vm_peek_u16(0xC010);
+    const unsigned object_index = 9; /* MP80 M7: x=33/y=59, family 3. */
+    const u16 object = (u16)(objects + object_index * 16u);
+    const u16 spawn_x = (u16)zeliard_fight_masm_vm_peek_u16(
+        (u16)(object + 11));
+    const u8 spawn_y = (u8)zeliard_fight_masm_vm_peek_u8(
+        (u16)(object + 13));
+    const u8 spawn_type = (u8)zeliard_fight_masm_vm_peek_u8(
+        (u16)(object + 14));
+
+    ok &= spawn_x == 33 && spawn_y == 59 && spawn_type == 3;
+    ok &= zeliard_fight_masm_vm_poke_u16(object, 0xFF00);
+    ok &= zeliard_fight_masm_vm_poke_u8((u16)(object + 15), 0);
+    for (unsigned frame = 1; ok && frame < 256; ++frame) {
+        ok &= advance_frame(game, vga, 0);
+        ok &= zeliard_fight_masm_vm_peek_u16(object) == 0xFF00;
+        ok &= zeliard_fight_masm_vm_peek_u8((u16)(object + 15)) ==
+              (int)(u8)frame;
+    }
+    const u8 counter_255 = (u8)zeliard_fight_masm_vm_peek_u8(
+        (u16)(object + 15));
+    ok &= counter_255 == 0xFF &&
+          zeliard_fight_masm_vm_peek_u16(object) == 0xFF00;
+    printf("absor_respawn_delay: %s object=%u spawn=%u/%u/%u "
+           "dead_through_frame=255 counter=%02x minimum_ms=21632\n",
+           ok ? "PASS" : "FAIL", object_index, spawn_x, spawn_y,
+           spawn_type, counter_255);
+    zeliard_fight_masm_vm_stop();
     return ok;
 }
 
@@ -488,7 +541,7 @@ int main(void) {
         {"Alguien handoff", "mp8d.mdt", 0x1C, 70, 8, 94, 0, 0, 0x00,
          0x1170CCB80731F929ULL, 0x9296F65C33677825ULL},
         {"Jashiin phase transition", "mp90.mdt", 0x1D, 73, 10, 96, 0, 0, 0x00,
-         0xEC4322843F255355ULL, 0xC323E744770E9BD2ULL},
+         0xEC4322843F255355ULL, 0x881549FB72E1A6D9ULL},
         {"Jashiin phase two", "mpa0.mdt", 0x1E, 73, 10, 96, 0, 0, 0x00,
          0x23D025DB28E274EBULL, 0xEF5D3778CBB67675ULL},
     };
@@ -506,6 +559,7 @@ int main(void) {
     ok &= run_persistence_case("Milagro", 0x18, 3, 0x43, 0x20);
     ok &= run_persistence_case("Desleal", 0x19, 3, 0x44, 0x08);
     ok &= run_persistence_case("Final", 0x1B, 0, 0x45, 0x10);
+    ok &= run_absor_respawn_case();
     ok &= run_all_persistent_objects();
     printf("VERDICT: %s: all remaining cavern release maps execute in the "
            "exact fight VM\n", ok ? "PASS" : "FAIL");

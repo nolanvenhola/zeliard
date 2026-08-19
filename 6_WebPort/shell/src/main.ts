@@ -2,6 +2,9 @@ import { firstConnectedGamepad, mapBrowserGamepad,
     type GamepadMask } from './gamepad';
 import { applyDisplayMode, parseDisplayMode,
     type DisplayMode } from './display';
+import { cavernMinimapWorldAt, decodeCavernMap, drawCavernMinimap,
+    readCavernObjects, type CavernMap,
+    type CavernPin, type MinimapPosition } from './minimap';
 
 /*
  * Zeliard web shell — boots the Emscripten engine, copies the 320x200
@@ -41,10 +44,14 @@ type EngineExports = {
     _zeliard_game_speed_digit(): number;
     _zeliard_debug_invincible(): number;
     _zeliard_debug_set_invincible(enabled: number): void;
+    _zeliard_debug_unlimited_magic(): number;
+    _zeliard_debug_set_unlimited_magic(enabled: number): void;
     _zeliard_debug_no_gravity(): number;
     _zeliard_debug_set_no_gravity(enabled: number): void;
     _zeliard_debug_restore_shield_magic(): void;
     _zeliard_debug_add_item(itemId: number): number;
+    _zeliard_test_defeat_jashiin(): number;
+    _zeliard_test_start_ending(): number;
     _zeliard_session_terminated(): number;
     _zeliard_music_enabled(): number;
     _zeliard_sound_enabled(): number;
@@ -63,6 +70,8 @@ type EngineExports = {
     _zeliard_audio_backend_fallback(): number;
     _zeliard_opening_set_phase_for_test(phase: number): void;
     _zeliard_room_kind(): number;
+    _zeliard_town_dialog_active(): number;
+    _zeliard_inventory_active(): number;
     _zeliard_town_area(): number;
     _zeliard_town_cavern_exit_requested(): number;
     _zeliard_cavern_transition_active(): number;
@@ -70,8 +79,13 @@ type EngineExports = {
     _zeliard_cavern_transition_step(): number;
     _zeliard_fight_active(): number;
     _zeliard_fight_ip(): number;
+    _zeliard_fight_map_width(): number;
     _zeliard_fight_boundary(): number;
+    _zeliard_test_fight_u8(offset: number): number;
+    _zeliard_test_restart_fight(selector: number, startPosition: number,
+        mapScrollRow: number, screenPosition: number): number;
     _zeliard_test_enter_room(kind: number): number;
+    _zeliard_test_restart_town(area: number): number;
     _zeliard_save_serial(): number;
     _zeliard_save_name(): number;
     _zeliard_save_record(): number;
@@ -110,6 +124,12 @@ const soundToggleEl = document.getElementById('sound-toggle') as HTMLButtonEleme
 const gameSpeedEl = document.getElementById('game-speed') as HTMLSelectElement;
 const invincibleToggleEl = document.getElementById(
     'invincible-toggle') as HTMLButtonElement;
+const unlimitedMagicToggleEl = document.getElementById(
+    'unlimited-magic-toggle') as HTMLButtonElement;
+const debugKillBossEl = document.getElementById(
+    'debug-kill-boss') as HTMLButtonElement;
+const debugStartEndingEl = document.getElementById(
+    'debug-start-ending') as HTMLButtonElement;
 const restoreResourcesEl = document.getElementById(
     'restore-resources') as HTMLButtonElement;
 const debugItemSelectEl = document.getElementById(
@@ -118,6 +138,37 @@ const debugAddItemEl = document.getElementById(
     'debug-add-item') as HTMLButtonElement;
 const flyingToggleEl = document.getElementById(
     'flying-toggle') as HTMLButtonElement;
+const debugWarpDestinationEl = document.getElementById(
+    'debug-warp-destination') as HTMLSelectElement;
+const debugWarpRoomEl = document.getElementById(
+    'debug-warp-room') as HTMLButtonElement;
+const debugWarpMapEl = document.getElementById(
+    'debug-warp-map') as HTMLButtonElement;
+const debugToggleEl = document.getElementById(
+    'debug-toggle') as HTMLButtonElement;
+const debugControlsEl = document.getElementById(
+    'debug-controls') as HTMLDivElement;
+const minimapToggleEl = document.getElementById(
+    'minimap-toggle') as HTMLButtonElement;
+const minimapEl = document.getElementById('minimap') as HTMLElement;
+const minimapCanvasEl = document.getElementById(
+    'minimap-canvas') as HTMLCanvasElement;
+const minimapDetailsEl = document.getElementById(
+    'minimap-details') as HTMLDivElement;
+const checkpointSlotEl = document.getElementById(
+    'checkpoint-slot') as HTMLSelectElement;
+const checkpointNameEl = document.getElementById(
+    'checkpoint-name') as HTMLInputElement;
+const checkpointSaveEl = document.getElementById(
+    'checkpoint-save') as HTMLButtonElement;
+const checkpointLoadEl = document.getElementById(
+    'checkpoint-load') as HTMLButtonElement;
+const checkpointClearEl = document.getElementById(
+    'checkpoint-clear') as HTMLButtonElement;
+const checkpointOpenEl = document.getElementById(
+    'checkpoint-open') as HTMLInputElement;
+const checkpointStatusEl = document.getElementById(
+    'checkpoint-status') as HTMLOutputElement;
 const keymapOpenEl = document.getElementById('keymap-open') as HTMLButtonElement;
 const keymapCloseEl = document.getElementById('keymap-close') as HTMLButtonElement;
 const keymapDialogEl = document.getElementById('keymap-dialog') as HTMLDialogElement;
@@ -308,6 +359,132 @@ async function boot() {
     setStatus('initialising engine…');
     Module._zeliard_init();
     (window as any).__zeliard = Module;
+
+    let debugToolsEnabled =
+        localStorage.getItem('zeliard.debugTools') === 'true';
+    type MinimapMode = 'off' | 'compact' | 'expanded';
+    const savedMinimapMode = localStorage.getItem('zeliard.minimapMode');
+    let minimapMode: MinimapMode = savedMinimapMode === 'compact' ||
+        savedMinimapMode === 'expanded' ? savedMinimapMode : 'off';
+    let minimapMap: CavernMap | null = null;
+    let minimapMapKey = '';
+    let minimapSelector = -1;
+    let minimapCenter: { x: number; y: number } | null = null;
+    let minimapLastPosition: MinimapPosition | null = null;
+    let minimapPins: CavernPin[] = [];
+    let minimapWarpArmed = false;
+    const minimapPinKey = (selector: number) =>
+        `zeliard.minimapPins.${selector.toString(16).padStart(2, '0')}`;
+    const loadMinimapPins = (selector: number): CavernPin[] => {
+        try {
+            const pins = JSON.parse(localStorage.getItem(
+                minimapPinKey(selector)) ?? '[]');
+            return Array.isArray(pins) ? pins.filter((pin: any) =>
+                Number.isInteger(pin?.x) && Number.isInteger(pin?.y) &&
+                Number.isInteger(pin?.number)).slice(0, 99) : [];
+        } catch {
+            return [];
+        }
+    };
+    const saveMinimapPins = () => {
+        if (minimapSelector >= 0)
+            localStorage.setItem(minimapPinKey(minimapSelector),
+                JSON.stringify(minimapPins));
+    };
+    type DebugCheckpoint = {
+        version: 1;
+        name: string;
+        savedAt: string;
+        location: 'town' | 'cavern';
+        area: number;
+        selector: number;
+        startPosition: number;
+        mapScrollRow: number;
+        screenPosition: number;
+        playerY: number;
+        record: number[];
+    };
+    const checkpointKey = (slot: string) =>
+        `zeliard.debugCheckpoint.${slot}`;
+    const townNames = [
+        'Felishika', 'Muralla', 'Satono', 'Bosque', 'Helada',
+        'Tumba', 'Dorado', 'Llama', 'Pureza', 'Esco',
+    ];
+    const cavernMapNames = [
+        'MP10', 'MP1D', 'MP20', 'MP21', 'MP2D', 'MP30', 'MP31', 'MP3D',
+        'MP40', 'MP41', 'MP4D', 'MP50', 'MP51', 'MP5D', 'MP60', 'MP61',
+        'MP62', 'MP6D', 'MP70', 'MP71', 'MP72', 'MP73', 'MP7D', 'MP80',
+        'MP81', 'MP82', 'MP83', 'MP84', 'MP8D', 'MP90', 'MPA0',
+    ];
+    const isCheckpoint = (value: any): value is DebugCheckpoint =>
+        value?.version === 1 && typeof value.name === 'string' &&
+        typeof value.savedAt === 'string' &&
+        (value.location === 'town' || value.location === 'cavern') &&
+        Number.isInteger(value.area) && Number.isInteger(value.selector) &&
+        Number.isInteger(value.startPosition) &&
+        Number.isInteger(value.mapScrollRow) &&
+        Number.isInteger(value.screenPosition) && Number.isInteger(value.playerY) &&
+        Array.isArray(value.record) && value.record.length === 0x100 &&
+        value.record.every((byte: unknown) => Number.isInteger(byte) &&
+            (byte as number) >= 0 && (byte as number) <= 0xFF);
+    const readCheckpoint = (slot = checkpointSlotEl.value):
+            DebugCheckpoint | null => {
+        try {
+            const value = JSON.parse(localStorage.getItem(
+                checkpointKey(slot)) ?? 'null');
+            if (!isCheckpoint(value)) return null;
+            /* Active 200FIGHT keeps its current map selector in C4. Early
+             * debug-state files incorrectly stored C8 (the level resource
+             * index), which could restart in a different cavern. Recover
+             * those files from their embedded live player record. */
+            if (value.location === 'cavern' && value.record[0xC4] < 0x80)
+                value.selector = value.record[0xC4];
+            return value;
+        } catch {
+            return null;
+        }
+    };
+    const checkpointDescription = (checkpoint: DebugCheckpoint) => {
+        const place = checkpoint.location === 'cavern'
+            ? `${cavernMapNames[checkpoint.selector] ??
+                `Cavern ${checkpoint.selector.toString(16).toUpperCase()
+                    .padStart(2, '0')}`} @ ${checkpoint.startPosition +
+                checkpoint.screenPosition + 4},${(checkpoint.mapScrollRow +
+                checkpoint.playerY + 3) & 0x3F}`
+            : `${townNames[checkpoint.area] ?? `Town ${checkpoint.area}`} @ ${
+                checkpoint.startPosition + checkpoint.screenPosition}`;
+        return place;
+    };
+    const canSaveCheckpoint = () => Module._zeliard_scene() === 2 &&
+        Module._zeliard_cavern_transition_active() === 0 &&
+        Module._zeliard_inventory_active() === 0 &&
+        Module._zeliard_town_dialog_active() === 0;
+    const refreshCheckpointControls = () => {
+        for (const option of Array.from(checkpointSlotEl.options)) {
+            const checkpoint = readCheckpoint(option.value);
+            option.textContent = checkpoint
+                ? `${checkpoint.name} — ${checkpointDescription(checkpoint)}`
+                : `Checkpoint ${option.value} — empty`;
+        }
+        const selected = readCheckpoint();
+        checkpointSaveEl.disabled = !canSaveCheckpoint();
+        checkpointLoadEl.disabled = !selected;
+        checkpointClearEl.disabled = !selected;
+    };
+    const safeCheckpointName = (name: string) => name.trim()
+        .replace(/\.zstate$/i, '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+        .replace(/[. ]+$/g, '').slice(0, 40) ||
+        `checkpoint-${checkpointSlotEl.value}`;
+    const downloadCheckpoint = (checkpoint: DebugCheckpoint) => {
+        const url = URL.createObjectURL(new Blob(
+            [JSON.stringify(checkpoint, null, 2)],
+            { type: 'application/json' }));
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${safeCheckpointName(checkpoint.name)}.zstate`;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    };
 
     const w = Module._zeliard_width();
     const h = Module._zeliard_height();
@@ -566,6 +743,8 @@ async function boot() {
         ctx.putImageData(imageData, 0, 0);
         if (deterministicCapture) recordPresent(fb, pal);
 
+        refreshMinimap();
+
     }
 
     paintFrame();
@@ -631,17 +810,44 @@ async function boot() {
             Module._zeliard_paused() !== 0;
         const debugEnabled = Module._zeliard_scene() === 2;
         const invincible = Module._zeliard_debug_invincible() !== 0;
+        const unlimitedMagic = Module._zeliard_debug_unlimited_magic() !== 0;
         const flying = Module._zeliard_debug_no_gravity() !== 0;
         invincibleToggleEl.textContent =
             `Invincible: ${invincible ? 'On' : 'Off'}`;
         invincibleToggleEl.setAttribute('aria-pressed', String(invincible));
+        unlimitedMagicToggleEl.textContent =
+            `Unlimited Magic: ${unlimitedMagic ? 'On' : 'Off'}`;
+        unlimitedMagicToggleEl.setAttribute(
+            'aria-pressed', String(unlimitedMagic));
         flyingToggleEl.textContent = `Flying: ${flying ? 'On' : 'Off'}`;
         flyingToggleEl.setAttribute('aria-pressed', String(flying));
         invincibleToggleEl.disabled = !debugEnabled;
+        unlimitedMagicToggleEl.disabled = !debugEnabled;
         flyingToggleEl.disabled = !debugEnabled;
         restoreResourcesEl.disabled = !debugEnabled;
         debugItemSelectEl.disabled = !debugEnabled;
         debugAddItemEl.disabled = !debugEnabled;
+        debugWarpDestinationEl.disabled = !debugEnabled;
+        debugWarpRoomEl.disabled = !debugEnabled;
+        const fightActive = debugEnabled &&
+            Module._zeliard_fight_active() !== 0;
+        debugKillBossEl.disabled = !fightActive;
+        debugStartEndingEl.disabled = !debugEnabled;
+        if (!fightActive) minimapWarpArmed = false;
+        debugWarpMapEl.disabled = !fightActive;
+        debugWarpMapEl.textContent = `Warp on Map: ${
+            minimapWarpArmed ? 'On' : 'Off'}`;
+        debugWarpMapEl.setAttribute('aria-pressed', String(minimapWarpArmed));
+        debugControlsEl.hidden = !debugToolsEnabled;
+        debugToggleEl.textContent = `Testing Tools: ${
+            debugToolsEnabled ? 'On' : 'Off'}`;
+        debugToggleEl.setAttribute('aria-pressed', String(debugToolsEnabled));
+        minimapToggleEl.disabled = !fightActive;
+        minimapToggleEl.textContent = `Map: ${minimapMode === 'off' ? 'Off' :
+            minimapMode === 'compact' ? 'Compact' : 'Large'}`;
+        minimapToggleEl.setAttribute('aria-pressed', String(
+            minimapMode !== 'off'));
+        refreshCheckpointControls();
 
         if (Module._zeliard_scene() === 2) {
             const player = Module._zeliard_game_segment();
@@ -658,6 +864,71 @@ async function boot() {
             playerExperienceEl.value = '—';
             playerExperienceThresholdEl.value = '—';
         }
+    }
+
+    function setMinimapMode(mode: MinimapMode) {
+        if (mode === 'expanded' && minimapMode !== 'expanded')
+            minimapCenter = null;
+        if (mode !== 'expanded') minimapWarpArmed = false;
+        minimapMode = mode;
+        localStorage.setItem('zeliard.minimapMode', mode);
+        refreshGameControls();
+        refreshMinimap();
+    }
+
+    function refreshMinimap() {
+        const active = debugToolsEnabled && minimapMode !== 'off' &&
+            Module._zeliard_scene() === 2 &&
+            Module._zeliard_fight_active() !== 0;
+        minimapEl.hidden = !active;
+        if (!active) return;
+
+        const player = Module._zeliard_game_segment();
+        const selector = Module.HEAPU8[player + 0xC4];
+        const width = Module._zeliard_fight_map_width();
+        const mapKey = `${selector}:${width}`;
+        const readFightByte = (offset: number) =>
+            Module._zeliard_test_fight_u8(offset);
+        if (!minimapMap || mapKey !== minimapMapKey) {
+            minimapMap = decodeCavernMap(readFightByte, selector);
+            minimapMapKey = mapKey;
+            minimapSelector = selector;
+            minimapCenter = null;
+            minimapPins = loadMinimapPins(selector);
+        }
+        if (!minimapMap) {
+            minimapEl.hidden = true;
+            return;
+        }
+
+        const scrollX = Module.HEAPU8[player + 0x80] |
+            (Module.HEAPU8[player + 0x81] << 8);
+        const scrollY = Module.HEAPU8[player + 0x82];
+        const screenX = Module.HEAPU8[player + 0x83];
+        const screenY = Module.HEAPU8[player + 0x84];
+        const playerX = (scrollX + screenX + 4) % minimapMap.width;
+        const playerY = (scrollY + screenY + 3) & 0x3F;
+        const expanded = minimapMode === 'expanded';
+        minimapLastPosition = { playerX, playerY, scrollX, scrollY };
+        minimapEl.classList.toggle('expanded', expanded);
+        minimapEl.classList.toggle('warp-armed', expanded && minimapWarpArmed);
+        drawCavernMinimap(minimapCanvasEl, minimapMap, {
+            playerX, playerY, scrollX, scrollY,
+        }, readCavernObjects(readFightByte), expanded, {
+            centerX: minimapCenter?.x,
+            centerY: minimapCenter?.y,
+            pins: minimapPins,
+        });
+        minimapDetailsEl.textContent = expanded && minimapWarpArmed
+            ? `Select destination  ·  Click: warp  ·  ` +
+              `Drag/wheel: pan  ·  Warp on Map: cancel`
+            : expanded
+            ? `Map ${selector.toString(16).toUpperCase().padStart(2, '0')}  ` +
+              `${minimapMap.width}\u00d7${minimapMap.height}  ` +
+              `Player ${playerX},${playerY}  ·  Drag/wheel: pan  ·  ` +
+              `Click: toggle pin  ·  Right-click: remove  ·  ` +
+              `Middle-click: recenter`
+            : 'M: hide  Shift+M: enlarge';
     }
 
     musicToggleEl.addEventListener('click', async () => {
@@ -691,6 +962,30 @@ async function boot() {
             Module._zeliard_debug_invincible() ? 0 : 1);
         refreshGameControls();
     });
+    unlimitedMagicToggleEl.addEventListener('click', () => {
+        Module._zeliard_debug_set_unlimited_magic(
+            Module._zeliard_debug_unlimited_magic() ? 0 : 1);
+        refreshGameControls();
+    });
+    debugKillBossEl.addEventListener('click', () => {
+        Module._zeliard_release_all_keys();
+        const defeated = Module._zeliard_test_defeat_jashiin() !== 0;
+        debugKillBossEl.textContent = defeated ? 'Boss Defeated' : 'Not in Jashiin Fight';
+        window.setTimeout(() => {
+            debugKillBossEl.textContent = 'Kill Boss';
+        }, 1200);
+        refreshGameControls();
+    });
+    debugStartEndingEl.addEventListener('click', () => {
+        Module._zeliard_release_all_keys();
+        const started = Module._zeliard_test_start_ending() !== 0;
+        debugStartEndingEl.textContent = started ? 'Ending Started' : 'Start Failed';
+        window.setTimeout(() => {
+            debugStartEndingEl.textContent = 'Start Final Ending';
+        }, 1200);
+        minimapWarpArmed = false;
+        refreshGameControls();
+    });
     restoreResourcesEl.addEventListener('click', () => {
         Module._zeliard_debug_restore_shield_magic();
         refreshGameControls();
@@ -708,6 +1003,324 @@ async function boot() {
         Module._zeliard_debug_set_no_gravity(
             Module._zeliard_debug_no_gravity() ? 0 : 1);
         refreshGameControls();
+    });
+    debugWarpRoomEl.addEventListener('click', () => {
+        const [area, kind] = debugWarpDestinationEl.value.split(':').map(Number);
+        Module._zeliard_release_all_keys();
+        minimapWarpArmed = false;
+        const restarted = Module._zeliard_test_restart_town(area) !== 0;
+        const entered = restarted && Module._zeliard_test_enter_room(kind) === 0;
+        debugWarpRoomEl.textContent = entered ? 'Warped' : 'Warp Failed';
+        window.setTimeout(() => {
+            debugWarpRoomEl.textContent = 'Warp to Room';
+        }, 1200);
+        minimapMap = null;
+        minimapMapKey = '';
+        refreshGameControls();
+        refreshMinimap();
+    });
+    debugWarpMapEl.addEventListener('click', () => {
+        if (Module._zeliard_fight_active() === 0) return;
+        minimapWarpArmed = !minimapWarpArmed;
+        if (minimapWarpArmed) setMinimapMode('expanded');
+        else {
+            refreshGameControls();
+            refreshMinimap();
+        }
+    });
+    debugToggleEl.addEventListener('click', () => {
+        debugToolsEnabled = !debugToolsEnabled;
+        localStorage.setItem('zeliard.debugTools', String(debugToolsEnabled));
+        refreshGameControls();
+        refreshMinimap();
+    });
+    minimapToggleEl.addEventListener('click', () => setMinimapMode(
+        minimapMode === 'off' ? 'compact' :
+        minimapMode === 'compact' ? 'expanded' : 'off'));
+
+    const wrapMapCoordinate = (value: number, size: number) =>
+        ((value % size) + size) % size;
+    const currentMinimapCenter = () => {
+        if (!minimapMap || !minimapLastPosition) return null;
+        return {
+            x: minimapCenter?.x ?? minimapLastPosition.playerX,
+            y: minimapCenter?.y ?? minimapLastPosition.playerY,
+        };
+    };
+    const minimapTileAt = (clientX: number, clientY: number) => {
+        if (!minimapMap || !minimapLastPosition) return null;
+        const rect = minimapCanvasEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+        return cavernMinimapWorldAt(minimapCanvasEl, minimapMap,
+            minimapLastPosition, true,
+            (clientX - rect.left) * minimapCanvasEl.width / rect.width,
+            (clientY - rect.top) * minimapCanvasEl.height / rect.height, {
+                centerX: minimapCenter?.x,
+                centerY: minimapCenter?.y,
+                pins: minimapPins,
+            });
+    };
+    const wrappedTileDistance = (a: number, b: number, size: number) => {
+        const distance = Math.abs(a - b);
+        return Math.min(distance, size - distance);
+    };
+    const nearestMinimapPin = (x: number, y: number,
+                               maximumDistance: number) => {
+        if (!minimapMap) return -1;
+        let nearest = -1;
+        let nearestDistance = maximumDistance;
+        minimapPins.forEach((pin, index) => {
+            const dx = wrappedTileDistance(pin.x, x, minimapMap!.width);
+            const dy = wrappedTileDistance(pin.y, y, minimapMap!.height);
+            const distance = Math.hypot(dx, dy);
+            if (distance <= nearestDistance) {
+                nearest = index;
+                nearestDistance = distance;
+            }
+        });
+        return nearest;
+    };
+    const removeMinimapPinAt = (clientX: number, clientY: number) => {
+        const tile = minimapTileAt(clientX, clientY);
+        if (!tile) return false;
+        const index = nearestMinimapPin(tile.x, tile.y, 2);
+        if (index < 0) return false;
+        minimapPins.splice(index, 1);
+        saveMinimapPins();
+        refreshMinimap();
+        return true;
+    };
+    const toggleMinimapPinAt = (clientX: number, clientY: number) => {
+        const tile = minimapTileAt(clientX, clientY);
+        if (!tile) return;
+        const index = nearestMinimapPin(tile.x, tile.y, 1.5);
+        if (index >= 0) {
+            minimapPins.splice(index, 1);
+        } else if (minimapPins.length < 99) {
+            let number = 1;
+            while (minimapPins.some(pin => pin.number === number)) number++;
+            minimapPins.push({ x: tile.x, y: tile.y, number });
+        }
+        saveMinimapPins();
+        refreshMinimap();
+    };
+    const warpToMinimapTileAt = (clientX: number, clientY: number) => {
+        const tile = minimapTileAt(clientX, clientY);
+        if (!tile || !minimapMap || minimapSelector < 0) return;
+        const player = Module._zeliard_game_segment();
+        const screenX = 14;
+        const screenY = Module.HEAPU8[player + 0x84];
+        const startPosition = wrapMapCoordinate(
+            tile.x - screenX - 4, minimapMap.width);
+        const mapScrollRow = wrapMapCoordinate(
+            tile.y - screenY - 3, minimapMap.height);
+        Module._zeliard_release_all_keys();
+        minimapWarpArmed = false;
+        const warped = Module._zeliard_test_restart_fight(
+            minimapSelector, startPosition, mapScrollRow, screenX) !== 0;
+        if (warped) {
+            minimapCenter = null;
+            minimapMap = null;
+            minimapMapKey = '';
+        } else {
+            debugWarpMapEl.textContent = 'Warp Failed';
+            window.setTimeout(() => refreshGameControls(), 1200);
+        }
+        refreshGameControls();
+        refreshMinimap();
+    };
+    type MinimapDrag = {
+        pointerId: number;
+        startClientX: number;
+        startClientY: number;
+        centerX: number;
+        centerY: number;
+        moved: boolean;
+    };
+    let minimapDrag: MinimapDrag | null = null;
+    minimapCanvasEl.addEventListener('pointerdown', event => {
+        if (minimapMode !== 'expanded' || !minimapMap ||
+            !minimapLastPosition) return;
+        if (event.button === 1) {
+            event.preventDefault();
+            minimapCenter = null;
+            refreshMinimap();
+            return;
+        }
+        if (event.button !== 0) return;
+        const center = currentMinimapCenter();
+        if (!center) return;
+        event.preventDefault();
+        minimapDrag = {
+            pointerId: event.pointerId,
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+            centerX: center.x,
+            centerY: center.y,
+            moved: false,
+        };
+        minimapCanvasEl.setPointerCapture(event.pointerId);
+    });
+    minimapCanvasEl.addEventListener('pointermove', event => {
+        if (!minimapDrag || event.pointerId !== minimapDrag.pointerId ||
+            !minimapMap) return;
+        const rect = minimapCanvasEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const dx = event.clientX - minimapDrag.startClientX;
+        const dy = event.clientY - minimapDrag.startClientY;
+        if (Math.hypot(dx, dy) >= 4) {
+            minimapDrag.moved = true;
+            minimapCanvasEl.classList.add('dragging');
+        }
+        if (!minimapDrag.moved) return;
+        const viewWidth = Math.min(minimapMap.width, 128);
+        const viewHeight = Math.min(minimapMap.height, 56);
+        minimapCenter = {
+            x: wrapMapCoordinate(minimapDrag.centerX -
+                dx / rect.width * viewWidth, minimapMap.width),
+            y: wrapMapCoordinate(minimapDrag.centerY -
+                dy / rect.height * viewHeight, minimapMap.height),
+        };
+        refreshMinimap();
+    });
+    const finishMinimapDrag = (event: PointerEvent) => {
+        if (!minimapDrag || event.pointerId !== minimapDrag.pointerId) return;
+        const wasMoved = minimapDrag.moved;
+        minimapDrag = null;
+        minimapCanvasEl.classList.remove('dragging');
+        if (minimapCanvasEl.hasPointerCapture(event.pointerId))
+            minimapCanvasEl.releasePointerCapture(event.pointerId);
+        if (!wasMoved) {
+            if (minimapWarpArmed)
+                warpToMinimapTileAt(event.clientX, event.clientY);
+            else
+                toggleMinimapPinAt(event.clientX, event.clientY);
+        }
+    };
+    minimapCanvasEl.addEventListener('pointerup', finishMinimapDrag);
+    minimapCanvasEl.addEventListener('pointercancel', event => {
+        if (!minimapDrag || event.pointerId !== minimapDrag.pointerId) return;
+        minimapDrag = null;
+        minimapCanvasEl.classList.remove('dragging');
+    });
+    minimapCanvasEl.addEventListener('contextmenu', event => {
+        if (minimapMode !== 'expanded') return;
+        event.preventDefault();
+        removeMinimapPinAt(event.clientX, event.clientY);
+    });
+    minimapCanvasEl.addEventListener('wheel', event => {
+        if (minimapMode !== 'expanded' || !minimapMap ||
+            !minimapLastPosition) return;
+        event.preventDefault();
+        const center = currentMinimapCenter();
+        const rect = minimapCanvasEl.getBoundingClientRect();
+        if (!center || !rect.width || !rect.height) return;
+        const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 :
+            event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? rect.height : 1;
+        const deltaX = (event.deltaX + (event.shiftKey ? event.deltaY : 0)) *
+            unit;
+        const deltaY = (event.shiftKey ? 0 : event.deltaY) * unit;
+        minimapCenter = {
+            x: wrapMapCoordinate(center.x + deltaX / rect.width *
+                Math.min(minimapMap.width, 128), minimapMap.width),
+            y: wrapMapCoordinate(center.y + deltaY / rect.height *
+                Math.min(minimapMap.height, 56), minimapMap.height),
+        };
+        refreshMinimap();
+    }, { passive: false });
+
+    checkpointSlotEl.addEventListener('change', () => {
+        checkpointStatusEl.value = '';
+        checkpointNameEl.value = readCheckpoint()?.name ?? '';
+        refreshCheckpointControls();
+    });
+    checkpointSaveEl.addEventListener('click', () => {
+        if (!canSaveCheckpoint()) return;
+        Module._zeliard_release_all_keys();
+        const pointer = Module._zeliard_game_segment();
+        const record = Array.from(Module.HEAPU8.slice(pointer, pointer + 0x100));
+        const cavern = Module._zeliard_fight_active() !== 0;
+        const name = safeCheckpointName(checkpointNameEl.value ||
+            checkpointDescription({
+                version: 1, name: '', savedAt: '',
+                location: cavern ? 'cavern' : 'town',
+                area: cavern ? -1 : Module._zeliard_town_area(),
+                selector: cavern ? record[0xC4] : record[0xC8],
+                startPosition: record[0x80] | (record[0x81] << 8),
+                mapScrollRow: record[0x82], screenPosition: record[0x83],
+                playerY: record[0x84], record,
+            }));
+        const checkpoint: DebugCheckpoint = {
+            version: 1,
+            name,
+            savedAt: new Date().toISOString(),
+            location: cavern ? 'cavern' : 'town',
+            area: cavern ? -1 : Module._zeliard_town_area(),
+            selector: cavern ? record[0xC4] : record[0xC8],
+            startPosition: record[0x80] | (record[0x81] << 8),
+            mapScrollRow: record[0x82],
+            screenPosition: record[0x83],
+            playerY: record[0x84],
+            record,
+        };
+        localStorage.setItem(checkpointKey(checkpointSlotEl.value),
+            JSON.stringify(checkpoint));
+        checkpointNameEl.value = name;
+        downloadCheckpoint(checkpoint);
+        checkpointStatusEl.value = 'Saved to disk';
+        refreshCheckpointControls();
+    });
+    const restoreCheckpoint = (checkpoint: DebugCheckpoint) => {
+        Module._zeliard_release_all_keys();
+        const record = checkpoint.record.slice();
+        /* A normal USR boot always starts in a town. For a cavern checkpoint,
+         * bootstrap through the last valid sage town, then immediately start
+         * 200FIGHT with the captured live selector and coordinates. */
+        if (checkpoint.location === 'cavern') {
+            const returnTown = record[0xC5];
+            record[0xC4] = returnTown >= 0x80 && returnTown <= 0x89
+                ? returnTown : 0x80;
+        }
+        const loaded = loadRecord(record);
+        const restored = loaded && (checkpoint.location === 'town' ||
+            Module._zeliard_test_restart_fight(checkpoint.selector,
+                checkpoint.startPosition, checkpoint.mapScrollRow,
+                checkpoint.screenPosition) !== 0);
+        checkpointStatusEl.value = restored ? 'Restored' : 'Restore failed';
+        minimapMap = null;
+        minimapMapKey = '';
+        refreshGameControls();
+        refreshMinimap();
+        return restored;
+    };
+    checkpointLoadEl.addEventListener('click', () => {
+        const checkpoint = readCheckpoint();
+        if (checkpoint) restoreCheckpoint(checkpoint);
+    });
+    checkpointOpenEl.addEventListener('change', async () => {
+        const file = checkpointOpenEl.files?.[0];
+        checkpointOpenEl.value = '';
+        if (!file) return;
+        try {
+            const checkpoint = JSON.parse(await file.text());
+            if (!isCheckpoint(checkpoint)) throw new Error('invalid state file');
+            if (checkpoint.location === 'cavern' &&
+                checkpoint.record[0xC4] < 0x80)
+                checkpoint.selector = checkpoint.record[0xC4];
+            checkpoint.name = safeCheckpointName(checkpoint.name || file.name);
+            localStorage.setItem(checkpointKey(checkpointSlotEl.value),
+                JSON.stringify(checkpoint));
+            checkpointNameEl.value = checkpoint.name;
+            refreshCheckpointControls();
+            restoreCheckpoint(checkpoint);
+        } catch {
+            checkpointStatusEl.value = 'Invalid state file';
+        }
+    });
+    checkpointClearEl.addEventListener('click', () => {
+        localStorage.removeItem(checkpointKey(checkpointSlotEl.value));
+        checkpointStatusEl.value = 'Cleared';
+        refreshCheckpointControls();
     });
     keymapOpenEl.addEventListener('click', () => {
         Module._zeliard_release_all_keys();
@@ -728,6 +1341,15 @@ async function boot() {
                 e.preventDefault();
                 keymapDialogEl.close();
             }
+            return;
+        }
+        if (!e.repeat && debugToolsEnabled &&
+            Module._zeliard_fight_active() !== 0 && e.key.toLowerCase() === 'm') {
+            e.preventDefault();
+            if (e.shiftKey)
+                setMinimapMode(minimapMode === 'expanded' ? 'compact' : 'expanded');
+            else
+                setMinimapMode(minimapMode === 'off' ? 'compact' : 'off');
             return;
         }
         const keycodes: Record<string, number> = {

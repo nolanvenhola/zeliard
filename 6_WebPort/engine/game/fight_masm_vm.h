@@ -29,8 +29,8 @@ u16 zeliard_fight_masm_vm_exit_scroll_count(void);
 u8 zeliard_fight_masm_vm_exit_scroll_dir(void);
 u8 zeliard_fight_masm_vm_exit_player_y(void);
 u8 zeliard_fight_masm_vm_music_chunk(void);
-int zeliard_fight_masm_vm_ending_requested(void);
-int zeliard_fight_masm_vm_begin_ending(void);
+int zeliard_fight_masm_vm_begin_ending(u8 *game_seg, size_t game_size,
+                                       u8 *vga, size_t vga_size);
 int zeliard_fight_masm_vm_ending_active(void);
 int zeliard_fight_masm_vm_ending_finished(void);
 u8 zeliard_fight_masm_vm_ending_scene(void);

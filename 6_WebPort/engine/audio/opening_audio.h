@@ -21,7 +21,8 @@ typedef enum {
     ZEL_MUSIC_MUS5 = 13,
     ZEL_MUSIC_MUS6 = 14,
     ZEL_MUSIC_MUS7 = 15,
-    ZEL_MUSIC_MUS8 = 16
+    ZEL_MUSIC_MUS8 = 16,
+    ZEL_MUSIC_MMAO = 17
 } zel_music_track_t;
 
 typedef zel_music_track_t zel_opening_music_track_t;
@@ -48,6 +49,7 @@ int zel_opening_audio_music_track(void);
 void zel_opening_audio_music_complete(int track);
 void zel_opening_audio_begin_transition_fade(void);
 void zel_opening_audio_begin_gameplay_transition_fade(void);
+void zel_opening_audio_begin_gameplay_music_change_fade(void);
 void zel_opening_audio_begin_gameplay_death_fade(void);
 void zel_opening_audio_tick(u32 dt_ms);
 void zel_opening_audio_set_heartbeat_volume(u8 volume);

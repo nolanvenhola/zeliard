@@ -15,6 +15,18 @@ static unsigned long long fnv1a64(const u8 *data, size_t size) {
     return hash;
 }
 
+static unsigned long long frame_rect_hash(const u8 *frame, u16 x, u16 y,
+                                          u16 width, u16 height) {
+    unsigned long long hash = 0xCBF29CE484222325ULL;
+    for (u16 row = 0; row < height; ++row) {
+        for (u16 col = 0; col < width; ++col) {
+            hash ^= frame[(size_t)(y + row) * 320u + x + col];
+            hash *= 0x100000001B3ULL;
+        }
+    }
+    return hash;
+}
+
 static u16 read_u16(const u8 *data, size_t offset) {
     return (u16)(data[offset] | ((u16)data[offset + 1] << 8));
 }
@@ -125,6 +137,49 @@ int main(void) {
     printf("arrugia_persistence_probe: objects=%04x removed=%u state=%02x/%02x\n",
            objects, removed, persistent_game[0x2C], persistent_game[0x2D]);
     ok &= removed == 6;
+
+    /* MP62 object 22 is the Fairy Flame/Enchantment Sword.  The release
+     * handler writes tier 6 straight to stdply:sword, redraws the HUD, and
+     * loads the tier-6 sword bank; swords are never selectable inventory. */
+    static u8 sword_game[0x10000], sword_vga[0x10000];
+    prepare_player(sword_game, 16, 16, 26);
+    sword_game[0x92] = 5;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        sword_game, sizeof(sword_game), sword_vga, sizeof(sword_vga));
+    unsigned sword_frames = 0;
+    for (; sword_frames < 180 && sword_game[0x92] != 6; ++sword_frames) {
+        sword_game[0xFF16] = (u8)((sword_frames & 7u) == 0u);
+        ok &= advance_frame(sword_game, sword_vga, 8);
+    }
+    sword_game[0xFF16] = 0;
+    for (unsigned frame = 0; frame < 24; ++frame) {
+        sword_game[0xFF16] = (u8)(frame == 0);
+        ok &= advance_frame(sword_game, sword_vga, 0);
+    }
+    sword_game[0xFF16] = 0;
+    const unsigned long long picked_sword_hud =
+        frame_rect_hash(sword_vga, 192, 171, 20, 18);
+    const u8 picked_vm_sword =
+        (u8)zeliard_fight_masm_vm_peek_u8(0x92);
+
+    static u8 sword_reference_game[0x10000], sword_reference_vga[0x10000];
+    prepare_player(sword_reference_game, 16, 55, 39);
+    sword_reference_game[0x92] = 6;
+    palette_set_game_mcga();
+    ok &= zeliard_fight_masm_vm_start(
+        sword_reference_game, sizeof(sword_reference_game),
+        sword_reference_vga, sizeof(sword_reference_vga));
+    const unsigned long long reference_sword_hud =
+        frame_rect_hash(sword_reference_vga, 192, 171, 20, 18);
+    printf("arrugia_fairy_flame_probe: frames=%u sword=%u vm_sword=%u state=%02x/%02x hud=%016llx/%016llx\n",
+           sword_frames, sword_game[0x92],
+           picked_vm_sword, sword_game[0x2C],
+           sword_game[0x2D], picked_sword_hud, reference_sword_hud);
+    ok &= sword_game[0x92] == 6;
+    ok &= picked_vm_sword == 6;
+    ok &= (sword_game[0x2C] & 0x08u) != 0;
+    ok &= picked_sword_hud == reference_sword_hud;
 
     /* Tesoro x31/y5 is the keyed entrance.  A missing key leaves the
      * player in MP60; one Lion key is consumed by the authored door. */

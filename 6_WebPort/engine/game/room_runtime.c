@@ -191,6 +191,19 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         zeliard_gtmcga_draw_room_grid(
             game_seg + 0xA16E, 96, room->room_tiles, 0x3000,
             vga, vga_size, 0x0E17);
+        /* 210KINGP:render_portrait falls through to
+         * render_portrait_variant(AL=6) when player byte 49h is set.  That
+         * 7x6 overlay is the post-victory King's complete face; applying
+         * only the later eye/mouth animation tiles to the base portrait
+         * produces the mismatched face seen at the end of A6C1h. */
+        if (zeliard_player_read_u8(
+                &player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0) {
+            const u16 source = read_u16(game_seg, 0xA1DA);
+            zeliard_gtmcga_draw_room_tile_grid(
+                game_seg + source, 42, 7, 6,
+                room->room_tiles, sizeof(room->room_tiles),
+                vga, vga_size, 0x1117);
+        }
     } else if (kind == ZEL_ROOM_SAGE) {
         /* 217KENJP records DS:0000..00FF verbatim and therefore cannot
          * repair the release game's stale 0C5h field while saving.  The web
@@ -257,11 +270,16 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
     room->menu_direction_latch = 0;
     room->menu_action = 0;
     memset(room->menu_item_ids, 0, sizeof(room->menu_item_ids));
-    /* 211OMOYP:A041 tests player offset 49h after drawing the room and
-     * branches to end_demo_transition when it is nonzero. */
-    room->alternate_transition_requested =
+    /* 211OMOYP tests player offset 49h only after OMOYA.GRP and the complete
+     * 16x17 stone-princess tile grid have been presented.  Its alternate
+     * path then loads ENDDEMO/GDMCGA and waits 012Ch raw PIT ticks while
+     * that hut frame remains visible.  Keep the handoff pending until the
+     * town clock has reproduced that authored pause. */
+    room->alternate_transition_pending =
         kind == ZEL_ROOM_VIEWING &&
         zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0;
+    room->alternate_transition_requested = 0;
+    room->alternate_transition_ticks = 0;
     room->entry_gold = zeliard_player_read_u24(&player, ZEL_PLAYER_GOLD);
     room->entry_almas = zeliard_player_read_u16(&player, ZEL_PLAYER_ALMAS);
     room->entry_hp = zeliard_player_read_u16(&player, ZEL_PLAYER_HP);
@@ -341,7 +359,9 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
             vga, vga_size, game_seg, game_size))
         return -1;
     room->active = 0;
+    room->alternate_transition_pending = 0;
     room->alternate_transition_requested = 0;
+    room->alternate_transition_ticks = 0;
     room->entry_frame_prepared = 0;
     room->exit_requested = 0;
     room->session_exit_requested = 0;
@@ -357,14 +377,21 @@ int zeliard_room_leave(zeliard_room_runtime_t *room,
 u16 zeliard_king_select_script(const u8 *game_seg, size_t game_size) {
     if (!game_seg || game_size < 0x10000) return 0;
     zeliard_player_state_t player = {.bytes = (u8 *)game_seg};
+    /* Release 210KINGP checks byte 06h before the final-victory byte 49h,
+     * because an authored playthrough has necessarily populated that older
+     * cavern-progress byte before Jashiin can be defeated.  Early web saves
+     * and full-state checkpoints could retain 49h while losing 06h, an
+     * impossible DOS state which otherwise selects A53Ch ("did you forget
+     * something?").  Recover only that completed-game state; the ordinary
+     * pre-victory branch order below remains byte-for-byte MASM-equivalent. */
+    if (zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) != 0)
+        return 0xA6C1;
     if ((u8)(zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE) |
              zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE_B)) == 0)
         return 0xA42F;
     if (zeliard_player_read_u8(&player, ZEL_PLAYER_KING_DIALOG_DONE_B) == 0)
         return 0xA53C;
-    if (zeliard_player_read_u8(&player, ZEL_PLAYER_AREA_LOAD_FLAG) == 0)
-        return 0xA5D2;
-    return 0xA6C1;
+    return 0xA5D2;
 }
 
 static u16 measure_king_word(const u8 *game_seg, u16 si) {

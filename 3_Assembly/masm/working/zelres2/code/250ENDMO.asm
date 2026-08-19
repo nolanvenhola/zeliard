@@ -9,16 +9,15 @@ PAGE  59,132
 ;  opening demo (100OPDMO) but runs the post-boss narrative and credit roll:
 ;
 ;    1. Screen fade-in / wipe transitions between the preceding cinematic
-;       screens loaded from zelres2 chunks (ref table at 813Dh..81D6h):
-;         813Dh  kingprin.grp   (king + princess scene)
-;         8148h  jashiin.grp    (Jashiin dying)
-;         8152h  gualand2.grp   (Duke Garland + land recovering)
-;         815Dh  palette data   (CGA mid-palette)
-;         8168h  heromirage.grp (hero silhouette/walk-off)
-;         8173h  heroclose.grp  (hero facing camera)
-;         8189h  kingcrown.grp  (king / farewell)
-;         8194h  felicia.grp    (Princess close-up)
-;         819Fh..81D6h  credits tileset chunks (waku/sei/yuup/seip/himp/etc.)
+;       screens loaded through the exact embedded ref records:
+;         813Dh  waku.grp       8148h  sei.grp
+;         8152h  yuup.grp       815Dh  seip.grp
+;         8168h  himp.grp       8173h  new1.grp
+;         817Eh  new2.grp       8189h  ne80.grp
+;         8194h  ne81.grp
+;         819Fh  end5.grp       81AAh  end4.grp
+;         81B5h  end6.grp       81C0h  end7.grp
+;         81CBh  en72.grp       81D6h  final.grp
 ;         81E0h  zend.msd       (ending music)
 ;    2. Narration pages rendered via the same script-byte interpreter as the
 ;       opening (SCR_* control codes, ANIM_* animated per-char color codes).
@@ -44,12 +43,9 @@ PAGE  59,132
 ;  Connections:
 ;    Loads:        loads multiple zelres2 cinematic chunks via the SAR
 ;                  loader at cs:sar_loader_fn using the resource ref-table
-;                  starting at 813Dh:
-;                    kingprin.grp (king + princess), jashiin.grp,
-;                    gualand2.grp (Duke Garland + land), CGA palette,
-;                    heromirage.grp, heroclose.grp, kingcrown.grp,
-;                    felicia.grp, credits tileset chunks (waku/sei/yuup/
-;                    seip/himp/etc.) at 819Fh..81D6h, and zend.msd
+;                  starting at 813Dh: waku/sei/yuup/seip/himp/new1/new2/
+;                    ne80/ne81, then end5/end4/end6/end7/en72/final at
+;                    819Fh..81D6h, and zend.msd
 ;                    (ending music) at 81E0h.
 ;                  Also calls cs:sar_loader_fn repeatedly to load each scene
 ;                  chunk before rendering.
@@ -138,9 +134,9 @@ credits_pause_ticks	equ	6969h		; credits: pause/delay word
 credits_tick_delay	equ	696Bh		; credits: inter-tick delay
 glyph_advance_tbl	equ	807Dh		; character advance (width) table
 glyph_space_tbl		equ	80DDh		; character space (width-inc) table
-ref_gualand2_palette	equ	815Dh		; chunk ref: palette (815Dh)
-ref_heroclose_grp	equ	8173h		; chunk ref: hero close-up grp
-ref_felicia_grp		equ	8194h		; chunk ref: Felicia close-up grp
+ref_seip_grp		equ	815Dh		; chunk ref: seip.grp
+ref_new1_grp		equ	8173h		; chunk ref: new1.grp
+ref_ne81_grp		equ	8194h		; chunk ref: ne81.grp
 vga_seg			equ	0A000h		; VGA segment (A000h)
 
 ; ----------------------------------------------------------------------
@@ -272,7 +268,7 @@ main_entry:
 		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		LOAD_CHUNK_AT ref_heroclose_grp, vga_seg
+		LOAD_CHUNK_AT ref_new1_grp, vga_seg
 		DECOMPRESS_RLE script_src_b
 		mov	es,cs:[gvar_game_seg]
 		mov	di,framebuf_b
@@ -364,7 +360,7 @@ init_wipe_loop:
 		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		LOAD_CHUNK_AT ref_gualand2_palette, vga_seg
+		LOAD_CHUNK_AT ref_seip_grp, vga_seg
 		DECOMPRESS_RLE script_src_b
 		xor	ax,ax			; Zero register
 		call	word ptr cs:[gfx_scene_fn1]
@@ -404,7 +400,7 @@ init_wipe_loop:
 		DECOMPRESS_RLE framebuf_b
 		push	cs
 		pop	es
-		LOAD_CHUNK_AT ref_felicia_grp, vga_seg
+		LOAD_CHUNK_AT ref_ne81_grp, vga_seg
 		DECOMPRESS_RLE script_src_b
 		mov	ax,2
 		call	word ptr cs:[gfx_scene_fn1]
@@ -1932,8 +1928,10 @@ bitmap_row_byte		db	77h
 ; credits_script - Script interpreted by run_credits_loop_main. Uses the
 ; same SCR_* control codes as the narration scripts plus a few extra
 ; credit-specific codes (F8=set-pause, FC=clear-screen). Tab byte (09h)
-; triggers credits_tab_indent. Runs through each credit scene, calling
-; the corresponding handler in credit_scene_fn_tbl after each F7h.
+; triggers credits_tab_indent. FE calls the next credit-scene handler; F7
+; waits for credits_skip_flag. Execution begins at 787Eh in the seven-byte
+; FE,F7,F8,0004h,FE,FC preamble immediately before credits_script, so the
+; complete byte stream contains three authored F7 action gates.
 ; =====================================================================
 
 credits_script:

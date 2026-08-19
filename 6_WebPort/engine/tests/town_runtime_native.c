@@ -526,10 +526,17 @@ int main(void) {
     ok &= zeliard_room_enter(&town.room, ZEL_ROOM_VIEWING,
                              segments[0], sizeof(segments[0]),
                              vga, sizeof(vga)) == 0;
-    ok &= town.room.alternate_transition_requested;
+    ok &= town.room.alternate_transition_pending;
+    ok &= !town.room.alternate_transition_requested;
     segments[0][0xFF1D] = 0xFF;
     ok &= zeliard_town_advance_pit(
-        &town, &game, vga, sizeof(vga), 20, 0) > 0;
+        &town, &game, vga, sizeof(vga), 299, 0) >= 0;
+    ok &= town.room.alternate_transition_pending;
+    ok &= !town.room.alternate_transition_requested;
+    ok &= zeliard_town_advance_pit(
+        &town, &game, vga, sizeof(vga), 1, 0) >= 0;
+    ok &= !town.room.alternate_transition_pending;
+    ok &= town.room.alternate_transition_requested;
     ok &= town.room.active;
     ok &= zeliard_room_leave(&town.room, segments[0], sizeof(segments[0]),
                              vga, sizeof(vga)) == 0;
