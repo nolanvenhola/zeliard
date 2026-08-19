@@ -1884,6 +1884,59 @@ static int sage_release_vm_menu(void) {
     return ok;
 }
 
+static int release_vm_idle_room_animation(void) {
+    static const zeliard_room_kind_t kinds[] = {
+        ZEL_ROOM_SAGE, ZEL_ROOM_DRUGSTORE
+    };
+    int ok = 1;
+    for (size_t index = 0; index < sizeof(kinds) / sizeof(kinds[0]); ++index) {
+        u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+        if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
+            free(cs); free(vga); return 0;
+        }
+        cs[0xC006] = 1;
+        int case_ok = zeliard_room_masm_vm_start(
+            kinds[index], cs, 0x10000, vga, 0x10000);
+        unsigned ticks = 0;
+        case_ok &= vm_reach_menu(cs, vga, &ticks);
+        unsigned long long previous = fnv1a64(vga, 0x10000);
+        unsigned changes = 0;
+        for (unsigned idle = 0; case_ok && idle < 160; ++idle) {
+            case_ok &= zeliard_room_masm_vm_advance(
+                cs, 0x10000, vga, 0x10000, 1, 0, 0, 0);
+            const unsigned long long frame = fnv1a64(vga, 0x10000);
+            if (frame != previous) ++changes;
+            previous = frame;
+        }
+        case_ok &= changes > 0;
+        case_ok &= zeliard_room_masm_vm_input_kind() ==
+                   ZEL_ROOM_VM_INPUT_MENU;
+        printf("release_vm_idle_animation_%u: changes=%u kind=%d\n",
+               (unsigned)kinds[index], changes,
+               zeliard_room_masm_vm_input_kind());
+        ok &= case_ok;
+        zeliard_room_masm_vm_stop();
+        free(cs); free(vga);
+    }
+    return ok;
+}
+
+static int room_entry_clears_stale_sound(void) {
+    u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
+    zeliard_room_runtime_t *room = calloc(1, sizeof(*room));
+    if (!cs || !vga || !room || load_raw(cs, 0, "assets/stdply.bin")) {
+        free(cs); free(vga); free(room); return 0;
+    }
+    cs[0xFF75] = 0x1F;
+    const int entered = zeliard_room_enter(
+        room, ZEL_ROOM_DRUGSTORE, cs, 0x10000, vga, 0x10000) == 0;
+    const int ok = entered && cs[0xFF75] == 0;
+    printf("room_entry_stale_sound: entered=%d cue=%02x\n",
+           entered, cs[0xFF75]);
+    free(cs); free(vga); free(room);
+    return ok;
+}
+
 static int muralla_release_vm_cursor_slide(void) {
     u8 *cs = calloc(1, 0x10000), *vga = calloc(1, 0x10000);
     if (!cs || !vga || load_raw(cs, 0, "assets/stdply.bin")) {
@@ -2341,6 +2394,8 @@ int main(void) {
                    king_first_visit_script() &&
                    king_followup_scripts() &&
                    sage_release_vm_menu() &&
+                   release_vm_idle_room_animation() &&
+                   room_entry_clears_stale_sound() &&
                    sage_release_vm_ignores_early_direction() &&
                    sage_release_vm_exit_farewell() &&
                    sage_release_vm_record() &&

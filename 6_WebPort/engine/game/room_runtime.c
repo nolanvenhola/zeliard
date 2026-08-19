@@ -152,6 +152,10 @@ int zeliard_room_enter(zeliard_room_runtime_t *room,
         vga_size < 0x10000 || room->active) return -1;
     zeliard_player_state_t player;
     if (!zeliard_player_state_bind(&player, game_seg, game_size)) return -1;
+    /* SNDADLIB consumes FF75h continuously in DOS. The browser room VM is
+     * created after the building fade, so an already-presented NPC cue can
+     * otherwise survive into the room and become its first sound. */
+    game_seg[GVAR_SOUND_CUE] = 0;
     const char *program = kind == ZEL_ROOM_KING ? "kingpro.bin" :
                           kind == ZEL_ROOM_SAGE ? "kenjpro.bin" :
                           kind == ZEL_ROOM_VIEWING ? "omoypro.bin" :

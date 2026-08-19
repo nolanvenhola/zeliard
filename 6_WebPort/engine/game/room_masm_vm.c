@@ -534,14 +534,18 @@ static void execute_room_callback(u8 *memory, size_t base) {
     zel_room86_set_flags(saved_flags);
 }
 
-static void run_bank_idle_portrait_callback(u8 *memory, size_t base) {
-    if (g_room_vm.kind != ZEL_ROOM_BANK || memory[base + 0xAD21] == 0 ||
-        read_u16(memory, base + 0xAD1F) != 0xA7C3)
-        return;
-    /* BANKP opcode 03 busy-waits on the PIT while 106TOWN continues its
-     * A002 room callback.  The host VM advances that PIT wait in slices, so
-     * invoke the same callback throughout the script phase, not only after
-     * it has yielded back to the main menu poll. */
+static void run_suspended_room_callback(u8 *memory, size_t base) {
+    /* 106TOWN:tick_town_frame calls the room program's A002 callback on
+     * every room clock. Once the host VM yields at a stable menu/text poll,
+     * it no longer re-enters tick_town_frame until input is supplied. Replay
+     * the authored callback for every PIT spent at that suspended poll so
+     * sage eyes and magic-shop glyphs keep animating. BANKP opcode 03 has an
+     * additional timed reaction outside a stable poll; preserve that case. */
+    const int bank_timed_reaction =
+        g_room_vm.kind == ZEL_ROOM_BANK &&
+        memory[base + 0xAD21] != 0 &&
+        read_u16(memory, base + 0xAD1F) == 0xA7C3;
+    if (!g_room_vm.at_input_poll && !bank_timed_reaction) return;
     execute_room_callback(memory, base);
 }
 
@@ -649,7 +653,7 @@ int zeliard_room_masm_vm_advance(u8 *game_seg, size_t game_size,
         write_u16(memory, base + 0xFF50,
                   (u16)(read_u16(memory, base + 0xFF50) + 1u));
         finish_bank_large_deposit_reaction(memory, base);
-        run_bank_idle_portrait_callback(memory, base);
+        run_suspended_room_callback(memory, base);
         const u32 amount_before =
             ((u32)memory[base + 0xAD29] << 16) |
             read_u16(memory, base + 0xAD2A);

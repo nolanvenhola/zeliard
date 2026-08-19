@@ -445,7 +445,9 @@ int main(void) {
     unsigned completion_frame = 0;
     unsigned tear_frame = 0;
     unsigned roka_start_frame = 0;
+    unsigned fanfare_start_frame = 0;
     unsigned roka_finish_frame = 0;
+    u8 music_at_roka_start = 0xFF;
     unsigned long long completion_hash = 0;
     unsigned long long raised_sword_hash = 0;
     unsigned long long crystal_launch_hash = 0;
@@ -473,8 +475,13 @@ int main(void) {
         }
         if (!tear_frame && game[0xA0]) tear_frame = victory_frames;
         const u16 ip = zeliard_fight_masm_vm_ip();
-        if (!roka_start_frame && ip >= 0xA009 && ip < 0xA5A8)
+        if (!roka_start_frame && ip >= 0xA009 && ip < 0xA5A8) {
             roka_start_frame = victory_frames;
+            music_at_roka_start = zeliard_fight_masm_vm_music_chunk();
+        }
+        if (roka_start_frame && !fanfare_start_frame &&
+            zeliard_fight_masm_vm_music_chunk() == 95)
+            fanfare_start_frame = victory_frames;
         if (roka_start_frame && !raised_sword_hash &&
             zeliard_fight_masm_vm_peek_u8(0x00E7) >= 5)
             raised_sword_hash = fnv1a64(vga, 64000);
@@ -520,7 +527,7 @@ int main(void) {
         }
     }
     printf("pulpo_victory_probe: frames=%u completion=%u/%02x tear=%u "
-           "roka=%u/%u "
+           "roka=%u/%u fanfare=%u music=%02x "
            "death=%02x timer=%02x tears=%02x pos=%02x/%02x/%02x "
            "pose=%02x hero=%02x "
            "weapon=%02x active=%d exit=%02x/%02x/%04x "
@@ -528,6 +535,7 @@ int main(void) {
            victory_frames, completion_frame,
            zeliard_fight_masm_vm_peek_u8(0xFF30),
            tear_frame, roka_start_frame, roka_finish_frame,
+           fanfare_start_frame, music_at_roka_start,
            zeliard_fight_masm_vm_peek_u8(0xFF2E),
            zeliard_fight_masm_vm_peek_u8(0xAA9E), game[0xA0], game[0x80],
            game[0x82], game[0x83], game[0xE7],
@@ -540,6 +548,10 @@ int main(void) {
     ok &= completion_frame > 0;
     ok &= roka_start_frame > completion_frame;
     ok &= tear_frame == roka_start_frame;
+    ok &= music_at_roka_start == 94;
+    ok &= fanfare_start_frame > roka_start_frame;
+    ok &= fanfare_start_frame >= roka_start_frame &&
+          fanfare_start_frame > tear_frame;
     ok &= raised_sword_hash != 0 && crystal_launch_hash != 0;
     ok &= crystal_motion_hash != 0 && crystal_arrival_hash != 0;
     ok &= completion_hash == 0x3A6EA18B0C80A526ULL;

@@ -242,7 +242,7 @@ try {
     let sawCrystalArrival = false;
     let sawFanfare = false;
     let rokaFinished = false;
-    while (rokaStarted && !rokaFinished && rokaTicks++ < 1400) {
+    while (rokaStarted && !rokaFinished && rokaTicks++ < 5000) {
       m._zeliard_tick(20);
       const ip = m._zeliard_fight_ip();
       const inRoka = ip >= 0xA009 && ip < 0xA5A8;
@@ -270,9 +270,8 @@ try {
   if (result.maliciaWidth !== 240 || result.connectorWidth !== 96 ||
       result.peligroWidth !== 224 || !result.active ||
       !result.maliciaRestart || !result.connectorRestart ||
-      result.maliciaMusic !== 7 || result.connectorMusic !== 7 ||
-      result.connectorFadeStart < 1 ||
-      result.connectorFadePeak <= result.connectorFadeStart ||
+      result.maliciaMusic !== 7 || result.connectorMusic !== 9 ||
+      result.connectorFadeStart !== 0 || result.connectorFadePeak !== 0 ||
       result.music !== 9 || result.visible < 1000)
     throw new Error(`Peligro route failed: ${JSON.stringify(result)}`);
   if (!combatAndBoss.combatRestart || combatAndBoss.cueDelta < 1 ||

@@ -74,7 +74,6 @@ static u32 g_input_subtick_accum;
  * stick.asm.  Automated replay uses this clock instead of host wall time. */
 static u32 g_guest_tick_count;
 static u8 g_fight_music_chunk = 0xFF;
-static u8 g_fight_connector_music_fade;
 static u8 g_fight_boundary_selector = 0xFF;
 
 static u8 g_fight_started;
@@ -268,20 +267,6 @@ static void sync_fight_music(void) {
         g_fight_music_chunk = chunk;
         return;
     }
-    const u16 map_width = zeliard_fight_masm_vm_active()
-        ? zeliard_fight_masm_vm_peek_u16(0xC002) : 0;
-    /* MP21 is the authored transition cavern between Malicia and Peligro.
-     * 200FIGHT changes the level/music selector on entry, but the audible
-     * score fades across the connector and the destination score begins at
-     * the far door.  Keep the currently playing score while MP21 is live. */
-    if (map_width == 96u &&
-        g_fight_music_chunk != 0xFF)
-        return;
-    if (g_fight_connector_music_fade && map_width != 96u) {
-        /* The far MP21 door is 200FIGHT's destination score boundary. */
-        g_fight_connector_music_fade = 0;
-        g_fight_music_chunk = 0xFF;
-    }
     if (chunk == 0xFF && zeliard_fight_masm_vm_active()) {
         /* 200FIGHT:new_game_init deliberately leaves the resident score
          * running when the new cavern uses the same level music. A browser
@@ -431,7 +416,6 @@ static void finish_cavern_return_to_town(void) {
     g_cavern_transition.return_to_town = 0;
     g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     g_cavern_town_origin.valid = 0;
-    g_fight_connector_music_fade = 0;
     g_town_runtime.cavern_exit_requested = 0;
     g_town_runtime.facing_door_type = 0xFF;
     g_town_runtime.facing_item_position = 0xFFFF;
@@ -504,7 +488,6 @@ static int finish_cavern_death_to_sage(void) {
     g_cavern_transition.return_to_town = 0;
     g_gameplay_location = GAMEPLAY_LOCATION_TOWN;
     g_cavern_town_origin.valid = 0;
-    g_fight_connector_music_fade = 0;
     g_fight_death_pending = 0;
     g_fight_death_return_pending = 0;
     g_fight_death_audio_fade_started = 0;
@@ -512,7 +495,6 @@ static int finish_cavern_death_to_sage(void) {
     zeliard_room_masm_vm_stop();
     zel_opening_audio_stop();
     g_fight_music_chunk = 0xFF;
-    g_fight_connector_music_fade = 0;
 
     /* Loader 1 returns to the suspended town graphics context before
      * 106TOWN and 217KENJP draw.  The web fight VM owns a private VGA image,
@@ -1096,8 +1078,6 @@ EXPORT void zeliard_tick(u32 dt_ms) {
             const u16 hp_before = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));
             if (!g_debug_invincible && hp_before <= 1) begin_fight_death();
-            const u16 map_width_before =
-                zeliard_fight_masm_vm_peek_u16(0xC002);
             const int frames = zeliard_fight_masm_vm_advance(
                 g_game_segments[0], sizeof(g_game_segments[0]),
                 g_game_vga, sizeof(g_game_vga), input_ticks,
@@ -1146,12 +1126,6 @@ EXPORT void zeliard_tick(u32 dt_ms) {
                 zeliard_fight_masm_vm_restore_vga(
                     g_game_vga, sizeof(g_game_vga));
                 g_inventory_fight_hud_override = 0;
-            }
-            const u16 map_width_after =
-                zeliard_fight_masm_vm_peek_u16(0xC002);
-            if (map_width_before != 96u && map_width_after == 96u) {
-                g_fight_connector_music_fade = 1;
-                zel_opening_audio_begin_gameplay_transition_fade();
             }
             const u16 hp_after = (u16)(g_game_segments[0][ZEL_PLAYER_HP] |
                 ((u16)g_game_segments[0][ZEL_PLAYER_HP + 1] << 8));

@@ -48,6 +48,7 @@ typedef struct {
     u8 exit_scroll_dir;
     u8 exit_player_y;
     u8 music_chunk;
+    u8 prepared_music_chunk;
     u8 ending_mode;
     u8 ending_finished;
     u8 ending_at_wait;
@@ -546,7 +547,14 @@ static int fight_step(void *context, u16 cs, u16 ip) {
              * so here overwrote the tail of the 4000h enemy sprite bank when
              * a track exceeded 1000h bytes (MUS6 reaches 45B5h). */
             loaded = asset_available(asset);
-            if (loaded) state->music_chunk = chunk;
+            if (loaded) {
+                /* 300ROKAD prepares MFAN at entry, then starts it with
+                 * INT 60h AX=0 only after the forward tear animation. */
+                if (chunk == 95)
+                    state->prepared_music_chunk = chunk;
+                else
+                    state->music_chunk = chunk;
+            }
         } else if (asset) {
             const size_t destination = operation == 1
                 ? linear(FIGHT_SEG, 0xC000)
@@ -585,6 +593,11 @@ static int fight_step(void *context, u16 cs, u16 ip) {
     if (cs == FIGHT_SEG) {
         const size_t instruction = linear(cs, ip);
         if (memory[instruction] == 0xCD && memory[instruction + 1] == 0x60) {
+            if (registers[ZEL_TINY86_AX] == 0 &&
+                state->prepared_music_chunk != 0xFF) {
+                state->music_chunk = state->prepared_music_chunk;
+                state->prepared_music_chunk = 0xFF;
+            }
             zel_fight86_set_ip((u16)(ip + 2u));
             return 1;
         }
@@ -636,6 +649,7 @@ int zeliard_fight_masm_vm_start(u8 *game_seg, size_t game_size,
         return 0;
     }
     g_fight_vm.music_chunk = 0xFF;
+    g_fight_vm.prepared_music_chunk = 0xFF;
     zel_fight86_reset(bios, (unsigned)bios_size);
     free(bios);
 
@@ -965,6 +979,7 @@ int zeliard_fight_masm_vm_begin_ending(u8 *game_seg, size_t game_size,
     zel_fight86_set_out_callback(fight_out, &g_fight_vm);
     g_fight_vm.active = 1;
     g_fight_vm.music_chunk = 0xFF;
+    g_fight_vm.prepared_music_chunk = 0xFF;
 
     /* 211OMOYP loads ENDDEMO and GDMCGA without clearing the visible
      * Princess-hut frame, holds that frame for 012Ch ticks, then calls
@@ -995,6 +1010,7 @@ int zeliard_fight_masm_vm_begin_ending(u8 *game_seg, size_t game_size,
     zel_fight86_set_ip(read_u16(memory, fight + 0x3006));
     zel_fight86_set_flags(0x0202);
     g_fight_vm.music_chunk = 0xFF;
+    g_fight_vm.prepared_music_chunk = 0xFF;
     /* Run only to GDMCGA's first authored timer boundary.  Subsequent host
      * ticks expose the complete assembly-driven transition; its RET loads
      * ENDDEMO and jumps through [6000h] in fight_step above. */
