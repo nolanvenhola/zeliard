@@ -4,7 +4,7 @@ Status: initial product boundary for GitHub issue #237
 
 Working title: Zeliard 2
 
-Related design contract: [Zeliard 2 Feel Bible](FEEL_BIBLE.md)
+Related design contracts: [Zeliard 2 Feel Bible](FEEL_BIBLE.md) and [Art Bible and Technical Asset Specification](ART_BIBLE.md)
 
 ## Product statement
 

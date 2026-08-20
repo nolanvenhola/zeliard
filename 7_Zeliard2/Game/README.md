@@ -38,3 +38,4 @@ See [CODING_STANDARDS.md](CODING_STANDARDS.md) before adding production code.
 See [CONTENT_MODEL.md](CONTENT_MODEL.md) for stable IDs, schema ownership, references, and the definition/state boundary.
 See [SAVE_FORMAT.md](SAVE_FORMAT.md) for versioning, integrity, atomic-write, migration, and recovery guarantees.
 See [CREATOR_WORKFLOW.md](CREATOR_WORKFLOW.md) for searchable authoring, templates, stable-ID pickers, validation navigation, and editor extension hooks.
+See the [Art Bible and Technical Asset Specification](../Design/ART_BIBLE.md) for the visual language, asset contracts, budgets, accessibility checks, and provenance requirements.
