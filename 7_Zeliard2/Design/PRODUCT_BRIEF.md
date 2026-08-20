@@ -51,7 +51,7 @@ The slice proves the production workflow and game identity. It is not a public p
 
 ### Full-game direction
 
-The planning target is a focused 6-10 hour first playthrough, with additional optional exploration for completion-oriented players. The final region count and content budget must be derived from measured vertical-slice production cost before full production is approved.
+The planning target is a focused 10-15 hour first playthrough, with additional optional exploration for completion-oriented players. The final region count and content budget must be derived from measured vertical-slice production cost before full production is approved.
 
 The game is single-player and offline-first. Saves are local, versioned, and portable where the target platform permits. No account is required to play.
 
@@ -218,7 +218,7 @@ The platform direction is successful when:
 2. **Workflow gate:** the representative region is authored through Creator with shared schemas and validation.
 3. **Platform gate:** Windows, browser, and Linux targets meet the same functional acceptance path.
 4. **Resource gate:** every included production resource passes provenance and licensing validation.
-5. **Production gate:** measured slice cost supports a credible 6-10 hour game plan.
+5. **Production gate:** measured slice cost supports a credible 10-15 hour game plan.
 6. **Release gate:** project licensing, contribution terms, product naming, and intellectual-property clearance are resolved for the intended distribution.
 
 Failure at a gate requires an explicit scope or technology decision; it must not be hidden by a target-specific fork or manual content workaround.
@@ -226,7 +226,7 @@ Failure at a gate requires an explicit scope or technology decision; it must not
 ## Decisions recorded on 2026-08-19
 
 - Build a new game and creation platform, not another port or remaster.
-- Target a focused 6-10 hour single-player game, gated by measured slice cost.
+- Target a focused 10-15 hour single-player game, gated by measured slice cost.
 - Make Windows the desktop reference, browser a first-class playable target, and Linux a required supported export.
 - Keep Godot Creator desktop-only during the slice.
 - Preserve the compact digital control vocabulary, including Up/diagonal cavern jumping.
