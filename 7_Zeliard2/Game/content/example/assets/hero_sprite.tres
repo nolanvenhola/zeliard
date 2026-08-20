@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ZeliardAssetDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/asset_definition.gd" id="1_asset"]
+
+[resource]
+script = ExtResource("1_asset")
+content_id = &"asset:hero_placeholder"
+display_name = "Hero Placeholder"
+asset_type = "sprite"
+source_path = "res://content/example/assets/hero_placeholder.svg"
+authoring_notes = "Original programmer art for schema and pipeline validation."

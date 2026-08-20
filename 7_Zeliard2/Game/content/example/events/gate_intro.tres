@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ZeliardEventDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/event_definition.gd" id="1_event"]
+[ext_resource type="Script" path="res://runtime/content/support/event_step.gd" id="2_step"]
+
+[sub_resource type="Resource" id="EventStep_dialogue"]
+script = ExtResource("2_step")
+action = "show_dialogue"
+target_content_id = &"dialogue:gate_warning"
+
+[sub_resource type="Resource" id="EventStep_quest"]
+script = ExtResource("2_step")
+action = "start_quest"
+target_content_id = &"quest:open_gate"
+
+[resource]
+script = ExtResource("1_event")
+content_id = &"event:gate_intro"
+display_name = "Gate Introduction"
+trigger = "room_enter"
+steps = Array[ExtResource("2_step")]([SubResource("EventStep_dialogue"), SubResource("EventStep_quest")])

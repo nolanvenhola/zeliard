@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ZeliardActorDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/actor_definition.gd" id="1_actor"]
+
+[resource]
+script = ExtResource("1_actor")
+content_id = &"actor:hero"
+display_name = "Hero"
+max_health = 10
+starting_item_ids = PackedStringArray("item:bronze_key")
+ability_ids = PackedStringArray("ability:sword_slash")
+sprite_asset_id = &"asset:hero_placeholder"
