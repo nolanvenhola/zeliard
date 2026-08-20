@@ -1,0 +1,9 @@
+{
+  "schema_version": 2,
+  "campaign_id": "campaign:example",
+  "current_room_id": "room:verdant_arrival",
+  "player_health": 10,
+  "inventory_ids": ["item:bronze_key"],
+  "quest_stages": {"quest:open_gate": 0},
+  "flags": {"gate_seen": true}
+}

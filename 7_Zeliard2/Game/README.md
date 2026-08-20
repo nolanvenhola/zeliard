@@ -36,3 +36,4 @@ Use `-SkipExports` when export templates are not installed. The command checks a
 
 See [CODING_STANDARDS.md](CODING_STANDARDS.md) before adding production code.
 See [CONTENT_MODEL.md](CONTENT_MODEL.md) for stable IDs, schema ownership, references, and the definition/state boundary.
+See [SAVE_FORMAT.md](SAVE_FORMAT.md) for versioning, integrity, atomic-write, migration, and recovery guarantees.
