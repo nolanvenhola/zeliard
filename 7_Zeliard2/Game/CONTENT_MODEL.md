@@ -21,10 +21,12 @@ The catalog indexes definitions by ID. Graph validation rejects malformed or dup
 | Ability | Power, range, and logical cooldown | Optional event, animation, and audio assets |
 | Dialogue | Ordered, locally identified lines | Speaking actors |
 | Quest | Ordered, locally identified stages | Quests, completion events, reward items |
-| Asset | Modern source asset and authoring notes | Imported Godot resource path |
+| Asset | Runtime/source paths, frame grid, pivot, palette limit, animation clips, and provenance | None; imported paths are validated implementation details |
 | Event | Trigger and ordered typed actions | Dialogue, items, quests, or destination rooms |
 
 Small nested Resources represent placements, exits, dialogue lines, quest stages, and event steps. They belong to their top-level definition and do not receive global IDs.
+
+Asset definitions also own nested animation-clip and provenance records. These records remain in the stable `.tres` definition when PNG pixels are re-exported or reimported; generated texture metadata never becomes gameplay identity. See [ART_PIPELINE.md](ART_PIPELINE.md).
 
 ## Definitions are not state
 

@@ -22,7 +22,10 @@ func _enter_tree() -> void:
 	_dock.diagnostic_activated.connect(_open_diagnostic)
 	add_control_to_dock(DOCK_SLOT_RIGHT_UL, _dock)
 	resource_saved.connect(_on_resource_saved)
-	EditorInterface.get_resource_filesystem().filesystem_changed.connect(_on_filesystem_changed)
+	var filesystem := EditorInterface.get_resource_filesystem()
+	filesystem.filesystem_changed.connect(_on_filesystem_changed)
+	filesystem.resources_reimported.connect(_on_resources_reimported)
+	_apply_art_import_policy()
 	_validate_content()
 
 
@@ -30,6 +33,8 @@ func _exit_tree() -> void:
 	var filesystem := EditorInterface.get_resource_filesystem()
 	if filesystem.filesystem_changed.is_connected(_on_filesystem_changed):
 		filesystem.filesystem_changed.disconnect(_on_filesystem_changed)
+	if filesystem.resources_reimported.is_connected(_on_resources_reimported):
+		filesystem.resources_reimported.disconnect(_on_resources_reimported)
 	if resource_saved.is_connected(_on_resource_saved):
 		resource_saved.disconnect(_on_resource_saved)
 	if _inspector_plugin != null:
@@ -72,7 +77,17 @@ func _reload_catalog() -> void:
 
 func _validate_content() -> void:
 	_reload_catalog()
-	_dock.show_diagnostics(ZeliardContentValidator.diagnose_graph(_catalog.all()))
+	var diagnostics := ZeliardContentValidator.diagnose_graph(_catalog.all())
+	diagnostics.append_array(ZeliardArtImportPolicy.diagnose_catalog(_catalog))
+	diagnostics.sort_custom(func(left: ZeliardDiagnostic, right: ZeliardDiagnostic) -> bool: return left.format() < right.format())
+	_dock.show_diagnostics(diagnostics)
+
+
+func _apply_art_import_policy() -> void:
+	var changed_paths := ZeliardArtImportPolicy.apply_catalog(_catalog)
+	if not changed_paths.is_empty():
+		_dock.set_status("Applying pixel-art import defaults to %d file(s)..." % changed_paths.size())
+		EditorInterface.get_resource_filesystem().reimport_files(changed_paths)
 
 
 func _create_content(kind: StringName, content_id: StringName, display_name: String) -> void:
@@ -142,4 +157,17 @@ func _on_resource_saved(resource: Resource) -> void:
 
 
 func _on_filesystem_changed() -> void:
-	call_deferred(&"_reload_catalog")
+	call_deferred(&"_refresh_after_filesystem_change")
+
+
+func _on_resources_reimported(paths: PackedStringArray) -> void:
+	for path: String in paths:
+		if path.get_extension().to_lower() == "png":
+			call_deferred(&"_refresh_after_filesystem_change")
+			return
+
+
+func _refresh_after_filesystem_change() -> void:
+	_reload_catalog()
+	_apply_art_import_policy()
+	_validate_content()

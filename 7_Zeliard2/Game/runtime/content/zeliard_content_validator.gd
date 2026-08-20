@@ -33,8 +33,20 @@ static func diagnose_graph(resources: Array[ZeliardContent]) -> Array[ZeliardDia
 		if content == null:
 			diagnostics.append(_diagnostic(null, &"content.null_definition", &"", "content resource is required"))
 			continue
+		var specialized_messages: Dictionary = {}
+		if content is ZeliardAssetDefinition:
+			for issue: Dictionary in (content as ZeliardAssetDefinition).asset_validation_issues():
+				var message := String(issue["message"])
+				specialized_messages[message] = true
+				diagnostics.append(_diagnostic(
+					content,
+					issue["code"] as StringName,
+					issue["property_path"] as StringName,
+					message
+				))
 		for message: String in validate(content):
-			diagnostics.append(_diagnostic(content, &"content.invalid_definition", &"", message))
+			if not specialized_messages.has(message):
+				diagnostics.append(_diagnostic(content, &"content.invalid_definition", &"", message))
 		if content.content_id.is_empty():
 			continue
 		if index.has(content.content_id):
