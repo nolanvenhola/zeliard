@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ZeliardRoomDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://content/room_definition.gd" id="1_room"]
+
+[resource]
+script = ExtResource("1_room")
+content_id = &"spike.training_room"
+display_name = "Training Cavern"
+tile_size = 8
+logical_size = Vector2i(320, 200)
+spawn_cell = Vector2i(7, 20)
+ground_row = 20
+enemy_cells = Array[Vector2i]([Vector2i(18, 20), Vector2i(28, 20)])
