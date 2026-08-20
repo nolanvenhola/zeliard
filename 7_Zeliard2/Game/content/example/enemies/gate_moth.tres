@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ZeliardEnemyDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/enemy_definition.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+content_id = &"enemy:gate_moth"
+display_name = "Gate Moth"
+max_health = 3
+contact_damage = 1
+ability_ids = PackedStringArray("ability:sword_slash")
+sprite_asset_id = &"asset:hero_placeholder"

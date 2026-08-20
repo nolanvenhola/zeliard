@@ -28,26 +28,7 @@ func _exit_tree() -> void:
 
 
 func _validate_content() -> void:
-	var resources := _find_content_resources("res://content")
-	var invalid := ZeliardContentValidator.validate_all(resources)
+	var catalog := ZeliardContentCatalog.load_directory("res://content")
+	var resources := catalog.all()
+	var invalid := ZeliardContentValidator.validate_graph(resources)
 	_status.text = "%d valid resource(s)" % resources.size() if invalid.is_empty() else "%d invalid resource(s)" % invalid.size()
-
-
-func _find_content_resources(root: String) -> Array[ZeliardContent]:
-	var resources: Array[ZeliardContent] = []
-	var directory := DirAccess.open(root)
-	if directory == null:
-		return resources
-	directory.list_dir_begin()
-	var entry := directory.get_next()
-	while not entry.is_empty():
-		var path := root.path_join(entry)
-		if directory.current_is_dir() and not entry.begins_with("."):
-			resources.append_array(_find_content_resources(path))
-		elif entry.get_extension() == "tres":
-			var loaded := ResourceLoader.load(path)
-			if loaded is ZeliardContent:
-				resources.append(loaded as ZeliardContent)
-		entry = directory.get_next()
-	directory.list_dir_end()
-	return resources

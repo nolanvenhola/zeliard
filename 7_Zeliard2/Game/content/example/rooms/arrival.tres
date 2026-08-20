@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ZeliardRoomDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/room_definition.gd" id="1_room"]
+[ext_resource type="Script" path="res://runtime/content/support/room_exit.gd" id="2_exit"]
+[ext_resource type="Script" path="res://runtime/content/support/content_placement.gd" id="3_placement"]
+
+[sub_resource type="Resource" id="RoomExit_gate"]
+script = ExtResource("2_exit")
+exit_id = &"east_gate"
+destination_room_id = &"room:verdant_gate"
+destination_entry_id = &"west"
+trigger_cell = Vector2i(39, 20)
+
+[sub_resource type="Resource" id="ActorPlacement_hero"]
+script = ExtResource("3_placement")
+definition_id = &"actor:hero"
+cell = Vector2i(6, 20)
+facing = 1
+
+[resource]
+script = ExtResource("1_room")
+content_id = &"room:verdant_arrival"
+display_name = "Verdant Arrival"
+region_id = &"region:verdant"
+size_cells = Vector2i(40, 25)
+entry_ids = PackedStringArray("start", "from_gate")
+exits = Array[ExtResource("2_exit")]([SubResource("RoomExit_gate")])
+actor_placements = Array[ExtResource("3_placement")]([SubResource("ActorPlacement_hero")])
+event_ids = PackedStringArray("event:gate_intro")

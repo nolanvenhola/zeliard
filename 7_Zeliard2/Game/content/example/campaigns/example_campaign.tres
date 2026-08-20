@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ZeliardCampaignDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/campaign_definition.gd" id="1_campaign"]
+
+[resource]
+script = ExtResource("1_campaign")
+content_id = &"campaign:example"
+display_name = "Example Campaign"
+region_ids = PackedStringArray("region:verdant")
+starting_region_id = &"region:verdant"
+player_actor_id = &"actor:hero"

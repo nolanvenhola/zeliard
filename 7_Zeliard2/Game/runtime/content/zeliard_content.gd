@@ -2,6 +2,11 @@ class_name ZeliardContent
 extends Resource
 
 @export var content_id: StringName = &""
+@export var display_name: String = ""
+
+
+func content_kind() -> StringName:
+	return ZeliardContentKinds.CONTENT
 
 
 func validation_errors() -> PackedStringArray:
@@ -10,7 +15,25 @@ func validation_errors() -> PackedStringArray:
 		errors.append("content_id is required")
 	elif not _is_valid_content_id(String(content_id)):
 		errors.append("content_id must use lowercase namespace:name syntax")
+	elif content_kind() != ZeliardContentKinds.CONTENT and String(content_id).get_slice(":", 0) != String(content_kind()):
+		errors.append("content_id namespace must match content kind %s" % content_kind())
+	if display_name.strip_edges().is_empty():
+		errors.append("display_name is required")
 	return errors
+
+
+func content_references() -> Array[ZeliardContentReference]:
+	return []
+
+
+func _append_reference(
+	references: Array[ZeliardContentReference],
+	field: StringName,
+	target_id: StringName,
+	expected_kind: StringName
+) -> void:
+	if not target_id.is_empty():
+		references.append(ZeliardContentReference.new(field, target_id, expected_kind))
 
 
 static func _is_valid_content_id(value: String) -> bool:

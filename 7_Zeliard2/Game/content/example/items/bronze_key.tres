@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ZeliardItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = &"item:bronze_key"
+display_name = "Bronze Key"
+item_type = "key"
+value = 25
+icon_asset_id = &"asset:hero_placeholder"

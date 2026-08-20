@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ZeliardQuestDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/quest_definition.gd" id="1_quest"]
+[ext_resource type="Script" path="res://runtime/content/support/quest_stage.gd" id="2_stage"]
+
+[sub_resource type="Resource" id="QuestStage_unlock"]
+script = ExtResource("2_stage")
+stage_id = &"unlock"
+description = "Carry the bronze key to the gate."
+
+[resource]
+script = ExtResource("1_quest")
+content_id = &"quest:open_gate"
+display_name = "Open the Gate"
+stages = Array[ExtResource("2_stage")]([SubResource("QuestStage_unlock")])
+reward_item_ids = PackedStringArray("item:bronze_key")

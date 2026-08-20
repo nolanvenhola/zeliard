@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ZeliardRegionDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/region_definition.gd" id="1_region"]
+
+[resource]
+script = ExtResource("1_region")
+content_id = &"region:verdant"
+display_name = "Verdant Threshold"
+room_ids = PackedStringArray("room:verdant_arrival", "room:verdant_gate")
+entry_room_id = &"room:verdant_arrival"

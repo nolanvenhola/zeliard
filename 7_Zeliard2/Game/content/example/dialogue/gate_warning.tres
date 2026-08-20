@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ZeliardDialogueDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/dialogue_definition.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://runtime/content/support/dialogue_line.gd" id="2_line"]
+
+[sub_resource type="Resource" id="DialogueLine_warning"]
+script = ExtResource("2_line")
+line_id = &"warning"
+speaker_actor_id = &"actor:hero"
+text = "The old gate is stirring."
+
+[resource]
+script = ExtResource("1_dialogue")
+content_id = &"dialogue:gate_warning"
+display_name = "Gate Warning"
+lines = Array[ExtResource("2_line")]([SubResource("DialogueLine_warning")])

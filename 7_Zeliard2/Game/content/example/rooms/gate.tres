@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ZeliardRoomDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/room_definition.gd" id="1_room"]
+[ext_resource type="Script" path="res://runtime/content/support/room_exit.gd" id="2_exit"]
+[ext_resource type="Script" path="res://runtime/content/support/content_placement.gd" id="3_placement"]
+
+[sub_resource type="Resource" id="RoomExit_arrival"]
+script = ExtResource("2_exit")
+exit_id = &"west"
+destination_room_id = &"room:verdant_arrival"
+destination_entry_id = &"from_gate"
+trigger_cell = Vector2i(0, 20)
+
+[sub_resource type="Resource" id="EnemyPlacement_moth"]
+script = ExtResource("3_placement")
+definition_id = &"enemy:gate_moth"
+cell = Vector2i(22, 18)
+facing = -1
+
+[resource]
+script = ExtResource("1_room")
+content_id = &"room:verdant_gate"
+display_name = "Verdant Gate"
+region_id = &"region:verdant"
+size_cells = Vector2i(40, 25)
+entry_ids = PackedStringArray("west")
+exits = Array[ExtResource("2_exit")]([SubResource("RoomExit_arrival")])
+enemy_placements = Array[ExtResource("3_placement")]([SubResource("EnemyPlacement_moth")])

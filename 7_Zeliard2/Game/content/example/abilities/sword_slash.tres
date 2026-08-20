@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ZeliardAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/content/definitions/ability_definition.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+content_id = &"ability:sword_slash"
+display_name = "Sword Slash"
+ability_type = "melee"
+power = 2
+cooldown_steps = 1
+range_cells = 1
+animation_asset_id = &"asset:hero_placeholder"
