@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://runtime/feel_spike.gd" id="1_spike"]
+
+[node name="FeelSpike" type="Node2D"]
+script = ExtResource("1_spike")
