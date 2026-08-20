@@ -9,6 +9,7 @@ var failures: int = 0
 
 func _init() -> void:
 	_test_room_resource()
+	_test_zeliard_keyboard_mapping()
 	_test_fixed_step_clock()
 	_test_grid_movement()
 	_test_normal_jump()
@@ -17,7 +18,7 @@ func _init() -> void:
 	_test_committed_sword_event()
 	_test_spike_scripts_parse()
 	if failures == 0:
-		print("PASS: 8 Godot stack spike scenarios")
+		print("PASS: 9 Godot stack spike scenarios")
 		quit(0)
 	else:
 		push_error("FAIL: %d assertion(s)" % failures)
@@ -28,6 +29,23 @@ func _test_room_resource() -> void:
 	var room := load("res://content/training_room.tres") as ZeliardRoomDefinition
 	_expect(room != null, "typed room resource loads")
 	_expect(room.validation_errors().is_empty(), "room resource validates")
+
+
+func _test_zeliard_keyboard_mapping() -> void:
+	_expect_keyboard_action(&"move_left", KEY_LEFT)
+	_expect_keyboard_action(&"move_right", KEY_RIGHT)
+	_expect_keyboard_action(&"move_up", KEY_UP)
+
+
+func _expect_keyboard_action(action: StringName, expected_keycode: int) -> void:
+	var keyboard_events: Array[InputEventKey] = []
+	for input_event: InputEvent in InputMap.action_get_events(action):
+		if input_event is InputEventKey:
+			keyboard_events.append(input_event as InputEventKey)
+	_expect_equal(keyboard_events.size(), 1, "%s has one keyboard binding" % action)
+	if keyboard_events.size() == 1:
+		_expect_equal(keyboard_events[0].keycode, expected_keycode, "%s uses its Zeliard arrow key" % action)
+		_expect_equal(keyboard_events[0].physical_keycode, 0, "%s has no physical letter-key binding" % action)
 
 
 func _test_fixed_step_clock() -> void:

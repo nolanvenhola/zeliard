@@ -39,7 +39,7 @@ func _draw() -> void:
 	_draw_ground()
 	for enemy_cell: Vector2i in enemies:
 		_draw_actor(enemy_cell, Color("d45b47"), Vector2i(16, 16))
-	_draw_actor(model.cell, Color("e8d7a1"), Vector2i(16, 24))
+	_draw_actor(model.cell, Color("e8d7a1"), Vector2i(16, 24), model.facing)
 	if model.is_attacking():
 		for sword_cell: Vector2i in model.sword_cells():
 			var sword_rect := Rect2(Vector2(sword_cell * room.tile_size), Vector2(room.tile_size, room.tile_size))
@@ -61,11 +61,13 @@ func _draw_ground() -> void:
 		draw_rect(Rect2(x, top, room.tile_size, room.tile_size), Color("4c6242"))
 
 
-func _draw_actor(actor_cell: Vector2i, color: Color, size: Vector2i) -> void:
+func _draw_actor(actor_cell: Vector2i, color: Color, size: Vector2i, facing_direction: int = 0) -> void:
 	var bottom_left := Vector2(actor_cell * room.tile_size)
 	var top_left := bottom_left - Vector2(0, size.y - room.tile_size)
 	draw_rect(Rect2(top_left, Vector2(size)), color)
-	draw_rect(Rect2(top_left + Vector2(3, 4), Vector2(3, 3)), Color("101522"))
+	if facing_direction != 0:
+		var face_x := top_left.x + size.x if facing_direction > 0 else top_left.x - 2.0
+		draw_rect(Rect2(face_x, top_left.y + 5.0, 2.0, 6.0), color.lightened(0.18))
 
 
 func _direction_mask() -> int:
@@ -94,7 +96,7 @@ func _build_overlay() -> void:
 	add_child(layer)
 	instructions_label = Label.new()
 	instructions_label.position = Vector2(6, 4)
-	instructions_label.text = "Move: arrows/WASD  Jump: Up+direction  Sword: Space  Feruza: F"
+	instructions_label.text = "Move: Left/Right  Jump: Up+direction  Sword: Space  Feruza: F"
 	instructions_label.add_theme_font_size_override("font_size", 8)
 	layer.add_child(instructions_label)
 	status_label = Label.new()

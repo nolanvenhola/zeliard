@@ -27,15 +27,15 @@ enabled=PackedStringArray("res://addons/zeliard_creator/plugin.cfg")
 
 move_left={
 "deadzone": 0.5,
-"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":4194311), Object(InputEventJoypadMotion,"axis":0,"axis_value":-1.0)]
+"events": [Object(InputEventKey,"keycode":4194319), Object(InputEventJoypadMotion,"axis":0,"axis_value":-1.0)]
 }
 move_right={
 "deadzone": 0.5,
-"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":4194313), Object(InputEventJoypadMotion,"axis":0,"axis_value":1.0)]
+"events": [Object(InputEventKey,"keycode":4194321), Object(InputEventJoypadMotion,"axis":0,"axis_value":1.0)]
 }
 move_up={
 "deadzone": 0.5,
-"events": [Object(InputEventKey,"physical_keycode":87), Object(InputEventKey,"physical_keycode":4194320), Object(InputEventJoypadMotion,"axis":1,"axis_value":-1.0)]
+"events": [Object(InputEventKey,"keycode":4194320), Object(InputEventJoypadMotion,"axis":1,"axis_value":-1.0)]
 }
 primary_action={
 "deadzone": 0.5,

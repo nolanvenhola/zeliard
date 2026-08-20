@@ -19,8 +19,8 @@ The colored rectangles are deliberate programmer art. No original Zeliard visual
 
 Open this directory in Godot 4.7.2, then press F6/F5. Controls:
 
-- Left/Right or A/D: walk one logical cell per simulation beat
-- Up or W: straight jump
+- Left/Right arrows: walk one logical cell per simulation beat
+- Up arrow: straight jump
 - Up+Left / Up+Right: committed directional jump
 - Space / gamepad south: sword attack
 - F / gamepad north: toggle the Feruza jump-height variant
@@ -35,7 +35,7 @@ The simulation advances at the Feel Bible's initial 11.835 Hz logical cadence wh
 
 The script imports the project and editor plugin, runs the main-scene smoke and deterministic suite, creates ignored export directories, exports Windows and Web builds, and runs the exported Windows executable. Use `-SkipExports` when matching export templates are not installed.
 
-The deterministic suite covers the fixed-step clock, typed Resource loading/validation, one-cell movement, normal and directional jumps, doubled Feruza height, one-event sword reach, plugin parsing, and scene instantiation. The validation wrapper also treats Godot `SCRIPT ERROR`/`ERROR:` output as failure because some editor operations can otherwise return exit code zero.
+The deterministic suite covers arrow-only Zeliard keyboard mappings, the fixed-step clock, typed Resource loading/validation, one-cell movement, normal and directional jumps, doubled Feruza height, one-event sword reach, plugin parsing, and scene instantiation. The validation wrapper also treats Godot `SCRIPT ERROR`/`ERROR:` output as failure because some editor operations can otherwise return exit code zero.
 
 ## Creator workflow
 
