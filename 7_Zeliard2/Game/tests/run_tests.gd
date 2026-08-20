@@ -10,6 +10,10 @@ func _init() -> void:
 	_test_example_graph_validation()
 	_test_invalid_graph_references()
 	_test_structured_validation_diagnostics()
+	_test_creator_catalog_search()
+	_test_creator_templates_are_valid()
+	_test_creator_reference_metadata()
+	_test_creator_dirty_tracking()
 	_test_resource_round_trip()
 	_test_stable_id_survives_file_move()
 	_test_deterministic_save_migration()
@@ -19,7 +23,7 @@ func _init() -> void:
 	_test_structured_logging()
 	_test_main_scene_loads()
 	if _failures == 0:
-		print("PASS: 14 production validation and save scenarios")
+		print("PASS: 18 production validation, Creator, and save scenarios")
 		quit(0)
 	else:
 		push_error("FAIL: %d assertion(s)" % _failures)
@@ -110,6 +114,65 @@ func _test_structured_validation_diagnostics() -> void:
 	resources.reverse()
 	var reversed_lines := ZeliardContentValidation.format_lines(ZeliardContentValidator.diagnose_graph(resources))
 	_expect_equal(lines, reversed_lines, "editor and CI diagnostics are deterministic regardless of discovery order")
+
+
+func _test_creator_catalog_search() -> void:
+	var catalog := ZeliardContentCatalog.load_directory("res://content/example")
+	var index := ZeliardCreatorCatalogIndex.new()
+	index.rebuild(catalog)
+	var by_name := index.search("Bronze Key")
+	_expect_equal(by_name.size(), 1, "Creator search finds content by display name")
+	if by_name.size() == 1:
+		_expect_equal(by_name[0].content_id, &"item:bronze_key", "Creator search returns the owning resource")
+	var assets := index.search("", ZeliardContentKinds.ASSET)
+	_expect_equal(assets.size(), 1, "Creator kind filter avoids raw folder navigation")
+	_expect_equal(index.choices(ZeliardContentKinds.ROOM).size(), 2, "reference choices contain every matching kind")
+
+
+func _test_creator_templates_are_valid() -> void:
+	var catalog := ZeliardContentCatalog.load_directory("res://content/example")
+	for kind: String in ZeliardContentKinds.all():
+		var content_id := StringName("%s:template" % kind)
+		var content := ZeliardCreatorTemplateFactory.create(StringName(kind), content_id, "Template", catalog)
+		_expect(content != null, "Creator provides a %s template" % kind)
+		if content == null:
+			continue
+		_expect(content.validation_errors().is_empty(), "%s template starts locally valid" % kind)
+		var graph := catalog.all()
+		graph.append(content)
+		_expect(
+			ZeliardContentValidator.diagnose_graph(graph).is_empty(),
+			"%s template starts graph-valid" % kind
+		)
+		_expect_equal(
+			ZeliardCreatorTemplateFactory.output_path(content),
+			"res://content/created/%s/template.tres" % kind,
+			"%s template has a deterministic output path" % kind
+		)
+
+
+func _test_creator_reference_metadata() -> void:
+	var campaign := ZeliardCampaignDefinition.new()
+	var fields := campaign.reference_field_kinds()
+	_expect_equal(fields[&"region_ids"], ZeliardContentKinds.REGION, "campaign region collection uses a stable-ID picker")
+	_expect_equal(fields[&"player_actor_id"], ZeliardContentKinds.ACTOR, "campaign player reference uses an actor picker")
+	var line := ZeliardDialogueLine.new()
+	_expect_equal(
+		line.reference_field_kinds()[&"speaker_actor_id"],
+		ZeliardContentKinds.ACTOR,
+		"nested dialogue references advertise their expected kind"
+	)
+
+
+func _test_creator_dirty_tracking() -> void:
+	var tracker := ZeliardCreatorDirtyTracker.new()
+	tracker.mark("res://content/example/rooms/gate.tres")
+	tracker.mark("res://content/example/actors/hero.tres")
+	_expect(tracker.contains("res://content/example/rooms/gate.tres"), "Creator marks changed resources dirty")
+	_expect_equal(tracker.paths()[0], "res://content/example/actors/hero.tres", "dirty resources are reported deterministically")
+	_expect(not tracker.status_text().is_empty(), "dirty state is visible to the editor")
+	tracker.clear("res://content/example/rooms/gate.tres")
+	_expect(not tracker.contains("res://content/example/rooms/gate.tres"), "saving clears a resource's dirty state")
 
 
 func _test_resource_round_trip() -> void:

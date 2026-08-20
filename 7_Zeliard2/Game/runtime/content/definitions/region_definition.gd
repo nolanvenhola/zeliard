@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardRegionDefinition
 extends ZeliardContent
 
@@ -26,3 +27,11 @@ func content_references() -> Array[ZeliardContentReference]:
 	_append_reference(references, &"entry_room_id", entry_room_id, ZeliardContentKinds.ROOM)
 	_append_reference(references, &"music_asset_id", music_asset_id, ZeliardContentKinds.ASSET)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"room_ids": ZeliardContentKinds.ROOM,
+		&"entry_room_id": ZeliardContentKinds.ROOM,
+		&"music_asset_id": ZeliardContentKinds.ASSET,
+	}

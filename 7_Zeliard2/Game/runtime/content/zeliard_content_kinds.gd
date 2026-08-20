@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardContentKinds
 extends RefCounted
 
@@ -13,3 +14,10 @@ const DIALOGUE: StringName = &"dialogue"
 const QUEST: StringName = &"quest"
 const ASSET: StringName = &"asset"
 const EVENT: StringName = &"event"
+
+
+static func all() -> PackedStringArray:
+	return PackedStringArray([
+		CAMPAIGN, REGION, ROOM, ACTOR, ENEMY, ITEM,
+		ABILITY, DIALOGUE, QUEST, ASSET, EVENT,
+	])

@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardActorDefinition
 extends ZeliardContent
 
@@ -28,3 +29,11 @@ func content_references() -> Array[ZeliardContentReference]:
 		_append_reference(references, &"ability_ids", StringName(ability_id), ZeliardContentKinds.ABILITY)
 	_append_reference(references, &"sprite_asset_id", sprite_asset_id, ZeliardContentKinds.ASSET)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"starting_item_ids": ZeliardContentKinds.ITEM,
+		&"ability_ids": ZeliardContentKinds.ABILITY,
+		&"sprite_asset_id": ZeliardContentKinds.ASSET,
+	}
