@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardEventStep
 extends Resource
 
@@ -29,6 +30,11 @@ func expected_target_kind() -> StringName:
 			return ZeliardContentKinds.ROOM
 		_:
 			return &""
+
+
+func reference_field_kinds() -> Dictionary:
+	var kind := expected_target_kind()
+	return {} if kind.is_empty() else {&"target_content_id": kind}
 
 
 func validation_errors() -> PackedStringArray:

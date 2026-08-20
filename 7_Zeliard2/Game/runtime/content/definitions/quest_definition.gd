@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardQuestDefinition
 extends ZeliardContent
 
@@ -35,3 +36,10 @@ func content_references() -> Array[ZeliardContentReference]:
 	for item_id: String in reward_item_ids:
 		_append_reference(references, &"reward_item_ids", StringName(item_id), ZeliardContentKinds.ITEM)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"prerequisite_quest_ids": ZeliardContentKinds.QUEST,
+		&"reward_item_ids": ZeliardContentKinds.ITEM,
+	}

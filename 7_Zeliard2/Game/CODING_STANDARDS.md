@@ -13,7 +13,8 @@ These rules apply to the production project. The validation command enforces the
 
 ## Boundaries
 
-- `runtime/` contains everything shipped in the game. It must not reference `EditorPlugin`, `EditorInterface`, `EditorInspectorPlugin`, `@tool`, `res://addons`, or files under `addons/`.
+- `runtime/` contains everything shipped in the game. It must not reference `EditorPlugin`, `EditorInterface`, `EditorInspectorPlugin`, `res://addons`, or files under `addons/`.
+- Shared content Resources may be `@tool` scripts so their schema and validation methods work in the Creator. They remain engine-editor independent and must not call editor APIs.
 - `addons/zeliard_creator/` is editor-only. It may consume public runtime content contracts, but runtime code never calls back into it.
 - Deterministic game state must remain independent of `Node`, rendering, input-device APIs, and frame delta. Nodes adapt that model to Godot.
 - Authored data derives from the shared `ZeliardContent` contract and returns validation errors rather than silently repairing invalid source data.

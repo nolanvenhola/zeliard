@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardContent
 extends Resource
 
@@ -29,6 +30,10 @@ func validation_errors() -> PackedStringArray:
 
 func content_references() -> Array[ZeliardContentReference]:
 	return []
+
+
+func reference_field_kinds() -> Dictionary:
+	return {}
 
 
 func _append_reference(

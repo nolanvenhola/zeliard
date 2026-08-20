@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardRoomDefinition
 extends ZeliardContent
 
@@ -44,3 +45,10 @@ func content_references() -> Array[ZeliardContentReference]:
 	for event_id: String in event_ids:
 		_append_reference(references, &"event_ids", StringName(event_id), ZeliardContentKinds.EVENT)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"region_id": ZeliardContentKinds.REGION,
+		&"event_ids": ZeliardContentKinds.EVENT,
+	}

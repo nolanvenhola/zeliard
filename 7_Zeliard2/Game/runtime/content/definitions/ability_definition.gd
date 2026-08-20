@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardAbilityDefinition
 extends ZeliardContent
 
@@ -31,3 +32,11 @@ func content_references() -> Array[ZeliardContentReference]:
 	_append_reference(references, &"animation_asset_id", animation_asset_id, ZeliardContentKinds.ASSET)
 	_append_reference(references, &"audio_asset_id", audio_asset_id, ZeliardContentKinds.ASSET)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"effect_event_id": ZeliardContentKinds.EVENT,
+		&"animation_asset_id": ZeliardContentKinds.ASSET,
+		&"audio_asset_id": ZeliardContentKinds.ASSET,
+	}

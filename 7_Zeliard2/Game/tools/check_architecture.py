@@ -11,7 +11,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT_ROOTS = (PROJECT_ROOT / "runtime", PROJECT_ROOT / "addons", PROJECT_ROOT / "tests")
 RUNTIME_FORBIDDEN = (
-    "@tool",
     "EditorPlugin",
     "EditorInterface",
     "EditorInspectorPlugin",

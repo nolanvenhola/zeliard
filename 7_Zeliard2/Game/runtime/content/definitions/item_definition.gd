@@ -1,3 +1,4 @@
+@tool
 class_name ZeliardItemDefinition
 extends ZeliardContent
 
@@ -29,3 +30,10 @@ func content_references() -> Array[ZeliardContentReference]:
 	_append_reference(references, &"granted_ability_id", granted_ability_id, ZeliardContentKinds.ABILITY)
 	_append_reference(references, &"icon_asset_id", icon_asset_id, ZeliardContentKinds.ASSET)
 	return references
+
+
+func reference_field_kinds() -> Dictionary:
+	return {
+		&"granted_ability_id": ZeliardContentKinds.ABILITY,
+		&"icon_asset_id": ZeliardContentKinds.ASSET,
+	}
