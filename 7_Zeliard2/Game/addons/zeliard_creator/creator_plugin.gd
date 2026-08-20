@@ -29,6 +29,5 @@ func _exit_tree() -> void:
 
 func _validate_content() -> void:
 	var catalog := ZeliardContentCatalog.load_directory("res://content")
-	var resources := catalog.all()
-	var invalid := ZeliardContentValidator.validate_graph(resources)
-	_status.text = "%d valid resource(s)" % resources.size() if invalid.is_empty() else "%d invalid resource(s)" % invalid.size()
+	var diagnostics := ZeliardContentValidation.validate_directory("res://content")
+	_status.text = "%d valid resource(s)" % catalog.all().size() if diagnostics.is_empty() else "\n".join(ZeliardContentValidation.format_lines(diagnostics))

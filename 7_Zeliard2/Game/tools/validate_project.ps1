@@ -33,6 +33,9 @@ Invoke-CheckedProcess -Executable "python" -Description "Check architecture and 
 Invoke-CheckedProcess -Executable $Godot -Description "Import project and load Creator plugin" -Arguments @(
     "--headless", "--editor", "--path", $projectRoot, "--quit"
 )
+Invoke-CheckedProcess -Executable $Godot -Description "Validate production content graph" -Arguments @(
+    "--headless", "--path", $projectRoot, "--script", "res://tools/validate_content.gd"
+)
 Invoke-CheckedProcess -Executable $Godot -Description "Run headless scaffold tests" -Arguments @(
     "--headless", "--path", $projectRoot, "--script", "res://tests/run_tests.gd"
 )

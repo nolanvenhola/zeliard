@@ -1,6 +1,9 @@
 class_name ZeliardContent
 extends Resource
 
+const CURRENT_SCHEMA_VERSION: int = 1
+
+@export_range(1, 999) var schema_version: int = CURRENT_SCHEMA_VERSION
 @export var content_id: StringName = &""
 @export var display_name: String = ""
 
@@ -11,6 +14,8 @@ func content_kind() -> StringName:
 
 func validation_errors() -> PackedStringArray:
 	var errors := PackedStringArray()
+	if schema_version != CURRENT_SCHEMA_VERSION:
+		errors.append("unsupported content schema_version %d" % schema_version)
 	if content_id.is_empty():
 		errors.append("content_id is required")
 	elif not _is_valid_content_id(String(content_id)):

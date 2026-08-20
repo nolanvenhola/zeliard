@@ -9,12 +9,17 @@ func _init() -> void:
 	_test_example_catalog_and_schema_kinds()
 	_test_example_graph_validation()
 	_test_invalid_graph_references()
+	_test_structured_validation_diagnostics()
 	_test_resource_round_trip()
 	_test_stable_id_survives_file_move()
+	_test_deterministic_save_migration()
+	_test_save_checksum_integrity()
+	_test_atomic_save_rotation()
+	_test_corrupt_save_recovery_is_non_destructive()
 	_test_structured_logging()
 	_test_main_scene_loads()
 	if _failures == 0:
-		print("PASS: 9 production content scenarios")
+		print("PASS: 14 production validation and save scenarios")
 		quit(0)
 	else:
 		push_error("FAIL: %d assertion(s)" % _failures)
@@ -93,6 +98,20 @@ func _test_invalid_graph_references() -> void:
 	_expect(_errors_contain(invalid, &"item:not_an_actor", "namespace must match content kind actor"), "ID namespace must match definition kind")
 
 
+func _test_structured_validation_diagnostics() -> void:
+	var catalog := ZeliardContentCatalog.load_directory("res://content/example")
+	var resources := catalog.all()
+	var broken := load("res://tests/fixtures/content/broken_campaign.tres") as ZeliardCampaignDefinition
+	resources.append(broken)
+	var diagnostics := ZeliardContentValidator.diagnose_graph(resources)
+	var lines := ZeliardContentValidation.format_lines(diagnostics)
+	var expected := "ERROR [content.missing_reference] res://tests/fixtures/content/broken_campaign.tres (campaign:broken.region_ids): region_ids references missing region ID region:missing"
+	_expect(lines.has(expected), "shared diagnostic links missing reference to owning resource and property")
+	resources.reverse()
+	var reversed_lines := ZeliardContentValidation.format_lines(ZeliardContentValidator.diagnose_graph(resources))
+	_expect_equal(lines, reversed_lines, "editor and CI diagnostics are deterministic regardless of discovery order")
+
+
 func _test_resource_round_trip() -> void:
 	var catalog := ZeliardContentCatalog.load_directory("res://content/example")
 	for content: ZeliardContent in catalog.all():
@@ -127,6 +146,78 @@ func _test_stable_id_survives_file_move() -> void:
 				_expect_equal(moved.content_id, &"campaign:example", "stable ID survives file move and rename")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(first_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(moved_path))
+
+
+func _test_deterministic_save_migration() -> void:
+	var source_text := FileAccess.get_file_as_string("res://tests/fixtures/saves/save_v1.json")
+	var expected_text := FileAccess.get_file_as_string("res://tests/fixtures/saves/save_v2_expected.json")
+	var expected_result := ZeliardSaveCodec.decode(expected_text)
+	var first := ZeliardSaveCodec.decode(source_text)
+	var second := ZeliardSaveCodec.decode(source_text)
+	_expect(expected_result.success, "expected version 2 save fixture decodes")
+	_expect(first.success, "version 1 save fixture migrates")
+	_expect(second.success, "version 1 save fixture migrates repeatedly")
+	if expected_result.success and first.success and second.success:
+		_expect_equal(first.migrated_from_version, 1, "migration reports source schema version")
+		_expect_equal(first.data.to_dictionary(), expected_result.data.to_dictionary(), "version 1 fixture matches expected version 2 state")
+		_expect_equal(first.data.to_dictionary(), second.data.to_dictionary(), "save migration is deterministic")
+		_expect_equal(ZeliardSaveCodec.encode(first.data), ZeliardSaveCodec.encode(second.data), "migrated save encoding is deterministic")
+
+
+func _test_save_checksum_integrity() -> void:
+	var data := _example_save_data(10)
+	var encoded := ZeliardSaveCodec.encode(data)
+	_expect(ZeliardSaveCodec.decode(encoded).success, "current save integrity envelope decodes")
+	var envelope := JSON.parse_string(encoded) as Dictionary
+	var payload := envelope["payload"] as Dictionary
+	payload["player_health"] = 9
+	var tampered := JSON.stringify(envelope, "\t", true)
+	var decoded := ZeliardSaveCodec.decode(tampered)
+	_expect(not decoded.success, "tampered save payload is rejected")
+	_expect(decoded.error_message.contains("checksum"), "tampered save reports checksum failure")
+
+
+func _test_atomic_save_rotation() -> void:
+	var path := "user://zeliard2_atomic_test.save"
+	_cleanup_save_paths(path)
+	_expect_equal(ZeliardSaveStore.save(path, _example_save_data(10)), OK, "initial atomic save succeeds")
+	_expect_equal(ZeliardSaveStore.save(path, _example_save_data(6)), OK, "replacement atomic save succeeds")
+	var current := ZeliardSaveStore.load(path)
+	var backup := ZeliardSaveCodec.decode(_read_text(path + ".backup"))
+	_expect(current.success, "current atomic save loads")
+	_expect(backup.success, "rotated backup remains valid")
+	if current.success:
+		_expect_equal(current.data.player_health, 6, "primary contains replacement state")
+	if backup.success:
+		_expect_equal(backup.data.player_health, 10, "backup contains previous valid state")
+	_expect(not FileAccess.file_exists(path + ".tmp"), "verified temporary file is installed, not abandoned")
+	_cleanup_save_paths(path)
+
+
+func _test_corrupt_save_recovery_is_non_destructive() -> void:
+	var path := "user://zeliard2_recovery_test.save"
+	_cleanup_save_paths(path)
+	ZeliardSaveStore.save(path, _example_save_data(10))
+	ZeliardSaveStore.save(path, _example_save_data(6))
+	_write_text(path, "{ definitely not valid JSON")
+	var corrupt_before := _read_text(path)
+	var recovered := ZeliardSaveStore.load(path)
+	_expect(recovered.success, "valid backup recovers a corrupt primary")
+	_expect(recovered.recovered_from_backup, "load result identifies backup recovery")
+	if recovered.success:
+		_expect_equal(recovered.data.player_health, 10, "recovery returns last valid backup")
+	_expect_equal(_read_text(path), corrupt_before, "recovery does not rewrite corrupt primary")
+	var backup_before := _read_text(path + ".backup")
+	_expect_equal(ZeliardSaveStore.save(path, _example_save_data(4)), OK, "new save succeeds beside corrupt primary")
+	_expect_equal(_read_text(path + ".backup"), backup_before, "new save does not overwrite recoverable backup with corrupt data")
+	_expect(FileAccess.file_exists(path + ".corrupt"), "corrupt primary is quarantined")
+	_cleanup_save_paths(path)
+	_write_text(path, "{ still corrupt")
+	var lone_corrupt_before := _read_text(path)
+	var failed := ZeliardSaveStore.load(path)
+	_expect(not failed.success, "corrupt save without backup fails safely")
+	_expect_equal(_read_text(path), lone_corrupt_before, "failed recovery leaves lone corrupt save untouched")
+	_cleanup_save_paths(path)
 
 
 func _test_structured_logging() -> void:
@@ -182,6 +273,39 @@ func _snapshot_value(value: Variant) -> Variant:
 	if value is PackedStringArray:
 		return Array(value as PackedStringArray)
 	return value
+
+
+func _example_save_data(health: int) -> ZeliardSaveData:
+	var data := ZeliardSaveData.new()
+	data.campaign_id = &"campaign:example"
+	data.current_room_id = &"room:verdant_arrival"
+	data.player_health = health
+	data.inventory_ids = PackedStringArray(["item:bronze_key"])
+	data.quest_stages = {"quest:open_gate": 0}
+	data.flags = {"gate_seen": true}
+	return data
+
+
+func _read_text(path: String) -> String:
+	return FileAccess.get_file_as_string(path)
+
+
+func _write_text(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	_expect(file != null, "%s opens for test write" % path)
+	if file != null:
+		file.store_string(text)
+		file.close()
+
+
+func _cleanup_save_paths(path: String) -> void:
+	var suffixes := PackedStringArray(["", ".backup", ".tmp", ".corrupt"])
+	for index: int in 5:
+		suffixes.append(".corrupt.%d" % index)
+	for suffix: String in suffixes:
+		var candidate := path + suffix
+		if FileAccess.file_exists(candidate):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
 
 
 func _expect(condition: bool, description: String) -> void:
