@@ -14,6 +14,10 @@ func _init() -> void:
 	_test_creator_templates_are_valid()
 	_test_creator_reference_metadata()
 	_test_creator_dirty_tracking()
+	_test_art_asset_contract()
+	_test_art_diagnostics()
+	_test_import_policy_preserves_metadata()
+	_test_imported_pixels_are_lossless()
 	_test_resource_round_trip()
 	_test_stable_id_survives_file_move()
 	_test_deterministic_save_migration()
@@ -23,7 +27,7 @@ func _init() -> void:
 	_test_structured_logging()
 	_test_main_scene_loads()
 	if _failures == 0:
-		print("PASS: 18 production validation, Creator, and save scenarios")
+		print("PASS: 22 production validation, Creator, art-pipeline, and save scenarios")
 		quit(0)
 	else:
 		push_error("FAIL: %d assertion(s)" % _failures)
@@ -175,6 +179,75 @@ func _test_creator_dirty_tracking() -> void:
 	_expect(not tracker.contains("res://content/example/rooms/gate.tres"), "saving clears a resource's dirty state")
 
 
+func _test_art_asset_contract() -> void:
+	var asset := load("res://content/example/assets/hero_sprite.tres") as ZeliardAssetDefinition
+	_expect(asset != null, "pixel-art asset definition loads")
+	if asset == null:
+		return
+	_expect(asset.asset_validation_issues().is_empty(), "example pixel art satisfies dimensions, pivot, palette, and provenance")
+	_expect_equal(asset.frame_size, Vector2i(16, 24), "asset owns its stable frame size")
+	_expect_equal(asset.pivot, Vector2i(8, 23), "asset owns its stable gameplay pivot")
+	_expect(asset.provenance != null and asset.provenance.reviewed, "asset carries reviewed provenance")
+	_expect(ZeliardArtImportPolicy.diagnose(asset).is_empty(), "example PNG uses project import defaults")
+
+
+func _test_art_diagnostics() -> void:
+	var asset := ZeliardAssetDefinition.new()
+	asset.content_id = &"asset:broken_art"
+	asset.display_name = "Broken Art"
+	asset.source_path = "res://content/example/assets/hero_placeholder.png"
+	asset.authoring_source_path = asset.source_path
+	asset.frame_size = Vector2i(10, 10)
+	asset.pivot = Vector2i(10, 10)
+	asset.palette_color_limit = 1
+	var bad_name := ZeliardAssetDefinition.new()
+	bad_name.content_id = &"asset:bad_name"
+	bad_name.display_name = "Bad Name"
+	bad_name.source_path = "res://content/example/assets/Hero Placeholder.png"
+	bad_name.authoring_source_path = bad_name.source_path
+	var resources: Array[ZeliardContent] = [asset, bad_name]
+	var diagnostics := ZeliardContentValidator.diagnose_graph(resources)
+	_expect(_diagnostics_have_code(diagnostics, &"asset.missing_provenance"), "missing art provenance has a stable diagnostic code")
+	_expect(_diagnostics_have_code(diagnostics, &"art.off_grid"), "off-grid frame dimensions have a stable diagnostic code")
+	_expect(_diagnostics_have_code(diagnostics, &"art.invalid_dimensions"), "non-divisible sheets have a stable diagnostic code")
+	_expect(_diagnostics_have_code(diagnostics, &"art.invalid_pivot"), "out-of-frame pivots have a stable diagnostic code")
+	_expect(_diagnostics_have_code(diagnostics, &"art.palette_budget"), "palette overflow has a stable diagnostic code")
+	_expect(_diagnostics_have_code(diagnostics, &"art.invalid_name"), "invalid export naming has a stable diagnostic code")
+
+
+func _test_import_policy_preserves_metadata() -> void:
+	var source := load("res://content/example/assets/hero_sprite.tres") as ZeliardAssetDefinition
+	var asset := source.duplicate(true) as ZeliardAssetDefinition
+	asset.source_path = "user://art_policy_fixture.png"
+	var clip := ZeliardAnimationClipDefinition.new()
+	clip.clip_name = &"idle"
+	clip.first_frame = 0
+	clip.frame_count = 1
+	asset.clips = [clip]
+	var before := _resource_snapshot(asset)
+	var config := ConfigFile.new()
+	config.set_value("remap", "importer", "texture")
+	config.set_value("params", "compress/mode", 1)
+	_expect_equal(config.save(asset.source_path + ".import"), OK, "test import metadata saves")
+	_expect(ZeliardArtImportPolicy.apply(asset), "import policy corrects drifted settings")
+	_expect(ZeliardArtImportPolicy.diagnose(asset).is_empty(), "corrected import metadata validates")
+	_expect_equal(_resource_snapshot(asset), before, "reimport policy preserves pivots, clips, IDs, and provenance")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(asset.source_path + ".import"))
+
+
+func _test_imported_pixels_are_lossless() -> void:
+	var path := "res://content/example/assets/hero_placeholder.png"
+	var source_image := Image.new()
+	var load_error := source_image.load_png_from_buffer(FileAccess.get_file_as_bytes(path))
+	_expect_equal(load_error, OK, "source PNG decodes without editor-only file loading")
+	var texture := ResourceLoader.load(path) as Texture2D
+	_expect(texture != null, "Godot imports the PNG as a texture")
+	if load_error == OK and texture != null:
+		var imported_image := texture.get_image()
+		_expect_equal(imported_image.get_size(), source_image.get_size(), "import preserves PNG dimensions")
+		_expect_equal(imported_image.get_data(), source_image.get_data(), "lossless import preserves every RGBA pixel")
+
+
 func _test_resource_round_trip() -> void:
 	var catalog := ZeliardContentCatalog.load_directory("res://content/example")
 	for content: ZeliardContent in catalog.all():
@@ -308,6 +381,13 @@ func _errors_contain(invalid: Dictionary, owner_id: StringName, fragment: String
 	var errors := invalid.get(owner_id, PackedStringArray()) as PackedStringArray
 	for message: String in errors:
 		if message.contains(fragment):
+			return true
+	return false
+
+
+func _diagnostics_have_code(diagnostics: Array[ZeliardDiagnostic], code: StringName) -> bool:
+	for diagnostic: ZeliardDiagnostic in diagnostics:
+		if diagnostic.code == code:
 			return true
 	return false
 

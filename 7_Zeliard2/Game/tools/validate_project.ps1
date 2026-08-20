@@ -36,6 +36,13 @@ Invoke-CheckedProcess -Executable $Godot -Description "Import project and load C
 Invoke-CheckedProcess -Executable $Godot -Description "Validate production content graph" -Arguments @(
     "--headless", "--path", $projectRoot, "--script", "res://tools/validate_content.gd"
 )
+$powerShellExecutable = (Get-Process -Id $PID).Path
+Invoke-CheckedProcess -Executable $powerShellExecutable -Description "Test Aseprite CLI export contract" -Arguments @(
+    "-NoProfile", "-File", (Join-Path $PSScriptRoot "test_export_pixel_art.ps1")
+)
+Invoke-CheckedProcess -Executable $Godot -Description "Validate pixel-art import policy" -Arguments @(
+    "--headless", "--path", $projectRoot, "--script", "res://tools/validate_art_import.gd"
+)
 Invoke-CheckedProcess -Executable $Godot -Description "Run headless scaffold tests" -Arguments @(
     "--headless", "--path", $projectRoot, "--script", "res://tests/run_tests.gd"
 )

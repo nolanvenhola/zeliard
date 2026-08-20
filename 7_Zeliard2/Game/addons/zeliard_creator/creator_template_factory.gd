@@ -19,7 +19,13 @@ static func create(
 	var room_id := _first_id(catalog, ZeliardContentKinds.ROOM)
 	match kind:
 		ZeliardContentKinds.ASSET:
-			(content as ZeliardAssetDefinition).source_path = "res://content/example/assets/hero_placeholder.svg"
+			var asset := content as ZeliardAssetDefinition
+			asset.source_path = "res://content/example/assets/hero_placeholder.png"
+			asset.authoring_source_path = asset.source_path
+			asset.frame_size = Vector2i(16, 24)
+			asset.pivot = Vector2i(8, 23)
+			asset.palette_color_limit = 5
+			asset.provenance = _placeholder_provenance()
 		ZeliardContentKinds.ACTOR:
 			(content as ZeliardActorDefinition).sprite_asset_id = asset_id
 		ZeliardContentKinds.ENEMY:
@@ -81,3 +87,17 @@ static func _first_id(catalog: ZeliardContentCatalog, kind: StringName) -> Strin
 		if content.content_kind() == kind:
 			return content.content_id
 	return &""
+
+
+static func _placeholder_provenance() -> ZeliardAssetProvenance:
+	var provenance := ZeliardAssetProvenance.new()
+	provenance.creator = "Zeliard Project"
+	provenance.rights_holder = "Zeliard Project"
+	provenance.source_record = "Original placeholder created by the Zeliard Creator template."
+	provenance.license_name = "Project-owned original"
+	provenance.modification_permitted = true
+	provenance.commercial_distribution_permitted = true
+	provenance.tools_and_versions = "Zeliard Creator for Godot 4.7.2"
+	provenance.creation_date = Time.get_date_string_from_system()
+	provenance.placeholder = true
+	return provenance
