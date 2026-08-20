@@ -132,6 +132,15 @@ Complete, start-to-finish playable browser port. A portable C engine implements
 the game while the TypeScript/Vite shell supplies the web platform, audio,
 display, input, gamepad, save-file, automated-playthrough, and deployment layers.
 
+### 7_Zeliard2/
+
+Modern sequel and content-creation work. `Design/` defines the product and feel
+targets, `Spikes/` preserves disposable feasibility evidence, and `Game/` is the
+pinned Godot 4.7.2 production project shared by the runtime and Zeliard Creator.
+The sequel uses newly authored resources rather than legacy Zeliard assets or
+formats. See [`7_Zeliard2/Game/README.md`](7_Zeliard2/Game/README.md) to open,
+validate, test, and export the production scaffold.
+
 ## SAR Virtual Filesystem
 
 References inside game binaries: `[archive_index] [chunk_1indexed] 'FILENAME.EXT' 0x00`
