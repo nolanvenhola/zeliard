@@ -1,0 +1,27 @@
+; Zeliard 2 production project. Keep the engine version pinned in README.md and CI.
+config_version=5
+
+[application]
+
+config/name="Zeliard 2"
+run/main_scene="res://scenes/main.tscn"
+
+[display]
+
+window/size/viewport_width=320
+window/size/viewport_height=200
+window/size/window_width_override=960
+window/size/window_height_override=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/zeliard_creator/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0

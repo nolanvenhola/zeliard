@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://runtime/app.gd" type="Script" id="1_app"]
+
+[node name="Zeliard2" type="Node2D"]
+script = ExtResource("1_app")
+
+[node name="Title" type="Label" parent="."]
+offset_left = 109.0
+offset_top = 88.0
+offset_right = 211.0
+offset_bottom = 112.0
+text = "ZELIARD 2"
+horizontal_alignment = 1

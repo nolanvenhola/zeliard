@@ -1,0 +1,63 @@
+name: Zeliard 2 Godot
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/zeliard2-godot.yml
+      - 7_Zeliard2/Game/**
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/zeliard2-godot.yml
+      - 7_Zeliard2/Game/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2
+  GODOT_RELEASE: 4.7.2-stable
+  PROJECT_PATH: 7_Zeliard2/Game
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pinned Godot and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tools/godot .tools/templates
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip" \
+            --output .tools/godot.zip
+          unzip -q .tools/godot.zip -d .tools/godot
+          mv ".tools/godot/Godot_v${GODOT_RELEASE}_linux.x86_64" .tools/godot/godot
+          chmod +x .tools/godot/godot
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_RELEASE}_export_templates.tpz" \
+            --output .tools/export_templates.tpz
+          unzip -q .tools/export_templates.tpz -d .tools/templates
+          template_root="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$template_root"
+          mv .tools/templates/templates/* "$template_root/"
+
+      - name: Validate, test, and export
+        shell: pwsh
+        run: >-
+          & "${{ github.workspace }}/7_Zeliard2/Game/tools/validate_project.ps1"
+          -Godot "${{ github.workspace }}/.tools/godot/godot"
+
+      - name: Upload representative exports
+        uses: actions/upload-artifact@v7
+        with:
+          name: zeliard2-representative-exports
+          path: |
+            7_Zeliard2/Game/build/windows/Zeliard2.exe
+            7_Zeliard2/Game/build/web/
+          if-no-files-found: error
+          retention-days: 7
